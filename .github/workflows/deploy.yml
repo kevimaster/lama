@@ -31,6 +31,8 @@ jobs:
           cp index.html _site/index.html
           # Dominio personalizado
           cp CNAME _site/CNAME
+          # Assets (logo, imágenes)
+          if [ -d assets ]; then cp -r assets _site/assets; fi
           # Copiar todos los simuladores que tengan index.html
           for dir in simuladores/*/; do
             sim=$(basename "$dir")
