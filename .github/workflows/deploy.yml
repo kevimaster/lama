@@ -29,6 +29,8 @@ jobs:
           mkdir -p _site
           # Portal raíz
           cp index.html _site/index.html
+          # Dominio personalizado
+          cp CNAME _site/CNAME
           # Copiar todos los simuladores que tengan index.html
           for dir in simuladores/*/; do
             sim=$(basename "$dir")
