@@ -1,881 +1,734 @@
-import React, { useState, useEffect } from 'react';
-import { Search, User, MapPin, Eye, AlertTriangle, BarChart3, RefreshCw, BookOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
 
-const SearchBiasAnalyzer = () => {
-  const [currentQuery, setCurrentQuery] = useState('inteligencia artificial empleos');
-  const [selectedProfile, setSelectedProfile] = useState('young-tech');
-  const [showComparison, setShowComparison] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Perfiles demográficos simulados
-  const profiles = {
-    'young-tech': {
-      name: 'Joven Tecnología',
-      description: 'Estudiante universitario, 22 años, Bogotá',
-      icon: '👨‍💻',
-      demographics: { age: '18-25', location: 'Bogotá', interests: 'Tecnología, Gaming' }
-    },
-    'middle-corporate': {
-      name: 'Profesional Corporativo',
-      description: 'Ejecutiva, 38 años, Medellín',
-      icon: '👩‍💼',
-      demographics: { age: '35-45', location: 'Medellín', interests: 'Negocios, Finanzas' }
-    },
-    'rural-teacher': {
-      name: 'Educador Rural',
-      description: 'Profesor, 45 años, Cauca',
-      icon: '👨‍🏫',
-      demographics: { age: '40-50', location: 'Cauca', interests: 'Educación, Agricultura' }
-    },
-    'senior-urban': {
-      name: 'Adulto Mayor Urbano',
-      description: 'Pensionado, 65 años, Cali',
-      icon: '👴',
-      demographics: { age: '60+', location: 'Cali', interests: 'Salud, Familia' }
+// Audio feedback system
+const useSound = () => {
+  const audioContext = useRef(null);
+  
+  const playTone = (frequency, duration = 0.08, type = 'sine') => {
+    if (!audioContext.current) {
+      audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-  };
-
-  // Datos simulados de resultados de búsqueda con sesgos
-  const searchResults = {
-    'inteligencia artificial empleos': {
-      'young-tech': [
-        {
-          title: 'Los 10 empleos mejor pagados en IA para desarrolladores',
-          url: 'techcareers.com',
-          snippet: 'Descubre las oportunidades más lucrative en machine learning, deep learning y data science. Salarios desde $4M COP.',
-          bias: 'Enfoque en salarios altos y roles técnicos'
-        },
-        {
-          title: 'Bootcamps de IA: Tu camino hacia el éxito tecnológico',
-          url: 'codingbootcamp.co',
-          snippet: 'Cursos intensivos de 6 meses. Aprende Python, TensorFlow y consigue trabajo garantizado.',
-          bias: 'Promesas de empleo rápido'
-        },
-        {
-          title: 'Startups colombianas que están contratando en IA',
-          url: 'startupjobs.co',
-          snippet: 'Rappi, Platzi y otras unicornios buscan talento joven en inteligencia artificial.',
-          bias: 'Cultura startup y juventud'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Cómo liderar la transformación digital con IA en su empresa',
-          url: 'harvard-business.com',
-          snippet: 'Estrategias ejecutivas para implementar IA sin perder empleados. ROI garantizado.',
-          bias: 'Perspectiva gerencial y ROI'
-        },
-        {
-          title: 'IA y el futuro del management: Curso para ejecutivos',
-          url: 'eafit-executive.edu.co',
-          snippet: 'MBA especializado para líderes empresariales. Inversión $15M COP.',
-          bias: 'Educación ejecutiva costosa'
-        },
-        {
-          title: 'Consultorías en IA para medianas empresas en Colombia',
-          url: 'mckinsey.com',
-          snippet: 'Implemente IA sin riesgo con nuestros expertos. Cases de éxito en retail y manufactura.',
-          bias: 'Soluciones premium y consultorías'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'IA en el aula rural: Herramientas gratuitas para profesores',
-          url: 'mineducacion.gov.co',
-          snippet: 'Guía del Ministerio para usar ChatGPT y otras herramientas en colegios rurales.',
-          bias: 'Recursos gubernamentales y gratuitos'
-        },
-        {
-          title: 'Capacitación docente: IA para mejorar la educación campesina',
-          url: 'universia.co',
-          snippet: 'Curso virtual gratuito. Aprenda a usar IA para crear material educativo contextualizado.',
-          bias: 'Enfoque en lo gratuito y educativo'
-        },
-        {
-          title: '¿La IA reemplazará a los maestros rurales?',
-          url: 'elespectador.com',
-          snippet: 'Análisis sobre el futuro del empleo docente en zonas apartadas de Colombia.',
-          bias: 'Preocupaciones sobre desplazamiento laboral'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'IA y empleos para personas mayores de 50: Mitos y realidades',
-          url: 'aarp-colombia.org',
-          snippet: 'La discriminación por edad en trabajos de tecnología. Cómo reinventarse después de los 50.',
-          bias: 'Preocupaciones sobre discriminación'
-        },
-        {
-          title: 'Pensiones y automatización: ¿Está su jubilación en riesgo?',
-          url: 'portafolio.co',
-          snippet: 'Estudio sobre cómo la IA podría afectar los fondos de pensiones en Colombia.',
-          bias: 'Enfoque en seguridad financiera'
-        },
-        {
-          title: 'Cursos de IA para adultos mayores: Nunca es tarde para aprender',
-          url: 'universidad-tercera-edad.co',
-          snippet: 'Programa de alfabetización digital especializado para personas de 60+.',
-          bias: 'Paternalismo hacia adultos mayores'
-        }
-      ]
-    },
-    'emprendimiento jóvenes': {
-      'young-tech': [
-        {
-          title: 'Startups tech que puedes crear desde tu cuarto',
-          url: 'techstars.co',
-          snippet: 'Ideas de negocio digital con inversión mínima. Desde apps hasta NFTs.',
-          bias: 'Solucionismo tecnológico individual'
-        },
-        {
-          title: 'Fondos de inversión para millennials en Colombia',
-          url: 'innpulsa.gov.co',
-          snippet: 'Capital semilla hasta $500M COP para emprendimientos innovadores.',
-          bias: 'Acceso privilegiado a capital'
-        },
-        {
-          title: 'Unicornios latinos: La nueva generación de CEO jóvenes',
-          url: 'forbes.co',
-          snippet: 'Historias de éxito de fundadores menores de 30 años en Latinoamérica.',
-          bias: 'Mitología del emprendedor joven'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Intraemprendimiento: Innove desde dentro de su empresa',
-          url: 'harvard-business.com',
-          snippet: 'Estrategias para crear nuevas líneas de negocio sin abandonar su trabajo.',
-          bias: 'Mantener estabilidad corporativa'
-        },
-        {
-          title: 'Franquicias rentables para ejecutivos en Colombia',
-          url: 'franquicias.com.co',
-          snippet: 'Inversiones seguras desde $100M COP. Modelos de negocio probados.',
-          bias: 'Aversión al riesgo y capital alto'
-        },
-        {
-          title: 'MBA en emprendimiento para profesionales senior',
-          url: 'uniandes.edu.co',
-          snippet: 'Programa ejecutivo nocturno. Concilie familia, trabajo y nuevo negocio.',
-          bias: 'Educación formal costosa'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Emprendimiento rural: Agregue valor a productos campesinos',
-          url: 'agronet.gov.co',
-          snippet: 'Guía para transformar materias primas locales en productos comercializables.',
-          bias: 'Enfoque en agricultura tradicional'
-        },
-        {
-          title: 'Cooperativas juveniles: Organización comunitaria para el desarrollo',
-          url: 'dansocial.gov.co',
-          snippet: 'Modelos asociativos para jóvenes rurales. Apoyo estatal disponible.',
-          bias: 'Soluciones colectivas vs individuales'
-        },
-        {
-          title: 'Turismo comunitario: Potencial emprendedor en territorios',
-          url: 'mincit.gov.co',
-          snippet: 'Cómo aprovechar biodiversidad y cultura local para generar ingresos.',
-          bias: 'Recursos territoriales vs capital'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Emprendimiento senior: Aproveche su experiencia profesional',
-          url: 'dinero.com',
-          snippet: 'Consultorías y servicios profesionales como segunda carrera exitosa.',
-          bias: 'Valoración de experiencia acumulada'
-        },
-        {
-          title: 'Negocios familiares: Involucre a la siguiente generación',
-          url: 'revista-empresarial.com',
-          snippet: 'Estrategias para transferir conocimiento y asegurar continuidad.',
-          bias: 'Estabilidad generacional'
-        },
-        {
-          title: 'Microcréditos para adultos mayores emprendedores',
-          url: 'bancoldex.gov.co',
-          snippet: 'Líneas especiales de financiación para personas 50+.',
-          bias: 'Acceso limitado a financiación'
-        }
-      ]
-    },
-    'salud mental jóvenes': {
-      'young-tech': [
-        {
-          title: 'Apps de meditación que están revolucionando el bienestar',
-          url: 'headspace.com',
-          snippet: 'Desde Calm hasta Insight Timer. La tecnología como solución al estrés.',
-          bias: 'Solucionismo digital para problemas psicológicos'
-        },
-        {
-          title: 'Terapia online: Psicólogos a un click de distancia',
-          url: 'betterhelp.co',
-          snippet: 'Sesiones virtuales 24/7. Más accesible que la terapia tradicional.',
-          bias: 'Individualización y mercantilización'
-        },
-        {
-          title: 'Mental health startups: El nuevo boom de inversión',
-          url: 'crunchbase.com',
-          snippet: 'Empresas que están transformando el cuidado psicológico con IA.',
-          bias: 'Narrativa empresarial sobre salud'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Burnout ejecutivo: Señales de alarma y prevención',
-          url: 'hbr.org',
-          snippet: 'Cómo identificar agotamiento laboral antes que afecte productividad.',
-          bias: 'Enfoque en rendimiento laboral'
-        },
-        {
-          title: 'Programas de bienestar corporativo: ROI en salud mental',
-          url: 'mercer.com',
-          snippet: 'Evidencia de que invertir en psicología mejora resultados empresariales.',
-          bias: 'Instrumentalización del bienestar'
-        },
-        {
-          title: 'EPS y cobertura en salud mental: Guía para ejecutivos',
-          url: 'supersalud.gov.co',
-          snippet: 'Navegue el sistema de salud para acceder a tratamiento psicológico.',
-          bias: 'Privilegio de seguros premium'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Salud mental en territorios: Estrategias comunitarias',
-          url: 'minsalud.gov.co',
-          snippet: 'Guía para docentes sobre acompañamiento psicosocial en contextos rurales.',
-          bias: 'Enfoque en recursos comunitarios'
-        },
-        {
-          title: 'Impacto del conflicto en niños: Pedagogía del cuidado',
-          url: 'icbf.gov.co',
-          snippet: 'Herramientas para maestros en zonas afectadas por violencia.',
-          bias: 'Contextualización del trauma social'
-        },
-        {
-          title: 'Red de apoyo psicológico rural: Telemedicina solidaria',
-          url: 'telesalud.co',
-          snippet: 'Conexión con psicólogos urbanos para estudiantes de veredas.',
-          bias: 'Dependencia de centros urbanos'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Depresión en adultos mayores: Síntomas y tratamiento',
-          url: 'mayoclinic.org',
-          snippet: 'Guía médica sobre salud mental en la tercera edad.',
-          bias: 'Medicalización del envejecimiento'
-        },
-        {
-          title: 'Aislamiento social post-pandemia: Estrategias de reconexión',
-          url: 'who.int',
-          snippet: 'Recomendaciones para combatir soledad en personas mayores.',
-          bias: 'Problematización de la soledad'
-        },
-        {
-          title: 'Grupos de apoyo para adultos mayores en Cali',
-          url: 'secretariasalud.cali.gov.co',
-          snippet: 'Espacios comunitarios de encuentro y acompañamiento emocional.',
-          bias: 'Soluciones grupales institucionales'
-        }
-      ]
-    },
-    'educación virtual': {
-      'young-tech': [
-        {
-          title: 'Coursera vs. Platzi: ¿Cuál plataforma te dará mejores empleos?',
-          url: 'techreview.co',
-          snippet: 'Comparación de certificaciones que más valoran los reclutadores tech.',
-          bias: 'Competencia entre plataformas comerciales'
-        },
-        {
-          title: 'Aprende a programar gratis: GitHub, freeCodeCamp y más',
-          url: 'medium.com',
-          snippet: 'Roadmap completo para convertirte en developer sin gastar dinero.',
-          bias: 'Autoformación individual'
-        },
-        {
-          title: 'NFTs en educación: Certificados blockchain revolucionarios',
-          url: 'web3university.co',
-          snippet: 'La nueva frontera de credenciales educativas descentralizadas.',
-          bias: 'Hype tecnológico aplicado a educación'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Executive MBA online: Estudie sin pausar su carrera',
-          url: 'ie.edu',
-          snippet: 'Programas híbridos para altos ejecutivos. Networking global incluido.',
-          bias: 'Educación premium para élites'
-        },
-        {
-          title: 'Upskilling corporativo: Invierta en su equipo remoto',
-          url: 'linkedin-learning.com',
-          snippet: 'Plataformas empresariales para capacitación continua de empleados.',
-          bias: 'Enfoque en productividad empresarial'
-        },
-        {
-          title: 'ROI de la educación virtual: Métricas que importan',
-          url: 'trainingindustry.com',
-          snippet: 'Cómo medir el retorno de inversión en capacitación online.',
-          bias: 'Cuantificación del aprendizaje'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Conectividad rural: Desafíos para educación virtual',
-          url: 'mintic.gov.co',
-          snippet: 'Estrategias para enseñar online en zonas con internet limitado.',
-          bias: 'Barreras de infraestructura'
-        },
-        {
-          title: 'Recursos educativos abiertos para colegios rurales',
-          url: 'colombiaaprende.edu.co',
-          snippet: 'Contenidos gratuitos adaptados al contexto campesino colombiano.',
-          bias: 'Dependencia de recursos estatales'
-        },
-        {
-          title: 'Pedagogía híbrida: Combine presencial y virtual efectivamente',
-          url: 'compartirpalabramaestra.org',
-          snippet: 'Metodologías para docentes que alternan entre modalidades.',
-          bias: 'Adaptación forzada a limitaciones'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Universidad de la tercera edad: Programas virtuales',
-          url: 'javeriana.edu.co',
-          snippet: 'Cursos online diseñados específicamente para adultos mayores.',
-          bias: 'Segregación etaria en educación'
-        },
-        {
-          title: 'Alfabetización digital para seniors: Nunca es tarde',
-          url: 'sena.edu.co',
-          snippet: 'Cursos gratuitos para aprender computación básica y navegación web.',
-          bias: 'Asunción de analfabetismo digital'
-        },
-        {
-          title: 'Brecha digital generacional: Cómo superarla en familia',
-          url: 'eltiempo.com',
-          snippet: 'Consejos para que abuelos aprendan tecnología con ayuda de nietos.',
-          bias: 'Dependencia de familiares jóvenes'
-        }
-      ]
-    },
-    'vivienda propia': {
-      'young-tech': [
-        {
-          title: 'Fintech inmobiliario: Apps que facilitan comprar casa',
-          url: 'houm.co',
-          snippet: 'Plataformas digitales para millennials. Proceso 100% online.',
-          bias: 'Solucionismo tecnológico para acceso'
-        },
-        {
-          title: 'Crowdfunding inmobiliario: Invierte desde $500K COP',
-          url: 'brickbro.co',
-          snippet: 'Democratización de inversión en finca raíz vía tecnología blockchain.',
-          bias: 'Financiarización de la vivienda'
-        },
-        {
-          title: 'Apartaestudios inteligentes: La micro-vivienda del futuro',
-          url: 'metrocuadrado.com',
-          snippet: 'Espacios de 30m² con domótica y diseño optimizado para jóvenes.',
-          bias: 'Normalización de espacios mínimos'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Leasing habitacional vs. crédito hipotecario: Guía completa',
-          url: 'asobancaria.com',
-          snippet: 'Análisis financiero de las mejores opciones según su perfil crediticio.',
-          bias: 'Acceso a múltiples productos financieros'
-        },
-        {
-          title: 'Inversión en finca raíz: Compre para arrendar',
-          url: 'larepublica.co',
-          snippet: 'Estrategias para generar ingresos pasivos con propiedades.',
-          bias: 'Acumulación de activos inmobiliarios'
-        },
-        {
-          title: 'Barrios premium en Cali: Valorización garantizada',
-          url: 'elcolombiano.com',
-          snippet: 'Zonas con mayor potencial de crecimiento para inversión residencial.',
-          bias: 'Segregación socioespacial'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Subsidio de vivienda rural: Guía paso a paso',
-          url: 'mivienda.gov.co',
-          snippet: 'Requisitos y proceso para acceder a casa propia en el campo.',
-          bias: 'Dependencia de subsidios estatales'
-        },
-        {
-          title: 'Autoconstrucción asistida: Técnicas y materiales locales',
-          url: 'sena.edu.co',
-          snippet: 'Capacitación para construir con guadua, bahareque y otros recursos.',
-          bias: 'Autogestión por falta de recursos'
-        },
-        {
-          title: 'Titulación de tierras: Regularice su propiedad rural',
-          url: 'agenciadetierras.gov.co',
-          snippet: 'Proceso para obtener escrituras de terrenos familiares ancestrales.',
-          bias: 'Problemas de formalización histórica'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Hipoteca reversa: Monetice su casa sin venderla',
-          url: 'bancolombia.com',
-          snippet: 'Producto financiero para adultos mayores propietarios de vivienda.',
-          bias: 'Instrumentalización del patrimonio'
-        },
-        {
-          title: 'Adaptación de vivienda para el envejecimiento',
-          url: 'minsalud.gov.co',
-          snippet: 'Modificaciones arquitectónicas para mayor seguridad y comodidad.',
-          bias: 'Enfoque en limitaciones físicas'
-        },
-        {
-          title: 'Herencias y sucesiones: Planifique el futuro familiar',
-          url: 'notariado.org',
-          snippet: 'Guía legal para transferir propiedades a la siguiente generación.',
-          bias: 'Preocupación por legado patrimonial'
-        }
-      ]
-    },
-    'seguridad ciudadana': {
-      'young-tech': [
-        {
-          title: 'Apps de seguridad: Tu smartphone como escudo personal',
-          url: 'techo.org',
-          snippet: 'Botón de pánico, GPS compartido y alertas comunitarias en tiempo real.',
-          bias: 'Individualización tecnológica de la seguridad'
-        },
-        {
-          title: 'Smart cities: Cómo la IA está reduciendo el crimen',
-          url: 'semana.com',
-          snippet: 'Cámaras inteligentes y algoritmos predictivos en ciudades modernas.',
-          bias: 'Solucionismo tecnológico autoritario'
-        },
-        {
-          title: 'Criptomonedas y seguridad: Protege tus activos digitales',
-          url: 'coindesk.com',
-          snippet: 'Wallets seguros y mejores prácticas contra hackeos y estafas.',
-          bias: 'Priorización de patrimonio digital'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'Seguridad corporativa: Proteja a sus ejecutivos',
-          url: 'elespectador.com',
-          snippet: 'Servicios de escoltas y blindaje para empresarios en riesgo.',
-          bias: 'Seguridad como privilegio de clase'
-        },
-        {
-          title: 'Seguros contra secuestro: Cobertura para altos patrimonios',
-          url: 'axa.co',
-          snippet: 'Pólizas especializadas para empresarios y sus familias.',
-          bias: 'Mercantilización del miedo'
-        },
-        {
-          title: 'Condominios cerrados: La nueva forma de vivir seguro',
-          url: 'portafolio.co',
-          snippet: 'Urbanizaciones con vigilancia 24/7 y acceso controlado.',
-          bias: 'Segregación espacial defensiva'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Seguridad escolar en zonas de conflicto: Protocolos',
-          url: 'mineducacion.gov.co',
-          snippet: 'Guías para docentes en territorios con presencia de grupos armados.',
-          bias: 'Normalización de violencia estructural'
-        },
-        {
-          title: 'Guardas rurales: Organización comunitaria para la protección',
-          url: 'unp.gov.co',
-          snippet: 'Redes de vigilancia vecinal en veredas y corregimientos.',
-          bias: 'Autodefensa ante ausencia estatal'
-        },
-        {
-          title: 'Desarme de cultivos ilícitos: Riesgos para comunidades',
-          url: 'dejusticia.org',
-          snippet: 'Impacto de la erradicación forzada en la seguridad campesina.',
-          bias: 'Victimización de comunidades rurales'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Adultos mayores: Principales víctimas de estafas urbanas',
-          url: 'policia.gov.co',
-          snippet: 'Modalidades de fraude más comunes y cómo prevenirlas.',
-          bias: 'Victimización de vulnerabilidad'
-        },
-        {
-          title: 'Bastones GPS y dispositivos de emergencia para seniors',
-          url: 'eltiempo.com',
-          snippet: 'Tecnología asistencial para adultos mayores que viven solos.',
-          bias: 'Tecnologización del cuidado'
-        },
-        {
-          title: 'Policía comunitaria en barrios residenciales de Cali',
-          url: 'cali.gov.co',
-          snippet: 'Programas de cooperación entre vecinos y autoridades locales.',
-          bias: 'Enfoque en barrios de estratos altos'
-        }
-      ]
-    },
-    'cambio climático': {
-      'young-tech': [
-        {
-          title: 'Apps para salvar el planeta: Las mejores soluciones tech verde',
-          url: 'gizmodo.com',
-          snippet: 'Desde calculadoras de huella de carbono hasta blockchains para energía renovable.',
-          bias: 'Solucionismo tecnológico'
-        },
-        {
-          title: 'Startups climáticas que están revolucionando el mundo',
-          url: 'techcrunch.com',
-          snippet: 'Inversión millonaria en cleantech. Oportunidades para developers ambientales.',
-          bias: 'Optimismo tecno-empresarial'
-        },
-        {
-          title: 'Hackathons por el clima: Programa tu futuro sostenible',
-          url: 'hackathon.co',
-          snippet: 'Eventos donde puedes ganar premios creando soluciones ambientales con código.',
-          bias: 'Gamificación del activismo'
-        }
-      ],
-      'middle-corporate': [
-        {
-          title: 'ESG y reputación empresarial: Invierta en sostenibilidad',
-          url: 'semana.com',
-          snippet: 'Cómo las políticas ambientales mejoran el valor de las acciones y atraen inversores.',
-          bias: 'Enfoque en beneficio económico'
-        },
-        {
-          title: 'Compliance ambiental: Evite multas millonarias',
-          url: 'ambito-juridico.com',
-          snippet: 'Nuevas regulaciones gubernamentales sobre emisiones. Asesoría legal especializada.',
-          bias: 'Miedo a sanciones regulatorias'
-        },
-        {
-          title: 'Certificaciones verdes para empresas: ISO 14001 y más',
-          url: 'icontec.org',
-          snippet: 'Mejore su competitividad con sellos de sostenibilidad reconocidos internacionalmente.',
-          bias: 'Ventajas competitivas'
-        }
-      ],
-      'rural-teacher': [
-        {
-          title: 'Pedagogía ambiental para colegios rurales: Guía práctica',
-          url: 'mineducacion.gov.co',
-          snippet: 'Recursos didácticos para enseñar cambio climático usando el entorno local.',
-          bias: 'Recursos educativos territoriales'
-        },
-        {
-          title: 'Afectaciones del clima en la agricultura campesina colombiana',
-          url: 'eltiempo.com',
-          snippet: 'Testimonios de agricultores sobre sequías y lluvias extremas en diferentes regiones.',
-          bias: 'Impactos locales y testimoniales'
-        },
-        {
-          title: 'Proyectos ambientales escolares: Huerta y reciclaje',
-          url: 'compartirpalabramaestra.org',
-          snippet: 'Ideas para que estudiantes rurales lideren iniciativas sostenibles en sus veredas.',
-          bias: 'Soluciones comunitarias prácticas'
-        }
-      ],
-      'senior-urban': [
-        {
-          title: 'Calidad del aire en Cali: Impactos en la salud de adultos mayores',
-          url: 'minsalud.gov.co',
-          snippet: 'Recomendaciones médicas para protegerse de la contaminación atmosférica.',
-          bias: 'Preocupaciones de salud inmediata'
-        },
-        {
-          title: '¿Cómo el cambio climático afecta las pensiones?',
-          url: 'colpensiones.gov.co',
-          snippet: 'Estudio sobre riesgos financieros del calentamiento global para el sistema pensional.',
-          bias: 'Impacto en seguridad económica'
-        },
-        {
-          title: 'Adaptación climática en barrios de Cali: Qué pueden hacer los vecinos',
-          url: 'cali.gov.co',
-          snippet: 'Iniciativas comunitarias para enfrentar olas de calor y inundaciones urbanas.',
-          bias: 'Acciones colectivas locales'
-        }
-      ]
-    }
-  };
-
-  const queries = Object.keys(searchResults);
-
-  const simulateSearch = () => {
-    setIsSearching(true);
-    setTimeout(() => {
-      setIsSearching(false);
-    }, 1500);
-  };
-
-  const getResults = () => {
-    return searchResults[currentQuery]?.[selectedProfile] || [];
-  };
-
-  const getAllResults = () => {
-    const allProfiles = Object.keys(profiles);
-    return allProfiles.map(profileKey => ({
-      profile: profiles[profileKey],
-      profileKey,
-      results: searchResults[currentQuery]?.[profileKey] || []
-    }));
-  };
-
-  const getBiasAnalysis = () => {
-    const results = getResults();
-    const biases = results.map(r => r.bias);
-    const uniqueBiases = [...new Set(biases)];
+    const ctx = audioContext.current;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
     
-    return {
-      totalBiases: uniqueBiases.length,
-      commonPatterns: uniqueBiases.slice(0, 3),
-      diversityScore: Math.max(0, 5 - uniqueBiases.length) * 20
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
+  };
+
+  return {
+    hover: () => playTone(440, 0.05),
+    select: () => playTone(523, 0.1),
+    navigate: () => playTone(392, 0.06),
+  };
+};
+
+// Knowledge base - rich content for learning
+const systemData = {
+  dataCollection: {
+    id: 'dataCollection',
+    name: 'Recolección de Datos',
+    category: 'input',
+    description: 'El punto de entrada donde los sesgos históricos y estructurales se codifican en conjuntos de datos.',
+    mechanisms: [
+      'Sobrerrepresentación de poblaciones dominantes en datos de entrenamiento',
+      'Exclusión sistemática de comunidades marginalizadas',
+      'Proxies que codifican discriminación histórica (códigos postales, nombres)',
+      'Temporalidad sesgada: datos que reflejan inequidades pasadas'
+    ],
+    cases: [
+      {
+        title: 'ImageNet y el sesgo visual',
+        detail: 'El 45% de las imágenes provienen de Estados Unidos, aunque representa solo el 4% de la población mundial. Esto genera modelos que reconocen mejor rostros caucásicos.'
+      },
+      {
+        title: 'Datos crediticios históricos',
+        detail: 'Los modelos entrenados con decisiones de préstamos de décadas pasadas perpetúan el redlining y la discriminación racial en el acceso al crédito.'
+      }
+    ],
+    connections: ['preprocessing', 'feedback'],
+    position: { x: 150, y: 200 }
+  },
+  preprocessing: {
+    id: 'preprocessing',
+    name: 'Preprocesamiento',
+    category: 'process',
+    description: 'Decisiones aparentemente técnicas que amplifican o atenúan sesgos existentes.',
+    mechanisms: [
+      'Selección de features que actúan como proxies discriminatorios',
+      'Normalización que invisibiliza variaciones culturales',
+      'Imputación de datos faltantes con promedios sesgados',
+      'Discretización que crea fronteras artificiales'
+    ],
+    cases: [
+      {
+        title: 'Codificación de género binario',
+        detail: 'Sistemas que solo permiten M/F excluyen identidades no binarias y perpetúan una ontología reduccionista en todos los análisis posteriores.'
+      },
+      {
+        title: 'Estandarización lingüística',
+        detail: 'Modelos de NLP entrenados en inglés "estándar" penalizan sistemáticamente dialectos afroamericanos y variantes del español latinoamericano.'
+      }
+    ],
+    connections: ['model', 'dataCollection'],
+    position: { x: 350, y: 120 }
+  },
+  model: {
+    id: 'model',
+    name: 'Arquitectura del Modelo',
+    category: 'process',
+    description: 'La estructura matemática que cristaliza patrones—incluyendo patrones de inequidad.',
+    mechanisms: [
+      'Funciones de optimización que priorizan precisión agregada sobre equidad',
+      'Arquitecturas que amplifican correlaciones espurias',
+      'Capacidad del modelo que memoriza sesgos específicos',
+      'Regularización insuficiente para casos minoritarios'
+    ],
+    cases: [
+      {
+        title: 'COMPAS y predicción de reincidencia',
+        detail: 'El algoritmo tenía el doble de probabilidad de etiquetar falsamente a acusados negros como futuros criminales comparado con acusados blancos.'
+      },
+      {
+        title: 'Modelos de lenguaje y estereotipos',
+        detail: 'GPT y similares asocian sistemáticamente profesiones de alto estatus con pronombres masculinos y trabajo doméstico con pronombres femeninos.'
+      }
+    ],
+    connections: ['output', 'preprocessing'],
+    position: { x: 550, y: 200 }
+  },
+  output: {
+    id: 'output',
+    name: 'Producción de Decisiones',
+    category: 'output',
+    description: 'Donde las predicciones se traducen en consecuencias materiales para personas reales.',
+    mechanisms: [
+      'Umbrales de decisión calibrados para poblaciones mayoritarias',
+      'Interfaces que oscurecen la incertidumbre del modelo',
+      'Automatización que elimina supervisión humana',
+      'Escalabilidad que amplifica el impacto de cada error'
+    ],
+    cases: [
+      {
+        title: 'Contratación automatizada en Amazon',
+        detail: 'El sistema de CV penalizaba la palabra "women\'s" (como en "women\'s chess club"), filtrando sistemáticamente candidatas mujeres.'
+      },
+      {
+        title: 'Diagnóstico médico algorítmico',
+        detail: 'Algoritmos dermatológicos entrenados principalmente con pieles claras tienen tasas de error 3x mayores en pieles oscuras.'
+      }
+    ],
+    connections: ['impact', 'model'],
+    position: { x: 750, y: 120 }
+  },
+  impact: {
+    id: 'impact',
+    name: 'Impacto Social',
+    category: 'output',
+    description: 'Las consecuencias vividas que cierran el ciclo y generan nuevos datos sesgados.',
+    mechanisms: [
+      'Distribución desigual de oportunidades y recursos',
+      'Legitimación de decisiones discriminatorias mediante "objetividad" algorítmica',
+      'Erosión de agencia individual frente a sistemas opacos',
+      'Normalización de la vigilancia diferencial'
+    ],
+    cases: [
+      {
+        title: 'Policiamiento predictivo',
+        detail: 'PredPol enviaba más patrullas a barrios de minorías, generando más arrestos, que alimentaban el modelo confirmando el "riesgo" de esas zonas.'
+      },
+      {
+        title: 'Puntuación social',
+        detail: 'Sistemas de crédito social crean ciudadanos de segunda clase con acceso restringido a vivienda, empleo y servicios públicos.'
+      }
+    ],
+    connections: ['feedback', 'output'],
+    position: { x: 750, y: 320 }
+  },
+  feedback: {
+    id: 'feedback',
+    name: 'Bucle de Retroalimentación',
+    category: 'system',
+    description: 'El mecanismo que convierte sesgos puntuales en estructuras sistémicas auto-reforzantes.',
+    mechanisms: [
+      'Profecías autocumplidas: predicciones que generan los datos que las confirman',
+      'Homogeneización progresiva de outputs que empobrece la diversidad',
+      'Bloqueo tecnológico: costos de cambio que perpetúan sistemas sesgados',
+      'Opacidad que impide auditoría y corrección'
+    ],
+    cases: [
+      {
+        title: 'Recomendación y radicalización',
+        detail: 'YouTube optimizaba por engagement, lo que sistemáticamente promovía contenido extremista porque generaba más tiempo de visualización.'
+      },
+      {
+        title: 'Filtros burbuja electorales',
+        detail: 'Algoritmos de redes sociales que muestran solo contenido afín reducen exposición a perspectivas diversas, polarizando el discurso público.'
+      }
+    ],
+    connections: ['dataCollection', 'impact'],
+    position: { x: 350, y: 320 }
+  }
+};
+
+// Main component
+export default function AlgorithmicBiasExplorer() {
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [activeTab, setActiveTab] = useState('mechanisms');
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [animatedConnections, setAnimatedConnections] = useState([]);
+  const sound = useSound();
+  const svgRef = useRef(null);
+
+  // Animate data flow periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nodes = Object.keys(systemData);
+      const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+      const connections = systemData[randomNode].connections;
+      if (connections.length > 0) {
+        const targetNode = connections[Math.floor(Math.random() * connections.length)];
+        setAnimatedConnections(prev => [...prev, { from: randomNode, to: targetNode, id: Date.now() }]);
+        setTimeout(() => {
+          setAnimatedConnections(prev => prev.filter(c => c.id !== Date.now()));
+        }, 1500);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNodeClick = (nodeId) => {
+    sound.select();
+    setSelectedNode(systemData[nodeId]);
+    setActiveTab('mechanisms');
+  };
+
+  const handleNodeHover = (nodeId) => {
+    if (hoveredNode !== nodeId) {
+      sound.hover();
+      setHoveredNode(nodeId);
+    }
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      input: { primary: '#8B4513', secondary: '#D2691E', bg: '#FDF5E6' },
+      process: { primary: '#4A5568', secondary: '#718096', bg: '#F7FAFC' },
+      output: { primary: '#744210', secondary: '#B7791F', bg: '#FFFAF0' },
+      system: { primary: '#553C9A', secondary: '#805AD5', bg: '#FAF5FF' }
     };
+    return colors[category] || colors.process;
+  };
+
+  const renderConnections = () => {
+    const connections = [];
+    Object.values(systemData).forEach(node => {
+      node.connections.forEach(targetId => {
+        const target = systemData[targetId];
+        if (target) {
+          const isAnimated = animatedConnections.some(
+            c => (c.from === node.id && c.to === targetId)
+          );
+          const isHighlighted = selectedNode && 
+            (selectedNode.id === node.id || selectedNode.id === targetId);
+          
+          // Calculate control points for curved lines
+          const midX = (node.position.x + target.position.x) / 2;
+          const midY = (node.position.y + target.position.y) / 2;
+          const dx = target.position.x - node.position.x;
+          const dy = target.position.y - node.position.y;
+          const offset = Math.sqrt(dx * dx + dy * dy) * 0.2;
+          const controlX = midX - dy * 0.3;
+          const controlY = midY + dx * 0.3;
+
+          connections.push(
+            <g key={`${node.id}-${targetId}`}>
+              <path
+                d={`M ${node.position.x} ${node.position.y} Q ${controlX} ${controlY} ${target.position.x} ${target.position.y}`}
+                fill="none"
+                stroke={isHighlighted ? '#805AD5' : '#CBD5E0'}
+                strokeWidth={isHighlighted ? 2.5 : 1.5}
+                strokeDasharray={isAnimated ? '8 4' : 'none'}
+                opacity={isHighlighted ? 1 : 0.5}
+                style={{
+                  transition: 'all 0.3s ease'
+                }}
+              />
+              {isAnimated && (
+                <circle r="4" fill="#805AD5">
+                  <animateMotion
+                    dur="1.5s"
+                    repeatCount="1"
+                    path={`M ${node.position.x} ${node.position.y} Q ${controlX} ${controlY} ${target.position.x} ${target.position.y}`}
+                  />
+                </circle>
+              )}
+            </g>
+          );
+        }
+      });
+    });
+    return connections;
+  };
+
+  const renderNodes = () => {
+    return Object.values(systemData).map(node => {
+      const colors = getCategoryColor(node.category);
+      const isSelected = selectedNode?.id === node.id;
+      const isHovered = hoveredNode === node.id;
+      const isConnected = selectedNode?.connections.includes(node.id) || 
+                          (selectedNode && node.connections.includes(selectedNode.id));
+
+      return (
+        <g
+          key={node.id}
+          transform={`translate(${node.position.x}, ${node.position.y})`}
+          onClick={() => handleNodeClick(node.id)}
+          onMouseEnter={() => handleNodeHover(node.id)}
+          onMouseLeave={() => setHoveredNode(null)}
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Outer ring for selected/connected state */}
+          {(isSelected || isConnected) && (
+            <circle
+              r={isSelected ? 52 : 48}
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth={isSelected ? 3 : 1.5}
+              strokeDasharray={isConnected && !isSelected ? '4 2' : 'none'}
+              opacity={0.6}
+            />
+          )}
+          
+          {/* Main circle */}
+          <circle
+            r={42}
+            fill={colors.bg}
+            stroke={colors.primary}
+            strokeWidth={isSelected ? 3 : isHovered ? 2 : 1.5}
+            style={{
+              transition: 'all 0.2s ease',
+              filter: isHovered ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' : 'none'
+            }}
+          />
+          
+          {/* Inner accent circle */}
+          <circle
+            r={36}
+            fill="none"
+            stroke={colors.secondary}
+            strokeWidth={0.5}
+            opacity={0.4}
+          />
+          
+          {/* Category indicator */}
+          <circle
+            r={6}
+            cy={-30}
+            fill={colors.primary}
+          />
+          
+          {/* Label */}
+          <text
+            textAnchor="middle"
+            dy={4}
+            style={{
+              fontSize: '11px',
+              fontFamily: 'system-ui, sans-serif',
+              fontWeight: 500,
+              fill: colors.primary,
+              pointerEvents: 'none'
+            }}
+          >
+            {node.name.split(' ').map((word, i) => (
+              <tspan key={i} x={0} dy={i === 0 ? -6 : 14}>{word}</tspan>
+            ))}
+          </text>
+        </g>
+      );
+    });
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+    <div style={{
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      backgroundColor: '#FAFAF9',
+      minHeight: '100vh',
+      color: '#1A202C'
+    }}>
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Search className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">Analizador de Sesgos en Búsquedas</h1>
-        </div>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Explora cómo los algoritmos de búsqueda muestran resultados diferentes según tu perfil demográfico, 
-          ubicación e historial. Una herramienta para comprender los filtros burbuja invisibles.
+      <header style={{
+        padding: '24px 32px',
+        borderBottom: '1px solid #E2E8F0',
+        backgroundColor: '#FFFFFF'
+      }}>
+        <h1 style={{
+          fontFamily: 'Georgia, serif',
+          fontSize: '28px',
+          fontWeight: 400,
+          margin: 0,
+          color: '#2D3748',
+          letterSpacing: '-0.02em'
+        }}>
+          El Sesgo Invisible
+        </h1>
+        <p style={{
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '14px',
+          color: '#718096',
+          margin: '8px 0 0 0',
+          maxWidth: '600px',
+          lineHeight: 1.5
+        }}>
+          Anatomía de un sistema algorítmico. Explore los mecanismos que transforman 
+          datos históricos en decisiones automatizadas—y las inequidades que perpetúan.
         </p>
-      </div>
+      </header>
 
-      {/* Controles principales */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Selector de búsqueda */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Search className="w-4 h-4 inline mr-2" />
-              Término de búsqueda
-            </label>
-            <select 
-              value={currentQuery}
-              onChange={(e) => setCurrentQuery(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 transition-colors"
-            >
-              {queries.map(query => (
-                <option key={query} value={query}>{query}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Selector de perfil */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <User className="w-4 h-4 inline mr-2" />
-              Perfil demográfico
-            </label>
-            <select 
-              value={selectedProfile}
-              onChange={(e) => setSelectedProfile(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 transition-colors"
-            >
-              {Object.entries(profiles).map(([key, profile]) => (
-                <option key={key} value={key}>
-                  {profile.icon} {profile.name} - {profile.description}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Botones de acción */}
-        <div className="flex flex-wrap gap-4 mt-6">
-          <button
-            onClick={simulateSearch}
-            disabled={isSearching}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 120px)' }}>
+        {/* SVG Visualization */}
+        <div style={{
+          flex: '1 1 55%',
+          padding: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <svg
+            ref={svgRef}
+            viewBox="0 0 900 440"
+            style={{
+              width: '100%',
+              maxWidth: '800px',
+              height: 'auto'
+            }}
           >
-            {isSearching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            {isSearching ? 'Buscando...' : 'Buscar'}
-          </button>
-          
-          <button
-            onClick={() => setShowComparison(!showComparison)}
-            className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <BarChart3 className="w-4 h-4" />
-            {showComparison ? 'Vista Individual' : 'Comparar Perfiles'}
-          </button>
-        </div>
-      </div>
-
-      {/* Información del perfil actual */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="text-4xl">{profiles[selectedProfile].icon}</div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-800">{profiles[selectedProfile].name}</h3>
-            <p className="text-gray-600">{profiles[selectedProfile].description}</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.entries(profiles[selectedProfile].demographics).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm text-gray-500 capitalize">{key}</div>
-              <div className="font-semibold text-gray-800">{value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {!showComparison ? (
-        // Vista individual
-        <div className="space-y-6">
-          {/* Resultados de búsqueda */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Resultados para: "{currentQuery}"
-            </h3>
+            {/* Background pattern */}
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E2E8F0" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" opacity="0.5" />
             
-            {isSearching ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-1"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {getResults().map((result, index) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                    <h4 className="text-lg font-semibold text-blue-600 hover:underline cursor-pointer">
-                      {result.title}
-                    </h4>
-                    <div className="text-green-600 text-sm mb-1">{result.url}</div>
-                    <p className="text-gray-700 text-sm mb-2">{result.snippet}</p>
-                    <div className="flex items-center gap-2 text-orange-600 text-xs">
-                      <AlertTriangle className="w-3 h-3" />
-                      <span className="font-semibold">Sesgo detectado:</span> {result.bias}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Flow direction indicator */}
+            <text x="450" y="30" textAnchor="middle" style={{
+              fontSize: '11px',
+              fontFamily: 'system-ui',
+              fill: '#A0AEC0',
+              letterSpacing: '0.1em'
+            }}>
+              FLUJO DEL SISTEMA
+            </text>
+            <path
+              d="M 200 45 L 700 45"
+              stroke="#CBD5E0"
+              strokeWidth="1"
+              markerEnd="url(#arrowhead)"
+            />
+            <defs>
+              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#CBD5E0" />
+              </marker>
+            </defs>
 
-          {/* Análisis de sesgos */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              <Eye className="w-5 h-5 inline mr-2" />
-              Análisis de Sesgos Detectados
-            </h3>
+            {/* Connections */}
+            <g>{renderConnections()}</g>
             
-            {(() => {
-              const analysis = getBiasAnalysis();
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-red-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">{analysis.totalBiases}</div>
-                    <div className="text-sm text-red-700">Tipos de sesgo identificados</div>
-                  </div>
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">{analysis.diversityScore}%</div>
-                    <div className="text-sm text-yellow-700">Puntuación de diversidad</div>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-sm text-blue-700 font-semibold mb-1">Patrones principales:</div>
-                    <div className="text-xs text-blue-600">
-                      {analysis.commonPatterns.slice(0, 2).join(', ')}
-                    </div>
-                  </div>
+            {/* Nodes */}
+            <g>{renderNodes()}</g>
+
+            {/* Legend */}
+            <g transform="translate(30, 380)">
+              <text style={{ fontSize: '10px', fill: '#718096', fontFamily: 'system-ui' }}>
+                <tspan fontWeight="500">Categorías:</tspan>
+              </text>
+              {[
+                { label: 'Entrada', color: '#8B4513', x: 80 },
+                { label: 'Proceso', color: '#4A5568', x: 150 },
+                { label: 'Salida', color: '#744210', x: 220 },
+                { label: 'Sistema', color: '#553C9A', x: 280 }
+              ].map(item => (
+                <g key={item.label} transform={`translate(${item.x}, -2)`}>
+                  <circle r="4" fill={item.color} />
+                  <text x="10" style={{ fontSize: '10px', fill: '#4A5568', fontFamily: 'system-ui' }}>
+                    {item.label}
+                  </text>
+                </g>
+              ))}
+            </g>
+          </svg>
+        </div>
+
+        {/* Information Panel */}
+        <aside style={{
+          flex: '0 0 380px',
+          backgroundColor: '#FFFFFF',
+          borderLeft: '1px solid #E2E8F0',
+          overflow: 'auto'
+        }}>
+          {selectedNode ? (
+            <div>
+              {/* Node Header */}
+              <div style={{
+                padding: '24px',
+                borderBottom: '1px solid #E2E8F0',
+                backgroundColor: getCategoryColor(selectedNode.category).bg
+              }}>
+                <div style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: getCategoryColor(selectedNode.category).primary,
+                  marginBottom: '8px',
+                  fontFamily: 'system-ui'
+                }}>
+                  {selectedNode.category === 'input' ? 'Entrada' : 
+                   selectedNode.category === 'process' ? 'Proceso' :
+                   selectedNode.category === 'output' ? 'Salida' : 'Sistema'}
                 </div>
-              );
-            })()}
-          </div>
-        </div>
-      ) : (
-        // Vista comparativa
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-6">
-            <BarChart3 className="w-5 h-5 inline mr-2" />
-            Comparación entre Perfiles para: "{currentQuery}"
-          </h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {getAllResults().map(({ profile, profileKey, results }) => (
-              <div key={profileKey} className="border rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-2xl">{profile.icon}</div>
+                <h2 style={{
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '22px',
+                  fontWeight: 400,
+                  margin: '0 0 12px 0',
+                  color: '#2D3748'
+                }}>
+                  {selectedNode.name}
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  lineHeight: 1.6,
+                  color: '#4A5568',
+                  margin: 0
+                }}>
+                  {selectedNode.description}
+                </p>
+              </div>
+
+              {/* Tabs */}
+              <div style={{
+                display: 'flex',
+                borderBottom: '1px solid #E2E8F0'
+              }}>
+                {[
+                  { id: 'mechanisms', label: 'Mecanismos' },
+                  { id: 'cases', label: 'Casos' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      sound.navigate();
+                      setActiveTab(tab.id);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '14px 16px',
+                      border: 'none',
+                      backgroundColor: activeTab === tab.id ? '#FFFFFF' : '#F7FAFC',
+                      color: activeTab === tab.id ? '#2D3748' : '#718096',
+                      fontSize: '13px',
+                      fontWeight: activeTab === tab.id ? 500 : 400,
+                      cursor: 'pointer',
+                      borderBottom: activeTab === tab.id ? '2px solid #553C9A' : '2px solid transparent',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'system-ui'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              <div style={{ padding: '20px 24px' }}>
+                {activeTab === 'mechanisms' && (
+                  <ul style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0
+                  }}>
+                    {selectedNode.mechanisms.map((mechanism, i) => (
+                      <li key={i} style={{
+                        padding: '12px 0',
+                        borderBottom: i < selectedNode.mechanisms.length - 1 ? '1px solid #EDF2F7' : 'none',
+                        fontSize: '13px',
+                        lineHeight: 1.6,
+                        color: '#4A5568',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px'
+                      }}>
+                        <span style={{
+                          fontFamily: 'SF Mono, Menlo, monospace',
+                          fontSize: '11px',
+                          color: '#805AD5',
+                          backgroundColor: '#FAF5FF',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          flexShrink: 0
+                        }}>
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        {mechanism}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {activeTab === 'cases' && (
                   <div>
-                    <h4 className="font-bold text-gray-800">{profile.name}</h4>
-                    <p className="text-sm text-gray-600">{profile.description}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  {results.slice(0, 2).map((result, index) => (
-                    <div key={index} className="bg-gray-50 p-3 rounded">
-                      <h5 className="font-semibold text-sm text-blue-600 mb-1">{result.title}</h5>
-                      <p className="text-xs text-gray-600 mb-2">{result.snippet.slice(0, 100)}...</p>
-                      <div className="text-xs text-orange-600">
-                        <AlertTriangle className="w-3 h-3 inline mr-1" />
-                        {result.bias}
+                    {selectedNode.cases.map((caseStudy, i) => (
+                      <div key={i} style={{
+                        marginBottom: i < selectedNode.cases.length - 1 ? '20px' : 0,
+                        paddingBottom: i < selectedNode.cases.length - 1 ? '20px' : 0,
+                        borderBottom: i < selectedNode.cases.length - 1 ? '1px solid #EDF2F7' : 'none'
+                      }}>
+                        <h4 style={{
+                          fontFamily: 'Georgia, serif',
+                          fontSize: '15px',
+                          fontWeight: 400,
+                          color: '#2D3748',
+                          margin: '0 0 8px 0'
+                        }}>
+                          {caseStudy.title}
+                        </h4>
+                        <p style={{
+                          fontSize: '13px',
+                          lineHeight: 1.65,
+                          color: '#4A5568',
+                          margin: 0
+                        }}>
+                          {caseStudy.detail}
+                        </p>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Connections */}
+              <div style={{
+                padding: '16px 24px',
+                backgroundColor: '#F7FAFC',
+                borderTop: '1px solid #E2E8F0'
+              }}>
+                <div style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: '#718096',
+                  marginBottom: '10px'
+                }}>
+                  Conecta con
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {selectedNode.connections.map(connId => (
+                    <button
+                      key={connId}
+                      onClick={() => handleNodeClick(connId)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        color: '#4A5568',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'system-ui'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.borderColor = '#805AD5';
+                        e.target.style.color = '#553C9A';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.borderColor = '#E2E8F0';
+                        e.target.style.color = '#4A5568';
+                      }}
+                    >
+                      {systemData[connId].name}
+                    </button>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Reflexión crítica */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg p-6 mt-6 text-white">
-        <h3 className="text-xl font-bold mb-4">
-          <BookOpen className="w-5 h-5 inline mr-2" />
-          Reflexión Crítica
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-semibold mb-2">¿Qué observas?</h4>
-            <ul className="text-sm space-y-1 opacity-90">
-              <li>• ¿Los resultados reflejan diferentes prioridades según el perfil?</li>
-              <li>• ¿Algunos grupos reciben información más comercial que otros?</li>
-              <li>• ¿Hay diferencias en el tono: optimista vs. pesimista?</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold mb-2">Implicaciones para la democracia</h4>
-            <ul className="text-sm space-y-1 opacity-90">
-              <li>• ¿Cómo afecta esto el debate público informado?</li>
-              <li>• ¿Qué grupos pueden quedar excluidos de cierta información?</li>
-              <li>• ¿Cómo podríamos diversificar nuestras fuentes?</li>
-            </ul>
-          </div>
-        </div>
+            </div>
+          ) : (
+            /* Empty State */
+            <div style={{
+              padding: '48px 32px',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                margin: '0 auto 20px',
+                borderRadius: '50%',
+                backgroundColor: '#F7FAFC',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#805AD5" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" />
+                </svg>
+              </div>
+              <h3 style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '18px',
+                fontWeight: 400,
+                color: '#2D3748',
+                margin: '0 0 12px 0'
+              }}>
+                Seleccione un componente
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: 1.6,
+                color: '#718096',
+                margin: 0
+              }}>
+                Haga clic en cualquier nodo del diagrama para explorar sus mecanismos 
+                de sesgo y casos documentados.
+              </p>
+            </div>
+          )}
+        </aside>
       </div>
+
+      {/* Footer */}
+      <footer style={{
+        padding: '16px 32px',
+        borderTop: '1px solid #E2E8F0',
+        backgroundColor: '#FFFFFF',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <span style={{
+          fontSize: '12px',
+          color: '#A0AEC0',
+          fontFamily: 'system-ui'
+        }}>
+          LAMA · Laboratorio de Mediaciones Algorítmicas
+        </span>
+        <span style={{
+          fontSize: '11px',
+          color: '#CBD5E0',
+          fontFamily: 'SF Mono, Menlo, monospace'
+        }}>
+          v1.0 · Herramienta pedagógica para alfabetización algorítmica crítica
+        </span>
+      </footer>
     </div>
   );
-};
-
-export default SearchBiasAnalyzer;
+}
