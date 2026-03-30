@@ -3,152 +3,303 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LAMA — Laboratorio de Mediaciones Algorítmicas</title>
+  <title>Artefactos Interactivos — LAMA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --verde: #2d6a4f;
-      --verde-claro: #52b788;
-      --fondo: #0d1117;
-      --superficie: #161b22;
-      --borde: #30363d;
-      --texto: #e6edf3;
-      --texto-suave: #8b949e;
-      --badge-html: #1f6feb;
-      --badge-react: #8957e5;
-      --badge-wip: #d29922;
+      --verde:        #4a7c3f;
+      --verde-hover:  #3a6230;
+      --verde-suave:  #e8f0e4;
+      --crema:        #f7f4ef;
+      --blanco:       #ffffff;
+      --texto:        #1a1a1a;
+      --texto-suave:  #5a5a5a;
+      --borde:        #ddd8cf;
+      --badge-html:   #1a5fa8;
+      --badge-react:  #6b3fa0;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); min-height: 100vh; }
-
-    header { background: var(--superficie); border-bottom: 1px solid var(--borde); padding: 2rem; text-align: center; }
-    header h1 { font-size: 2rem; color: var(--verde-claro); letter-spacing: .03em; }
-    header p { margin-top: .5rem; color: var(--texto-suave); font-size: .95rem; }
-    header .inst { font-size: .8rem; color: var(--texto-suave); margin-top: .25rem; }
-
-    main { max-width: 1100px; margin: 2.5rem auto; padding: 0 1.5rem; }
-
-    .filtros { display: flex; gap: .75rem; margin-bottom: 2rem; flex-wrap: wrap; }
-    .filtros button {
-      background: var(--superficie); border: 1px solid var(--borde); color: var(--texto-suave);
-      padding: .4rem 1rem; border-radius: 20px; cursor: pointer; font-size: .85rem; transition: all .2s;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--crema);
+      color: var(--texto);
+      min-height: 100vh;
     }
-    .filtros button:hover, .filtros button.activo { background: var(--verde); border-color: var(--verde); color: #fff; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+    /* ── Nav ── */
+    nav {
+      background: var(--blanco);
+      border-bottom: 1px solid var(--borde);
+      padding: .85rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: .75rem; text-decoration: none; }
+    .logo-mark {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--texto);
+      letter-spacing: -.02em;
+      line-height: 1;
+    }
+    .logo-mark span { color: var(--verde); }
+    .logo-sub {
+      font-size: .7rem;
+      color: var(--texto-suave);
+      line-height: 1.3;
+      border-left: 2px solid var(--borde);
+      padding-left: .75rem;
+    }
+    .nav-link {
+      font-size: .85rem;
+      color: var(--texto-suave);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--verde); }
 
+    /* ── Hero ── */
+    .hero {
+      background: var(--blanco);
+      border-bottom: 1px solid var(--borde);
+      padding: 3.5rem 2rem 3rem;
+      text-align: center;
+    }
+    .hero-label {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--verde);
+      margin-bottom: .75rem;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 600;
+      color: var(--texto);
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      max-width: 600px;
+      margin: 0 auto;
+      color: var(--texto-suave);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    /* ── Filtros ── */
+    .filtros-wrap {
+      background: var(--blanco);
+      border-bottom: 1px solid var(--borde);
+      padding: .85rem 2rem;
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .filtros-wrap button {
+      background: transparent;
+      border: 1px solid var(--borde);
+      color: var(--texto-suave);
+      padding: .35rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: .82rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      transition: all .18s;
+    }
+    .filtros-wrap button:hover { border-color: var(--verde); color: var(--verde); }
+    .filtros-wrap button.activo {
+      background: var(--verde);
+      border-color: var(--verde);
+      color: #fff;
+    }
+
+    /* ── Grid ── */
+    main {
+      max-width: 1140px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Card ── */
     .card {
-      background: var(--superficie); border: 1px solid var(--borde); border-radius: 10px;
-      padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem;
-      transition: border-color .2s, transform .2s;
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: .8rem;
+      transition: box-shadow .2s, border-color .2s, transform .2s;
     }
-    .card:hover { border-color: var(--verde-claro); transform: translateY(-2px); }
-    .card.wip { opacity: .6; pointer-events: none; }
+    .card:hover { box-shadow: 0 4px 20px rgba(74,124,63,.12); border-color: var(--verde); transform: translateY(-2px); }
+    .card.wip { opacity: .65; }
+    .card.wip:hover { transform: none; box-shadow: none; border-color: var(--borde); }
 
     .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .card-id { font-size: .75rem; font-weight: 700; color: var(--texto-suave); font-family: monospace; }
-    .badges { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .card-id { font-size: .72rem; font-weight: 600; color: var(--texto-suave); font-family: monospace; }
+    .badges { display: flex; gap: .35rem; flex-wrap: wrap; }
     .badge {
-      font-size: .7rem; font-weight: 600; padding: .15rem .5rem; border-radius: 12px; text-transform: uppercase; letter-spacing: .04em;
+      font-size: .68rem; font-weight: 600; padding: .12rem .5rem;
+      border-radius: 10px; text-transform: uppercase; letter-spacing: .04em;
     }
-    .badge.html { background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb66; }
-    .badge.react { background: #8957e533; color: #bc8cff; border: 1px solid #8957e566; }
-    .badge.wip { background: #d2992233; color: #e3b341; border: 1px solid #d2992266; }
-    .badge.funcional { background: #2d6a4f33; color: #52b788; border: 1px solid #2d6a4f66; }
+    .badge.html    { background: #dbeafe; color: #1e40af; }
+    .badge.react   { background: #ede9fe; color: #5b21b6; }
+    .badge.wip     { background: #fef3c7; color: #92400e; }
+    .badge.funcional { background: var(--verde-suave); color: var(--verde-hover); }
 
-    .card h3 { font-size: 1rem; font-weight: 600; color: var(--texto); line-height: 1.3; }
-    .card p { font-size: .82rem; color: var(--texto-suave); line-height: 1.5; flex: 1; }
+    .card h3 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 600; color: var(--texto); line-height: 1.3; }
+    .card p  { font-size: .83rem; color: var(--texto-suave); line-height: 1.55; flex: 1; }
 
     .card a {
-      display: inline-block; margin-top: auto; background: var(--verde); color: #fff;
-      text-decoration: none; padding: .45rem 1.1rem; border-radius: 6px; font-size: .85rem;
-      font-weight: 600; text-align: center; transition: background .2s;
+      display: inline-block;
+      margin-top: auto;
+      background: var(--verde);
+      color: #fff;
+      text-decoration: none;
+      padding: .5rem 1.2rem;
+      border-radius: 6px;
+      font-size: .85rem;
+      font-weight: 600;
+      text-align: center;
+      transition: background .18s;
     }
-    .card a:hover { background: var(--verde-claro); }
-    .card .btn-wip { background: var(--borde); color: var(--texto-suave); pointer-events: none; cursor: default; }
+    .card a:hover { background: var(--verde-hover); }
+    .btn-wip {
+      display: inline-block;
+      padding: .5rem 1.2rem;
+      border-radius: 6px;
+      font-size: .85rem;
+      font-weight: 600;
+      text-align: center;
+      background: var(--crema);
+      color: var(--texto-suave);
+      border: 1px solid var(--borde);
+      cursor: default;
+    }
 
-    footer { text-align: center; padding: 2.5rem 1rem; color: var(--texto-suave); font-size: .8rem; border-top: 1px solid var(--borde); margin-top: 3rem; }
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--texto-suave);
+      font-size: .8rem;
+      border-top: 1px solid var(--borde);
+      margin-top: 3rem;
+      background: var(--blanco);
+    }
+    footer a { color: var(--verde); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>LAMA</h1>
-  <p>Laboratorio de Mediaciones Algorítmicas</p>
-  <p class="inst">Universidad del Valle · Cali, Colombia</p>
-</header>
+<nav>
+  <a href="https://lama.lat" class="logo">
+    <span class="logo-mark">la<span>M</span>a</span>
+    <span class="logo-sub">Laboratorio de<br>Mediaciones Algorítmicas</span>
+  </a>
+  <a href="https://lama.lat" class="nav-link">← Volver al sitio</a>
+</nav>
+
+<div class="hero">
+  <p class="hero-label">Explora</p>
+  <h1>Artefactos Interactivos</h1>
+  <p>Herramientas pedagógicas de código abierto para explorar el funcionamiento algorítmico de forma lúdica y crítica.</p>
+</div>
+
+<div class="filtros-wrap">
+  <button class="activo" onclick="filtrar('todos', this)">Todos</button>
+  <button onclick="filtrar('html', this)">HTML</button>
+  <button onclick="filtrar('react', this)">React</button>
+  <button onclick="filtrar('funcional', this)">Disponibles</button>
+  <button onclick="filtrar('wip', this)">Próximamente</button>
+</div>
 
 <main>
-  <div class="filtros">
-    <button class="activo" onclick="filtrar('todos', this)">Todos</button>
-    <button onclick="filtrar('html', this)">HTML</button>
-    <button onclick="filtrar('react', this)">React</button>
-    <button onclick="filtrar('funcional', this)">Funcionales</button>
-    <button onclick="filtrar('wip', this)">En desarrollo</button>
-  </div>
-
   <div class="grid" id="grid"></div>
 </main>
 
 <footer>
-  LAMA &mdash; Universidad del Valle &mdash; Cali, Colombia<br>
-  <a href="https://github.com/kevimaster/lama" style="color:var(--verde-claro)">github.com/kevimaster/lama</a>
+  <strong>LAMA</strong> — Laboratorio de Mediaciones Algorítmicas<br>
+  Universidad del Valle · Cali, Colombia<br><br>
+  <a href="https://lama.lat">lama.lat</a> &nbsp;·&nbsp;
+  <a href="https://github.com/kevimaster/lama">GitHub</a>
 </footer>
 
 <script>
 const simuladores = [
-  { id:"LAMA-01", titulo:"Red neuronal básica",               tipo:"html",  estado:"wip",      carpeta:"red-neuronal-basica",      desc:"Visualización de una red neuronal simple con propagación hacia adelante." },
-  { id:"LAMA-02", titulo:"Red neuronal compleja",             tipo:"html",  estado:"wip",      carpeta:"red-neuronal-compleja",     desc:"Red neuronal multicapa con retropropagación e hiperparámetros ajustables." },
-  { id:"LAMA-03", titulo:"Algoritmos en Acción",              tipo:"html",  estado:"funcional", carpeta:"algoritmos-en-accion",     desc:"Visualización paso a paso de algoritmos clásicos de ordenamiento y búsqueda." },
-  { id:"LAMA-04", titulo:"Diseño de algoritmos",             tipo:"html",  estado:"funcional", carpeta:"diseno-algoritmos",        desc:"Simulador interactivo para diseñar y probar algoritmos básicos." },
-  { id:"LAMA-05", titulo:"Tu feed personalizado",            tipo:"html",  estado:"funcional", carpeta:"el-feed",                  desc:"Explora cómo los algoritmos de recomendación construyen tu burbuja informativa." },
-  { id:"LAMA-06", titulo:"El Casino de la Atención V1",      tipo:"html",  estado:"funcional", carpeta:"el-casino-atencion-v1",    desc:"Mecánicas de diseño persuasivo y economía de la atención — versión 1." },
-  { id:"LAMA-07", titulo:"El Casino de la Atención V2",      tipo:"html",  estado:"funcional", carpeta:"el-casino-atencion-v2",    desc:"Mecánicas de diseño persuasivo y economía de la atención — versión 2." },
-  { id:"LAMA-08", titulo:"Dinámicas de desinformación",      tipo:"html",  estado:"funcional", carpeta:"dinamicas-desinformacion", desc:"Modelo de difusión de noticias falsas en redes sociales." },
-  { id:"LAMA-09", titulo:"Analizador de Sesgos V1",          tipo:"html",  estado:"funcional", carpeta:"analizador-sesgos-v1",     desc:"Identificación de sesgos cognitivos en contenido digital — versión 1." },
-  { id:"LAMA-10", titulo:"Analizador de Sesgos V2",          tipo:"html",  estado:"funcional", carpeta:"analizador-sesgos-v2",     desc:"Identificación de sesgos cognitivos en contenido digital — versión 2." },
-  { id:"LAMA-11", titulo:"Dashboard de Diversidad Informativa", tipo:"html", estado:"funcional", carpeta:"dashboard-diversidad",   desc:"Métricas de pluralismo y diversidad en dietas informativas digitales." },
-  { id:"LAMA-12", titulo:"Detector de Polarización",         tipo:"html",  estado:"funcional", carpeta:"detector-polarizacion",    desc:"Mide la polarización política en redes de interacción online." },
-  { id:"LAMA-13", titulo:"Ecosistema digital sistémico",     tipo:"html",  estado:"funcional", carpeta:"ecosistema-digital",       desc:"Modelo sistémico del ecosistema de medios digitales y sus actores." },
-  { id:"LAMA-14", titulo:"El sesgo invisible",               tipo:"react", estado:"funcional", carpeta:"el-sesgo-invisible",       desc:"Experiencia interactiva sobre sesgos algorítmicos invisibles. (React)" },
-  { id:"LAMA-15", titulo:"Viral por grupos sociales",        tipo:"html",  estado:"funcional", carpeta:"viral-grupos-sociales",    desc:"Simulación de difusión viral segmentada por grupos sociodemográficos." },
-  { id:"LAMA-16", titulo:"Radar de capacidades periodísticas", tipo:"html", estado:"funcional", carpeta:"radar-capacidades",       desc:"Diagnóstico de competencias digitales para periodistas." },
-  { id:"LAMA-17", titulo:"Cámara de eco interactiva",        tipo:"html",  estado:"funcional", carpeta:"camara-de-eco",            desc:"Experiencia inmersiva en una cámara de eco informativa." },
-  { id:"LAMA-18", titulo:"Enjambre de datos personal",       tipo:"html",  estado:"funcional", carpeta:"enjambre-datos",           desc:"Visualización del rastro de datos que dejamos en plataformas digitales." },
-  { id:"LAMA-19", titulo:"Anatomía de un sistema algorítmico", tipo:"react", estado:"wip",      carpeta:"anatomia-sistema-algoritmico",  desc:"Disección interactiva de la arquitectura interna de un sistema algorítmico." },
-  { id:"LAMA-20", titulo:"Ensamblaje sociotécnico",           tipo:"react", estado:"wip",      carpeta:"ensamblaje-sociotecnico",       desc:"Modelo de los actores humanos y técnicos que configuran las plataformas digitales." },
-  { id:"LAMA-21", titulo:"Sesgos en narrativas históricas",   tipo:"react", estado:"wip",      carpeta:"sesgos-narrativas-historicas",  desc:"Simulador que revela cómo los sesgos algorítmicos distorsionan el relato histórico." },
-  { id:"LAMA-22", titulo:"Algoritmos: el juego de cartas",    tipo:"react", estado:"wip",      carpeta:"algoritmos-card-game",          desc:"Dinámica lúdica para comprender el funcionamiento de algoritmos de recomendación." },
-  { id:"LAMA-23", titulo:"Analizador de sesgos en búsquedas", tipo:"react", estado:"wip",      carpeta:"analizador-sesgos-busquedas",   desc:"Herramienta para comparar resultados de búsqueda según perfil demográfico del usuario." },
+  { id:"LAMA-01", titulo:"Red neuronal básica",                tipo:"html",  estado:"wip",      carpeta:"red-neuronal-basica",           desc:"Visualización de una red neuronal simple con propagación hacia adelante." },
+  { id:"LAMA-02", titulo:"Red neuronal compleja",              tipo:"html",  estado:"wip",      carpeta:"red-neuronal-compleja",          desc:"Red neuronal multicapa con retropropagación e hiperparámetros ajustables." },
+  { id:"LAMA-03", titulo:"Algoritmos en Acción",               tipo:"html",  estado:"wip",      carpeta:"algoritmos-en-accion",           desc:"Visualización paso a paso de algoritmos clásicos de ordenamiento y búsqueda." },
+  { id:"LAMA-04", titulo:"Diseño de algoritmos",               tipo:"html",  estado:"wip",      carpeta:"diseno-algoritmos",              desc:"Simulador interactivo para diseñar y probar algoritmos básicos." },
+  { id:"LAMA-05", titulo:"Tu feed personalizado",              tipo:"html",  estado:"funcional", carpeta:"el-feed",                       desc:"Explora cómo los algoritmos de recomendación construyen tu burbuja informativa." },
+  { id:"LAMA-06", titulo:"El Casino de la Atención V1",        tipo:"html",  estado:"wip",      carpeta:"el-casino-atencion-v1",          desc:"Mecánicas de diseño persuasivo y economía de la atención — versión 1." },
+  { id:"LAMA-07", titulo:"El Casino de la Atención V2",        tipo:"html",  estado:"wip",      carpeta:"el-casino-atencion-v2",          desc:"Mecánicas de diseño persuasivo y economía de la atención — versión 2." },
+  { id:"LAMA-08", titulo:"Dinámicas de desinformación",        tipo:"html",  estado:"wip",      carpeta:"dinamicas-desinformacion",       desc:"Modelo de difusión de noticias falsas en redes sociales." },
+  { id:"LAMA-09", titulo:"Analizador de Sesgos V1",            tipo:"html",  estado:"wip",      carpeta:"analizador-sesgos-v1",           desc:"Identificación de sesgos cognitivos en contenido digital — versión 1." },
+  { id:"LAMA-10", titulo:"Analizador de Sesgos V2",            tipo:"html",  estado:"wip",      carpeta:"analizador-sesgos-v2",           desc:"Identificación de sesgos cognitivos en contenido digital — versión 2." },
+  { id:"LAMA-11", titulo:"Dashboard de Diversidad Informativa",tipo:"html",  estado:"wip",      carpeta:"dashboard-diversidad",          desc:"Métricas de pluralismo y diversidad en dietas informativas digitales." },
+  { id:"LAMA-12", titulo:"Detector de Polarización",           tipo:"html",  estado:"wip",      carpeta:"detector-polarizacion",          desc:"Mide la polarización política en redes de interacción online." },
+  { id:"LAMA-13", titulo:"Ecosistema digital sistémico",       tipo:"html",  estado:"wip",      carpeta:"ecosistema-digital",             desc:"Modelo sistémico del ecosistema de medios digitales y sus actores." },
+  { id:"LAMA-14", titulo:"El sesgo invisible",                 tipo:"html",  estado:"funcional", carpeta:"el-sesgo-invisible",            desc:"Experiencia interactiva sobre sesgos algorítmicos invisibles." },
+  { id:"LAMA-15", titulo:"Viral por grupos sociales",          tipo:"html",  estado:"funcional", carpeta:"viral-grupos-sociales",         desc:"Simulación de difusión viral segmentada por grupos sociodemográficos." },
+  { id:"LAMA-16", titulo:"Radar de capacidades periodísticas", tipo:"html",  estado:"funcional", carpeta:"radar-capacidades",             desc:"Diagnóstico de competencias digitales para periodistas." },
+  { id:"LAMA-17", titulo:"Cámara de eco interactiva",          tipo:"html",  estado:"funcional", carpeta:"camara-de-eco",                 desc:"Experiencia inmersiva en una cámara de eco informativa." },
+  { id:"LAMA-18", titulo:"Enjambre de datos personal",         tipo:"html",  estado:"funcional", carpeta:"enjambre-datos",                desc:"Visualización del rastro de datos que dejamos en plataformas digitales." },
+  { id:"LAMA-19", titulo:"Anatomía de un sistema algorítmico", tipo:"react", estado:"wip",       carpeta:"anatomia-sistema-algoritmico",  desc:"Disección interactiva de la arquitectura interna de un sistema algorítmico." },
+  { id:"LAMA-20", titulo:"Ensamblaje sociotécnico",            tipo:"react", estado:"wip",       carpeta:"ensamblaje-sociotecnico",       desc:"Modelo de los actores humanos y técnicos que configuran las plataformas digitales." },
+  { id:"LAMA-21", titulo:"Sesgos en narrativas históricas",    tipo:"react", estado:"wip",       carpeta:"sesgos-narrativas-historicas",  desc:"Simulador que revela cómo los sesgos algorítmicos distorsionan el relato histórico." },
+  { id:"LAMA-22", titulo:"Algoritmos: el juego de cartas",     tipo:"react", estado:"wip",       carpeta:"algoritmos-card-game",          desc:"Dinámica lúdica para comprender el funcionamiento de algoritmos de recomendación." },
+  { id:"LAMA-23", titulo:"Analizador de sesgos en búsquedas",  tipo:"react", estado:"wip",       carpeta:"analizador-sesgos-busquedas",   desc:"Herramienta para comparar resultados de búsqueda según perfil demográfico del usuario." },
 ];
 
 function renderGrid(lista) {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = lista.map(s => `
-    <div class="card ${s.estado === 'wip' ? 'wip' : ''}" data-tipo="${s.tipo}" data-estado="${s.estado}">
+  document.getElementById('grid').innerHTML = lista.map(s => `
+    <div class="card${s.estado==='wip' ? ' wip' : ''}">
       <div class="card-top">
         <span class="card-id">${s.id}</span>
         <div class="badges">
-          <span class="badge ${s.tipo}">${s.tipo}</span>
-          <span class="badge ${s.estado}">${s.estado === 'wip' ? 'En desarrollo' : 'Funcional'}</span>
+          <span class="badge ${s.tipo}">${s.tipo.toUpperCase()}</span>
+          <span class="badge ${s.estado}">${s.estado==='wip' ? 'Próximamente' : 'Disponible'}</span>
         </div>
       </div>
       <h3>${s.titulo}</h3>
       <p>${s.desc}</p>
-      ${s.estado === 'wip'
-        ? '<span class="btn-wip" style="display:inline-block;padding:.45rem 1.1rem;border-radius:6px;font-size:.85rem;font-weight:600;text-align:center;background:var(--borde);color:var(--texto-suave)">Próximamente</span>'
-        : `<a href="simuladores/${s.carpeta}/">Abrir simulador →</a>`
-      }
+      ${s.estado==='wip'
+        ? '<span class="btn-wip">Próximamente</span>'
+        : `<a href="simuladores/${s.carpeta}/">Explorar →</a>`}
     </div>
   `).join('');
 }
 
 function filtrar(filtro, btn) {
-  document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('activo'));
+  document.querySelectorAll('.filtros-wrap button').forEach(b => b.classList.remove('activo'));
   btn.classList.add('activo');
-  if (filtro === 'todos') return renderGrid(simuladores);
-  if (filtro === 'funcional') return renderGrid(simuladores.filter(s => s.estado === 'funcional'));
-  if (filtro === 'wip') return renderGrid(simuladores.filter(s => s.estado === 'wip'));
-  renderGrid(simuladores.filter(s => s.tipo === filtro));
+  const map = {
+    todos:     simuladores,
+    funcional: simuladores.filter(s => s.estado==='funcional'),
+    wip:       simuladores.filter(s => s.estado==='wip'),
+    html:      simuladores.filter(s => s.tipo==='html'),
+    react:     simuladores.filter(s => s.tipo==='react'),
+  };
+  renderGrid(map[filtro] || simuladores);
 }
 
 renderGrid(simuladores);
