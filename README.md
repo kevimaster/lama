@@ -50,6 +50,11 @@ lama/
 | LAMA-16 | Radar de capacidades periodísticas | HTML | Funcional |
 | LAMA-17 | Cámara de eco interactiva | HTML | Funcional |
 | LAMA-18 | Enjambre de datos personal | HTML | Funcional |
+| LAMA-19 | Anatomía de un sistema algorítmico | React | En desarrollo |
+| LAMA-20 | Ensamblaje sociotécnico | React | En desarrollo |
+| LAMA-21 | Sesgos en narrativas históricas | React | En desarrollo |
+| LAMA-22 | Algoritmos: el juego de cartas | React | En desarrollo |
+| LAMA-23 | Analizador de sesgos en búsquedas | React | En desarrollo |
 
 ## Agregar un nuevo simulador
 
