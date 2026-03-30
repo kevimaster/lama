@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propagación de Desinformación: Simulación Interactiva</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #2d5016 0%, #1e3a14 50%, #3a5f0b 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: rgba(46, 80, 22, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(127, 199, 175, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        h1 {
+            font-size: 2.2em;
+            background: linear-gradient(90deg, #7fc7af 0%, #ffd89b 50%, #7fc7af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #c8d6bf;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .simulation-panel {
+            flex: 1;
+            background: rgba(46, 80, 22, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(127, 199, 175, 0.3);
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #1e3a14 0%, #2d5016 100%);
+            border-radius: 10px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+            cursor: crosshair;
+            position: relative;
+        }
+        
+        .controls-panel {
+            width: 380px;
+            background: rgba(46, 80, 22, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(127, 199, 175, 0.3);
+            max-height: fit-content;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(30, 58, 20, 0.6);
+            border-radius: 10px;
+            border: 1px solid rgba(127, 199, 175, 0.2);
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #7fc7af;
+            font-size: 0.95em;
+        }
+        
+        .control-value {
+            background: rgba(127, 199, 175, 0.2);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: center;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(127, 199, 175, 0.2);
+            outline: none;
+            border-radius: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #7fc7af;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(127, 199, 175, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 2px 12px rgba(127, 199, 175, 0.7);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #7fc7af 0%, #5a9a7f 100%);
+            color: #1e3a14;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(127, 199, 175, 0.4);
+            font-size: 0.95em;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(127, 199, 175, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4);
+        }
+        
+        button.danger:hover {
+            box-shadow: 0 6px 20px rgba(230, 126, 34, 0.6);
+        }
+        
+        .stats-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(30, 58, 20, 0.8);
+            border-radius: 10px;
+            border: 1px solid rgba(127, 199, 175, 0.2);
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(127, 199, 175, 0.2);
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #c8d6bf;
+            font-size: 0.9em;
+        }
+        
+        .stat-value {
+            color: #7fc7af;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(127, 199, 175, 0.3);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: rgba(127, 199, 175, 0.7);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+            background: #1e3a14;
+        }
+        
+        .legend {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(30, 58, 20, 0.6);
+            border-radius: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .controls-panel {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Propagación de Desinformación en Redes Comunitarias</h1>
+        <div class="subtitle">Simulación Interactiva de Dinámicas de Información</div>
+    </div>
+    
+    <div class="main-container">
+        <div class="simulation-panel">
+            <canvas id="canvas"></canvas>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>Información verificada</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>Desinformación</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f1c40f;"></div>
+                    <span>Líder de opinión / Verificando</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #95a5a6;"></div>
+                    <span>No informado</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Velocidad de Propagación</span>
+                    <span class="control-value" id="speedValue">5</span>
+                </div>
+                <input type="range" id="propagationSpeed" min="1" max="10" value="5">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Credibilidad de Fuente</span>
+                    <span class="control-value" id="credibilityValue">50%</span>
+                </div>
+                <input type="range" id="sourceCredibility" min="0" max="100" value="50">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Densidad de Red</span>
+                    <span class="control-value" id="densityValue">30%</span>
+                </div>
+                <input type="range" id="networkDensity" min="10" max="60" value="30">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Resistencia Crítica</span>
+                    <span class="control-value" id="resistanceValue">30%</span>
+                </div>
+                <input type="range" id="criticalResistance" min="0" max="100" value="30">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Verificación Activa</span>
+                </div>
+                <div class="toggle-container">
+                    <div class="toggle-switch" id="verificationToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span id="verificationText">Desactivada</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Líderes de Opinión</span>
+                </div>
+                <div class="toggle-container">
+                    <div class="toggle-switch" id="leadersToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span id="leadersText">Desactivados</span>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button id="startBtn">Iniciar</button>
+                <button id="pauseBtn">Pausar</button>
+                <button id="resetBtn" class="danger">Reiniciar</button>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat-row">
+                    <span class="stat-label">Nodos infectados:</span>
+                    <span class="stat-value" id="infectedCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Nodos verificados:</span>
+                    <span class="stat-value" id="verifiedCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Tiempo transcurrido:</span>
+                    <span class="stat-value" id="timeElapsed">0s</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Velocidad real:</span>
+                    <span class="stat-value" id="realSpeed">0/s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let isRunning = false;
+        let isPaused = false;
+        let animationId = null;
+        let startTime = Date.now();
+        let timeElapsed = 0;
+        let nodes = [];
+        let propagationWaves = [];
+        
+        let propagationSpeed = 5;
+        let sourceCredibility = 50;
+        let networkDensity = 30;
+        let criticalResistance = 30;
+        let verificationActive = false;
+        let leadersActive = false;
+        
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        class Node {
+            constructor(x, y, id) {
+                this.x = x;
+                this.y = y;
+                this.id = id;
+                this.radius = 8;
+                this.state = 'uninformed';
+                this.connections = [];
+                this.isLeader = false;
+                this.infectionTime = null;
+                this.resistanceLevel = Math.random() * 100;
+                this.animationPhase = 0;
+                this.pulseRadius = 0;
+                this.velocity = { 
+                    x: (Math.random() - 0.5) * 0.5, 
+                    y: (Math.random() - 0.5) * 0.5 
+                };
+            }
+            
+            update() {
+                if (this.state === 'misinformed') {
+                    this.pulseRadius = Math.sin(this.animationPhase) * 5 + this.radius;
+                    this.animationPhase += 0.1;
+                }
+                
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                
+                if (this.x <= this.radius || this.x >= canvas.width - this.radius) {
+                    this.velocity.x *= -1;
+                }
+                if (this.y <= this.radius || this.y >= canvas.height - this.radius) {
+                    this.velocity.y *= -1;
+                }
+                
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+            }
+            
+            draw() {
+                this.connections.forEach(targetNode => {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(targetNode.x, targetNode.y);
+                    
+                    if (this.state === 'misinformed' && targetNode.state === 'misinformed') {
+                        ctx.strokeStyle = 'rgba(231, 76, 60, 0.3)';
+                        ctx.lineWidth = 2;
+                    } else if (this.state === 'verified' && targetNode.state === 'verified') {
+                        ctx.strokeStyle = 'rgba(52, 152, 219, 0.3)';
+                        ctx.lineWidth = 2;
+                    } else {
+                        ctx.strokeStyle = 'rgba(149, 165, 166, 0.1)';
+                        ctx.lineWidth = 1;
+                    }
+                    ctx.stroke();
+                });
+                
+                if (this.state === 'misinformed' && this.pulseRadius > this.radius) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.pulseRadius + 10, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+                    ctx.fill();
+                }
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                switch(this.state) {
+                    case 'misinformed':
+                        ctx.fillStyle = '#e74c3c';
+                        ctx.shadowColor = 'rgba(231, 76, 60, 0.8)';
+                        ctx.shadowBlur = 15;
+                        break;
+                    case 'verified':
+                        ctx.fillStyle = '#3498db';
+                        ctx.shadowColor = 'rgba(52, 152, 219, 0.8)';
+                        ctx.shadowBlur = 15;
+                        break;
+                    case 'checking':
+                        ctx.fillStyle = '#f1c40f';
+                        ctx.shadowColor = 'rgba(241, 196, 15, 0.8)';
+                        ctx.shadowBlur = 10;
+                        break;
+                    default:
+                        ctx.fillStyle = '#95a5a6';
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                }
+                
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                if (this.isLeader) {
+                    ctx.strokeStyle = '#f1c40f';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(241, 196, 15, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+            
+            propagate() {
+                if (this.state !== 'misinformed') return;
+                
+                this.connections.forEach(targetNode => {
+                    if (targetNode.state === 'uninformed') {
+                        let propagationChance = (propagationSpeed / 10) * (sourceCredibility / 100);
+                        
+                        if (this.isLeader && leadersActive) {
+                            propagationChance *= 2;
+                        }
+                        
+                        propagationChance *= (1 - (targetNode.resistanceLevel * criticalResistance / 10000));
+                        
+                        if (verificationActive && Math.random() < 0.3) {
+                            targetNode.state = 'checking';
+                            setTimeout(() => {
+                                if (Math.random() < criticalResistance / 100) {
+                                    targetNode.state = 'verified';
+                                } else {
+                                    targetNode.state = 'misinformed';
+                                }
+                            }, 1000);
+                        } else if (Math.random() < propagationChance) {
+                            targetNode.state = 'misinformed';
+                            targetNode.infectionTime = Date.now();
+                        }
+                    }
+                });
+            }
+        }
+        
+        function createNetwork() {
+            nodes = [];
+            const nodeCount = 80;
+            const margin = 50;
+            
+            for (let i = 0; i < nodeCount; i++) {
+                const clusterX = Math.random() * 3;
+                const clusterY = Math.random() * 3;
+                
+                const x = margin + (canvas.width - 2 * margin) * (clusterX / 3) + (Math.random() - 0.5) * 100;
+                const y = margin + (canvas.height - 2 * margin) * (clusterY / 3) + (Math.random() - 0.5) * 100;
+                
+                const node = new Node(
+                    Math.max(margin, Math.min(canvas.width - margin, x)),
+                    Math.max(margin, Math.min(canvas.height - margin, y)),
+                    i
+                );
+                
+                if (Math.random() < 0.1) {
+                    node.isLeader = true;
+                    node.radius = 12;
+                }
+                
+                nodes.push(node);
+            }
+            
+            nodes.forEach(node => {
+                const maxConnections = Math.floor(networkDensity / 10);
+                let connectionCount = 0;
+                
+                const sortedNodes = nodes
+                    .filter(n => n.id !== node.id)
+                    .sort((a, b) => {
+                        const distA = Math.hypot(a.x - node.x, a.y - node.y);
+                        const distB = Math.hypot(b.x - node.x, b.y - node.y);
+                        return distA - distB;
+                    });
+                
+                for (let other of sortedNodes) {
+                    if (connectionCount >= maxConnections) break;
+                    
+                    const distance = Math.hypot(other.x - node.x, other.y - node.y);
+                    const connectionProbability = Math.exp(-distance / 150);
+                    
+                    if (Math.random() < connectionProbability) {
+                        if (!node.connections.includes(other)) {
+                            node.connections.push(other);
+                            other.connections.push(node);
+                            connectionCount++;
+                        }
+                    }
+                }
+                
+                if (node.connections.length === 0 && sortedNodes.length > 0) {
+                    const nearest = sortedNodes[0];
+                    node.connections.push(nearest);
+                    nearest.connections.push(node);
+                }
+            });
+        }
+        
+        function startSimulation() {
+            if (isRunning && !isPaused) return;
+            
+            if (isPaused) {
+                isPaused = false;
+                animate();
+                return;
+            }
+            
+            isRunning = true;
+            isPaused = false;
+            startTime = Date.now();
+            
+            let initialInfected = 3;
+            let infected = 0;
+            
+            while (infected < initialInfected && infected < nodes.length) {
+                const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+                if (randomNode.state === 'uninformed') {
+                    randomNode.state = 'misinformed';
+                    randomNode.infectionTime = Date.now();
+                    infected++;
+                    createPropagationWave(randomNode.x, randomNode.y);
+                }
+            }
+            
+            animate();
+        }
+        
+        function pauseSimulation() {
+            isPaused = true;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        function resetSimulation() {
+            isRunning = false;
+            isPaused = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            startTime = Date.now();
+            timeElapsed = 0;
+            propagationWaves = [];
+            
+            createNetwork();
+            updateStats();
+            drawFrame();
+        }
+        
+        function createPropagationWave(x, y) {
+            propagationWaves.push({
+                x: x,
+                y: y,
+                radius: 0,
+                maxRadius: 100,
+                opacity: 0.5
+            });
+        }
+        
+        function updatePropagationWaves() {
+            for (let i = propagationWaves.length - 1; i >= 0; i--) {
+                const wave = propagationWaves[i];
+                wave.radius += 3;
+                wave.opacity = Math.max(0, 0.5 * (1 - wave.radius / wave.maxRadius));
+                
+                if (wave.radius > wave.maxRadius) {
+                    propagationWaves.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawPropagationWaves() {
+            propagationWaves.forEach(wave => {
+                ctx.beginPath();
+                ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(231, 76, 60, ${wave.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+        
+        function updateStats() {
+            const infectedCount = nodes.filter(n => n.state === 'misinformed').length;
+            const verifiedCount = nodes.filter(n => n.state === 'verified').length;
+            
+            document.getElementById('infectedCount').textContent = infectedCount;
+            document.getElementById('verifiedCount').textContent = verifiedCount;
+            
+            if (isRunning) {
+                const currentTime = Date.now();
+                timeElapsed = Math.floor((currentTime - startTime) / 1000);
+                document.getElementById('timeElapsed').textContent = timeElapsed + 's';
+                
+                if (timeElapsed > 0) {
+                    const spreadRate = (infectedCount / timeElapsed).toFixed(1);
+                    document.getElementById('realSpeed').textContent = spreadRate + '/s';
+                }
+            } else {
+                document.getElementById('timeElapsed').textContent = '0s';
+                document.getElementById('realSpeed').textContent = '0/s';
+            }
+        }
+        
+        function drawFrame() {
+            ctx.fillStyle = 'rgba(30, 58, 20, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = 'rgba(127, 199, 175, 0.02)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            drawPropagationWaves();
+            
+            nodes.forEach(node => {
+                node.draw();
+            });
+        }
+        
+        function animate() {
+            if (!isRunning || isPaused) return;
+            
+            updatePropagationWaves();
+            
+            nodes.forEach(node => {
+                node.update();
+                
+                if (Math.random() < propagationSpeed / 100) {
+                    node.propagate();
+                }
+            });
+            
+            updateStats();
+            drawFrame();
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        document.getElementById('startBtn').addEventListener('click', startSimulation);
+        document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);
+        document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+        
+        document.getElementById('propagationSpeed').addEventListener('input', (e) => {
+            propagationSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = propagationSpeed;
+        });
+        
+        document.getElementById('sourceCredibility').addEventListener('input', (e) => {
+            sourceCredibility = parseInt(e.target.value);
+            document.getElementById('credibilityValue').textContent = sourceCredibility + '%';
+        });
+        
+        document.getElementById('networkDensity').addEventListener('input', (e) => {
+            networkDensity = parseInt(e.target.value);
+            document.getElementById('densityValue').textContent = networkDensity + '%';
+            if (!isRunning) {
+                createNetwork();
+                drawFrame();
+            }
+        });
+        
+        document.getElementById('criticalResistance').addEventListener('input', (e) => {
+            criticalResistance = parseInt(e.target.value);
+            document.getElementById('resistanceValue').textContent = criticalResistance + '%';
+        });
+        
+        document.getElementById('verificationToggle').addEventListener('click', function() {
+            verificationActive = !verificationActive;
+            this.classList.toggle('active');
+            document.getElementById('verificationText').textContent = verificationActive ? 'Activada' : 'Desactivada';
+        });
+        
+        document.getElementById('leadersToggle').addEventListener('click', function() {
+            leadersActive = !leadersActive;
+            this.classList.toggle('active');
+            document.getElementById('leadersText').textContent = leadersActive ? 'Activados' : 'Desactivados';
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (!isRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            let closestNode = null;
+            let minDistance = Infinity;
+            
+            nodes.forEach(node => {
+                const distance = Math.hypot(node.x - x, node.y - y);
+                if (distance < minDistance && distance < 30) {
+                    minDistance = distance;
+                    closestNode = node;
+                }
+            });
+            
+            if (closestNode && closestNode.state === 'uninformed') {
+                closestNode.state = 'misinformed';
+                closestNode.infectionTime = Date.now();
+                createPropagationWave(closestNode.x, closestNode.y);
+            }
+        });
+        
+        // Inicialización
+        createNetwork();
+        drawFrame();
+        updateStats();
+    </script>
+</body>
+</html>
