@@ -1,0 +1,64 @@
+.lama-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.lama-header {
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.back-link { color: #52b788; font-size: .85rem; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.sim-id { font-family: monospace; font-size: .8rem; color: #8b949e; display: block; }
+.lama-header h1 { font-size: 1.1rem; font-weight: 600; }
+
+.lama-main {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.simulador-area {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 2rem;
+  min-height: 400px;
+}
+.placeholder { color: #8b949e; text-align: center; margin-top: 5rem; }
+
+.controles {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+button {
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  padding: .5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 600;
+  transition: background .2s;
+}
+button:hover { background: #52b788; }
+button.secundario { background: #30363d; color: #e6edf3; }
+button.secundario:hover { background: #484f58; }
+
+.lama-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: #8b949e;
+  font-size: .78rem;
+  border-top: 1px solid #30363d;
+}

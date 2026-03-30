@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAMA-XX — Nombre del Simulador</title>
+  <!--
+    PLANTILLA HTML AUTOSUFICIENTE — LAMA
+    ─────────────────────────────────────
+    • Un solo archivo, sin build, sin dependencias externas
+    • Copia esta carpeta, renómbrala y edita index.html
+    • Actualiza el portal (index.html raíz) para incluir tu simulador
+  -->
+  <style>
+    /* ── Reset básico ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Cabecera ── */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header a { color: #52b788; font-size: .85rem; text-decoration: none; }
+    header a:hover { text-decoration: underline; }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    header .id { font-family: monospace; font-size: .8rem; color: #8b949e; }
+
+    /* ── Contenido principal ── */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Área del simulador ── */
+    #simulador {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 2rem;
+      min-height: 400px;
+    }
+
+    /* ── Controles ── */
+    .controles {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    button {
+      background: #2d6a4f;
+      color: #fff;
+      border: none;
+      padding: .5rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    button:hover { background: #52b788; }
+    button.secundario { background: #30363d; color: #e6edf3; }
+    button.secundario:hover { background: #484f58; }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #8b949e;
+      font-size: .78rem;
+      border-top: 1px solid #30363d;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="../../index.html">← Portal LAMA</a>
+  <div>
+    <span class="id">LAMA-XX</span>
+    <h1>Nombre del Simulador</h1>
+  </div>
+</header>
+
+<main>
+  <div id="simulador">
+    <!-- ── Tu simulador aquí ── -->
+    <p style="color:#8b949e;text-align:center;margin-top:5rem">Contenido del simulador</p>
+  </div>
+
+  <div class="controles">
+    <button onclick="iniciar()">Iniciar</button>
+    <button class="secundario" onclick="reiniciar()">Reiniciar</button>
+  </div>
+</main>
+
+<footer>LAMA — Universidad del Valle · Cali, Colombia</footer>
+
+<script>
+  // ── Lógica del simulador ──────────────────────────────────────────────────
+  function iniciar() {
+    // TODO: implementar
+  }
+
+  function reiniciar() {
+    // TODO: implementar
+  }
+</script>
+</body>
+</html>

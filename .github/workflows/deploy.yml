@@ -1,0 +1,100 @@
+name: Deploy LAMA to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # ── Build React simulators ──────────────────────────────────────────────────
+  build-react:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        simulator:
+          - el-sesgo-invisible
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: simuladores/${{ matrix.simulator }}/package-lock.json
+      - name: Build ${{ matrix.simulator }}
+        working-directory: simuladores/${{ matrix.simulator }}
+        run: npm ci && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.simulator }}
+          path: simuladores/${{ matrix.simulator }}/dist
+
+  # ── Assemble and deploy ─────────────────────────────────────────────────────
+  deploy:
+    needs: build-react
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download React build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: _artifacts
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          # Portal root
+          cp index.html _site/index.html
+          # HTML simulators (copy as-is)
+          HTML_SIMS=(
+            algoritmos-en-accion
+            el-feed
+            el-casino-atencion-v1
+            el-casino-atencion-v2
+            dinamicas-desinformacion
+            analizador-sesgos-v1
+            analizador-sesgos-v2
+            dashboard-diversidad
+            detector-polarizacion
+            ecosistema-digital
+            viral-grupos-sociales
+            radar-capacidades
+            camara-de-eco
+            enjambre-datos
+            red-neuronal-basica
+            red-neuronal-compleja
+          )
+          for sim in "${HTML_SIMS[@]}"; do
+            if [ -f "simuladores/$sim/index.html" ]; then
+              mkdir -p "_site/simuladores/$sim"
+              cp "simuladores/$sim/index.html" "_site/simuladores/$sim/index.html"
+            fi
+          done
+          # React simulators (copy built dist)
+          REACT_SIMS=(el-sesgo-invisible)
+          for sim in "${REACT_SIMS[@]}"; do
+            if [ -d "_artifacts/dist-$sim" ]; then
+              mkdir -p "_site/simuladores/$sim"
+              cp -r "_artifacts/dist-$sim/." "_site/simuladores/$sim/"
+            fi
+          done
+
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
