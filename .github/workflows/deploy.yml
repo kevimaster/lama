@@ -15,14 +15,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Deploy (solo HTML por ahora) ────────────────────────────────────────────
+  # ── Build React simulators ──────────────────────────────────────────────────
+  build-react:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        simulator:
+          - anatomia-sistema-algoritmico
+          - ensamblaje-sociotecnico
+          - sesgos-narrativas-historicas
+          - algoritmos-card-game
+          - analizador-sesgos-busquedas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build ${{ matrix.simulator }}
+        working-directory: simuladores/${{ matrix.simulator }}
+        run: npm install && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.simulator }}
+          path: simuladores/${{ matrix.simulator }}/dist
+
+  # ── Assemble and deploy ─────────────────────────────────────────────────────
   deploy:
+    needs: build-react
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download React build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: _artifacts
 
       - name: Assemble site
         run: |
@@ -33,14 +65,21 @@ jobs:
           cp CNAME _site/CNAME
           # Assets (logo, imágenes)
           if [ -d assets ]; then cp -r assets _site/assets; fi
-          # Copiar todos los simuladores que tengan index.html
+          # HTML simulators
           for dir in simuladores/*/; do
             sim=$(basename "$dir")
-            if [ -f "$dir/index.html" ]; then
+            if [ -f "$dir/index.html" ] && [ ! -f "$dir/vite.config.js" ]; then
               mkdir -p "_site/simuladores/$sim"
               cp "$dir/index.html" "_site/simuladores/$sim/index.html"
-              echo "  ✓ $sim"
+              echo "  HTML: $sim"
             fi
+          done
+          # React simulators (dist from build)
+          for artifact in _artifacts/dist-*/; do
+            sim=$(basename "$artifact" | sed 's/^dist-//')
+            mkdir -p "_site/simuladores/$sim"
+            cp -r "$artifact." "_site/simuladores/$sim/"
+            echo "  React: $sim"
           done
 
       - uses: actions/configure-pages@v4
@@ -49,6 +88,3 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
-
-# ── NOTA: cuando haya simuladores React listos para build, agregar job ───────
-# build-react con matrix de simuladores y luego incluir sus dist/ en _site
