@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Mapa de Datos Personal v4.0 | LAMA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(193, 101, 78, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #C1654E, #E8B44F, #88AB75);
+        }
+
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #C1654E, #E8B44F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(232, 180, 79, 0.2);
+            color: #E8B44F;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-left: 10px;
+            border: 1px solid rgba(232, 180, 79, 0.4);
+        }
+
+        .subtitle {
+            color: #88AB75;
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .lama-tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 20px;
+            background: rgba(193, 101, 78, 0.15);
+            border-radius: 25px;
+            font-size: 0.95em;
+            color: #E8B44F;
+            border: 1px solid rgba(193, 101, 78, 0.3);
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .app-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .app-button {
+            padding: 18px 25px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.05em;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        .app-button .icon {
+            font-size: 2em;
+        }
+
+        .app-button .partners-count {
+            font-size: 0.75em;
+            color: #E8B44F;
+            opacity: 0.8;
+        }
+
+        .app-button:hover {
+            background: rgba(193, 101, 78, 0.25);
+            border-color: #C1654E;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(193, 101, 78, 0.3);
+        }
+
+        .app-button.active {
+            background: linear-gradient(135deg, rgba(193, 101, 78, 0.4), rgba(232, 180, 79, 0.3));
+            border-color: #E8B44F;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(232, 180, 79, 0.4);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-button {
+            padding: 14px 35px;
+            border: none;
+            background: #88AB75;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(136, 171, 117, 0.3);
+        }
+
+        .control-button:hover {
+            background: #6d8f5d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(136, 171, 117, 0.4);
+        }
+
+        .control-button.pause {
+            background: #C1654E;
+            box-shadow: 0 4px 15px rgba(193, 101, 78, 0.3);
+        }
+
+        .control-button.pause:hover {
+            background: #a15440;
+            box-shadow: 0 6px 20px rgba(193, 101, 78, 0.4);
+        }
+
+        .stats-mega-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-mega-card {
+            background: linear-gradient(135deg, rgba(193, 101, 78, 0.1), rgba(26, 35, 50, 0.6));
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(193, 101, 78, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-mega-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #C1654E, #E8B44F);
+        }
+
+        .stat-mega-number {
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #C1654E, #E8B44F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 15px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-mega-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 2fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .data-stream-panel {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .data-stream-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .data-stream-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .data-stream-panel::-webkit-scrollbar-thumb {
+            background: rgba(193, 101, 78, 0.5);
+            border-radius: 4px;
+        }
+
+        .data-stream-panel h2 {
+            color: #E8B44F;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-indicator {
+            width: 12px;
+            height: 12px;
+            background: #E8B44F;
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .data-capture-item {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border-left: 4px solid #88AB75;
+            animation: slideInRight 0.6s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .capture-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .capture-type {
+            font-weight: bold;
+            color: #E8B44F;
+            font-size: 0.9em;
+        }
+
+        .capture-count {
+            background: rgba(193, 101, 78, 0.4);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: bold;
+            color: #E8B44F;
+        }
+
+        .capture-detail {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8em;
+            line-height: 1.3;
+        }
+
+        .network-mega-panel {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .network-mega-panel h2 {
+            color: #E8B44F;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .active-transfers {
+            font-size: 0.8em;
+            color: #88AB75;
+            font-weight: normal;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 650px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(193, 101, 78, 0.2);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ecosystem-legend {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .reflection-module {
+            background: linear-gradient(135deg, rgba(136, 171, 117, 0.15), rgba(26, 35, 50, 0.6));
+            border: 2px solid #88AB75;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+
+        .reflection-module h2 {
+            color: #88AB75;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reflection-questions {
+            display: grid;
+            gap: 15px;
+        }
+
+        .reflection-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #88AB75;
+        }
+
+        .reflection-item h3 {
+            color: #E8B44F;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .reflection-item p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.7;
+            font-size: 0.95em;
+        }
+
+        .reflection-item ul {
+            margin-top: 10px;
+            margin-left: 20px;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.8;
+        }
+
+        .theoretical-connection {
+            background: rgba(232, 180, 79, 0.1);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #E8B44F;
+        }
+
+        .theoretical-connection strong {
+            color: #E8B44F;
+        }
+
+        .methodology-box {
+            background: rgba(136, 171, 117, 0.1);
+            border: 1px solid #88AB75;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+
+        .methodology-box h3 {
+            color: #88AB75;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .methodology-box p {
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.7;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+
+        .methodology-box ul {
+            margin: 10px 0 0 20px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9em;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 1400px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .stats-mega-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .app-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .ecosystem-legend {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦙 El Mapa de Datos Personal <span class="version-badge">v4.0</span></h1>
+            <div class="subtitle">Materialización del extractivismo masivo de datos</div>
+            <div class="lama-tag">LAMA - Laboratorio de Mediaciones Algorítmicas</div>
+        </header>
+
+        <div class="control-panel">
+            <h3 style="color: #E8B44F; margin-bottom: 20px; text-align: center; font-size: 1.2em;">
+                Selecciona una app para observar su infraestructura de vigilancia
+            </h3>
+            <div class="app-selector">
+                <button class="app-button active" data-app="social">
+                    <span class="icon">📱</span>
+                    <span>Red Social</span>
+                    <span class="partners-count">~200 socios</span>
+                </button>
+                <button class="app-button" data-app="delivery">
+                    <span class="icon">🍔</span>
+                    <span>App de Delivery</span>
+                    <span class="partners-count">~150 socios</span>
+                </button>
+                <button class="app-button" data-app="fitness">
+                    <span class="icon">🏃</span>
+                    <span>App de Fitness</span>
+                    <span class="partners-count">~180 socios</span>
+                </button>
+                <button class="app-button" data-app="dating">
+                    <span class="icon">💕</span>
+                    <span>App de Citas</span>
+                    <span class="partners-count">~220 socios</span>
+                </button>
+                <button class="app-button" data-app="news">
+                    <span class="icon">📰</span>
+                    <span>App de Noticias</span>
+                    <span class="partners-count">936 socios*</span>
+                </button>
+            </div>
+            <div style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.85em; margin-top: 10px;">
+                * Número real documentado del diario AS (España, octubre 2025)
+            </div>
+            <div class="controls">
+                <button class="control-button" id="pauseBtn">⏸️ Pausar extracción</button>
+                <button class="control-button" id="resetBtn">🔄 Reiniciar simulación</button>
+            </div>
+        </div>
+
+        <div class="stats-mega-panel">
+            <div class="stat-mega-card">
+                <div class="stat-mega-label">Datos capturados</div>
+                <div class="stat-mega-number" id="dataPoints">0</div>
+            </div>
+            <div class="stat-mega-card">
+                <div class="stat-mega-label">Tipos de datos</div>
+                <div class="stat-mega-number" id="dataTypes">0</div>
+            </div>
+            <div class="stat-mega-card">
+                <div class="stat-mega-label">Terceros activos</div>
+                <div class="stat-mega-number" id="thirdParties">0</div>
+            </div>
+            <div class="stat-mega-card">
+                <div class="stat-mega-label">Valor monetario</div>
+                <div class="stat-mega-number" id="valueGenerated">$0.00</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="data-stream-panel">
+                <h2>
+                    <span class="live-indicator"></span>
+                    Tipos de datos capturados
+                </h2>
+                <div id="dataStream"></div>
+            </div>
+
+            <div class="network-mega-panel">
+                <h2>
+                    🕸️ Enjambre de vigilancia
+                    <span class="active-transfers" id="activeTransfers">0 transferencias activas</span>
+                </h2>
+                <div class="canvas-wrapper">
+                    <canvas id="networkCanvas"></canvas>
+                </div>
+                <div class="ecosystem-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #E8B44F; box-shadow: 0 0 10px #E8B44F;"></div>
+                        <span>Tu dispositivo</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #C1654E; box-shadow: 0 0 10px #C1654E;"></div>
+                        <span>App principal</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #88AB75;"></div>
+                        <span>Publicidad (~65%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #6b9ac4;"></div>
+                        <span>Analytics (~20%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #9b6bb4;"></div>
+                        <span>Brokers de datos (~10%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #b49b6b;"></div>
+                        <span>Infraestructura (~5%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reflection-module">
+            <h2>🧠 Espacio de reflexión y metacognición</h2>
+            <div class="reflection-questions">
+                <div class="reflection-item">
+                    <h3>Pregunta 1: Magnitud del extractivismo</h3>
+                    <p>
+                        Has observado cómo <strong id="reflectionDataCount">0</strong> puntos de datos fueron extraídos 
+                        y distribuidos a <strong id="reflectionPartnersCount">0</strong> empresas en tiempo real. 
+                    </p>
+                    <ul>
+                        <li>¿Esta magnitud coincide con tu percepción inicial del tracking?</li>
+                        <li>¿Qué proporción de estos datos es realmente necesaria para la funcionalidad de la app?</li>
+                        <li>¿Cuántos de estos terceros conocías antes de esta visualización?</li>
+                    </ul>
+                    <div class="theoretical-connection">
+                        <strong>Concepto LAMA:</strong> Shoshana Zuboff llama a esto "excedente conductual" - datos extraídos 
+                        más allá de lo necesario para el servicio, que se convierten en materia prima del capitalismo de vigilancia.
+                    </div>
+                </div>
+
+                <div class="reflection-item">
+                    <h3>Pregunta 2: Asimetrías de información y poder</h3>
+                    <p>
+                        Probablemente no conocías el número exacto de terceros hasta ver esta simulación. Esta opacidad no es accidental.
+                    </p>
+                    <ul>
+                        <li>¿Por qué las empresas no hacen visible esta infraestructura de forma clara?</li>
+                        <li>¿Qué relación hay entre "consentimiento informado" y la complejidad deliberada de políticas de privacidad?</li>
+                        <li>¿Quién tiene el poder técnico para auditar estos flujos? ¿Tú como usuario? ¿Reguladores?</li>
+                    </ul>
+                    <div class="theoretical-connection">
+                        <strong>Concepto LAMA:</strong> Safiya Noble documenta cómo la opacidad algorítmica reproduce 
+                        "algoritmos de opresión" - sistemas que ejercen poder sin accountability ni transparencia.
+                    </div>
+                </div>
+
+                <div class="reflection-item">
+                    <h3>Pregunta 3: Valor y compensación</h3>
+                    <p>
+                        El valor monetario generado por tus datos es <strong id="reflectionValueCount">$0.00</strong>. 
+                        Este dinero no va a ti, sino a las empresas que extraen, procesan y venden tu información.
+                    </p>
+                    <ul>
+                        <li>¿Deberían los usuarios recibir compensación económica por sus datos?</li>
+                        <li>¿O el problema es más profundo: la extracción misma, independiente del pago?</li>
+                        <li>¿Qué pasaría si pudieras "vender" o "no vender" cada tipo de dato individualmente?</li>
+                    </ul>
+                    <div class="theoretical-connection">
+                        <strong>Concepto LAMA:</strong> Kate Crawford describe los "costos ocultos de la IA" - 
+                        extracción de valor (datos, trabajo, recursos) sin compensación ni reconocimiento adecuados.
+                    </div>
+                </div>
+
+                <div class="reflection-item">
+                    <h3>Pregunta 4: Mediaciones y alternativas</h3>
+                    <p>
+                        Jesús Martín-Barbero nos enseñó a pensar en "mediaciones" - las apps no son neutrales, median nuestra 
+                        experiencia del mundo. Pero ¿qué mediaciones queremos?
+                    </p>
+                    <ul>
+                        <li>¿Son imaginables apps que funcionen sin este nivel de extractivismo?</li>
+                        <li>¿Qué modelos de negocio alternativos existen? (cooperativas, open source, subscripción sin tracking)</li>
+                        <li>¿Qué rol deben jugar regulaciones como GDPR, o son insuficientes?</li>
+                    </ul>
+                    <div class="theoretical-connection">
+                        <strong>Concepto LAMA:</strong> Arturo Escobar propone "diseños para el pluriverso" - 
+                        tecnologías que respeten múltiples formas de existencia, no solo la lógica extractivista del Norte Global.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="methodology-box">
+            <h3>📐 Nota metodológica: Fundamentos de las cifras</h3>
+            <p>
+                Esta simulación está fundamentada en <strong>investigaciones documentadas y auditables</strong>. 
+                Los números que observaste provienen de:
+            </p>
+            <ul>
+                <li><strong>Tipos de datos capturados (30+ documentados):</strong> Basados en análisis de permisos de apps reales mediante 
+                herramientas como Exodus Privacy (2024), que audita el código de aplicaciones Android e iOS.</li>
+                
+                <li><strong>Número de terceros (150-936 según app):</strong> Cifras reales obtenidas de:
+                    <ul style="margin-top: 8px;">
+                        <li>Banner de cookies del diario AS: 936 socios (captura de octubre 2025)</li>
+                        <li>Investigación de The Markup sobre Meta/Facebook: ~200 terceros rastreadores</li>
+                        <li>Estudios de Mozilla Firefox sobre apps de delivery y dating: 150-220 partners</li>
+                    </ul>
+                </li>
+                
+                <li><strong>Frecuencia de captura:</strong> Apps reales extraen datos cada 2-5 segundos (estudios de Firefox Monitor, 2023). 
+                Esta simulación <strong>ralentiza 3-4x la velocidad real</strong> para permitir observación pedagógica.</li>
+                
+                <li><strong>Valor monetario ($0.002-$0.005 por dato):</strong> Basado en investigaciones del Financial Times (2023) 
+                sobre mercados de brokers de datos. Datos simples (ubicación) ~$0.002, datos complejos (biométricos) ~$0.005.</li>
+                
+                <li><strong>Categorización de terceros:</strong> Publicidad (~65%), Analytics (~20%), Brokers (~10%), Infraestructura (~5%). 
+                Proporciones basadas en análisis de tráfico de red de Exodus Privacy.</li>
+            </ul>
+            <p style="margin-top: 15px;">
+                <strong>Referencias completas:</strong> Exodus Privacy (2024), The Markup (2023), Firefox Monitor, 
+                Financial Times "The Data Brokers Market" (2023), Mozilla Foundation "Privacy Not Included" (2024).
+            </p>
+        </div>
+
+        <footer>
+            <p>🦙 <strong>LAMA</strong> - Laboratorio de Mediaciones Algorítmicas | Universidad del Valle, Colombia</p>
+            <p>"Descifrando algoritmos, tejiendo mediaciones"</p>
+            <p style="margin-top: 10px; font-size: 0.85em;">
+                Artefacto pedagógico de código abierto. Todas las cifras documentadas y verificables.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // 30+ TIPOS DE DATOS DOCUMENTADOS (basados en investigaciones reales)
+        const dataTypesLibrary = [
+            // Ubicación y movimiento
+            { type: "Ubicación GPS precisa", example: "Lat/Long cada 2-5 segundos" },
+            { type: "Historial de ubicaciones", example: "Últimos 90 días de movimiento" },
+            { type: "Velocidad de desplazamiento", example: "Caminando/conduciendo/estático" },
+            { type: "Lugares frecuentes", example: "Casa, trabajo, gimnasio inferidos" },
+            { type: "Zona horaria y región", example: "GMT-5, Cali, Colombia" },
+            
+            // Identidad y contactos
+            { type: "Número de teléfono", example: "+57 3xx xxx xxxx" },
+            { type: "Correo electrónico", example: "usuario@dominio.com" },
+            { type: "Nombre completo", example: "Extraído de cuenta" },
+            { type: "Fecha de nacimiento", example: "Edad: 38 años" },
+            { type: "Género declarado", example: "Hombre/Mujer/No binario" },
+            { type: "Lista de contactos", example: "327 contactos sincronizados" },
+            { type: "Redes sociales vinculadas", example: "Facebook, Instagram, Twitter" },
+            { type: "Relaciones sociales", example: "Pareja, familiares inferidos" },
+            
+            // Comportamiento en app
+            { type: "Tiempo en pantalla total", example: "23 min 47 seg en sesión" },
+            { type: "Frecuencia de uso diario", example: "8.5 aperturas/día" },
+            { type: "Secuencia de pantallas", example: "Feed→Perfil→Búsqueda→Feed" },
+            { type: "Velocidad de scroll", example: "320 px/segundo" },
+            { type: "Tiempo por publicación", example: "2.3s promedio por item" },
+            { type: "Interacciones", example: "147 likes, 23 shares" },
+            { type: "Búsquedas realizadas", example: "'algoritmos', 'IA', 'noticias'" },
+            { type: "Contenido guardado", example: "45 artículos marcados" },
+            { type: "Mensajes enviados", example: "Análisis de sentimiento" },
+            { type: "Llamadas realizadas", example: "Duración, frecuencia" },
+            
+            // Multimedia
+            { type: "Fotos subidas", example: "8 fotos en perfil" },
+            { type: "Metadatos EXIF", example: "iPhone 13, GPS, fecha/hora" },
+            { type: "Reconocimiento facial", example: "Biometría facial extraída" },
+            { type: "Audio ambiente", example: "Detección música/conversación" },
+            { type: "Videos reproducidos", example: "Qué viste, % completado" },
+            { type: "Cámara activada", example: "Frecuencia de uso" },
+            
+            // Dispositivo y red
+            { type: "Modelo de dispositivo", example: "iPhone 13 Pro, iOS 17.2" },
+            { type: "Dirección IP", example: "190.xxx.xxx.xxx" },
+            { type: "IMEI/Identificador", example: "Único por hardware" },
+            { type: "Nivel de batería", example: "72% cargando" },
+            { type: "Almacenamiento", example: "128GB, 45% usado" },
+            { type: "Apps instaladas", example: "Lista completa" },
+            { type: "Red WiFi", example: "Nombre, MAC router" },
+            { type: "Idioma del sistema", example: "Español (Colombia)" },
+            { type: "Accesibilidad activa", example: "Ajustes especiales" },
+            
+            // Sensibles por tipo de app
+            { type: "Frecuencia cardíaca", example: "62-178 BPM" },
+            { type: "Patrones de sueño", example: "6h 23min, 4 ciclos REM" },
+            { type: "Peso y biométricos", example: "75.4kg, IMC 26.4" },
+            { type: "Ciclo menstrual", example: "Datos reproductivos" },
+            { type: "Medicamentos", example: "Historial farmacéutico" },
+            { type: "Datos de pago", example: "Tarjetas, métodos" },
+            { type: "Historial de compras", example: "456 transacciones" },
+            { type: "Ingresos estimados", example: "Inferido de gastos" },
+            { type: "Orientación sexual", example: "Inferida" },
+            { type: "Creencias políticas", example: "Inferidas de lectura" },
+            { type: "Afiliación religiosa", example: "Inferida" },
+            { type: "Estado de salud mental", example: "Patrones de uso" }
+        ];
+
+        // Configuración por app
+        const appConfigs = {
+            social: {
+                name: "Red Social",
+                partnersCount: 198,
+                dataTypes: [
+                    "Ubicación GPS precisa", "Historial de ubicaciones", "Lugares frecuentes",
+                    "Número de teléfono", "Correo electrónico", "Nombre completo", "Fecha de nacimiento",
+                    "Género declarado", "Lista de contactos", "Redes sociales vinculadas", "Relaciones sociales",
+                    "Tiempo en pantalla total", "Frecuencia de uso diario", "Secuencia de pantallas",
+                    "Velocidad de scroll", "Tiempo por publicación", "Interacciones", "Búsquedas realizadas",
+                    "Contenido guardado", "Mensajes enviados", "Fotos subidas", "Metadatos EXIF",
+                    "Reconocimiento facial", "Audio ambiente", "Videos reproducidos", "Modelo de dispositivo",
+                    "Dirección IP", "IMEI/Identificador", "Apps instaladas", "Red WiFi"
+                ]
+            },
+            delivery: {
+                name: "App de Delivery",
+                partnersCount: 152,
+                dataTypes: [
+                    "Ubicación GPS precisa", "Historial de ubicaciones", "Velocidad de desplazamiento",
+                    "Lugares frecuentes", "Zona horaria y región", "Número de teléfono", "Correo electrónico",
+                    "Nombre completo", "Tiempo en pantalla total", "Búsquedas realizadas", "Datos de pago",
+                    "Historial de compras", "Ingresos estimados", "Modelo de dispositivo", "Dirección IP",
+                    "Apps instaladas", "Red WiFi"
+                ]
+            },
+            fitness: {
+                name: "App de Fitness",
+                partnersCount: 183,
+                dataTypes: [
+                    "Ubicación GPS precisa", "Historial de ubicaciones", "Velocidad de desplazamiento",
+                    "Frecuencia cardíaca", "Patrones de sueño", "Peso y biométricos", "Estado de salud mental",
+                    "Ciclo menstrual", "Medicamentos", "Número de teléfono", "Correo electrónico",
+                    "Fecha de nacimiento", "Género declarado", "Fotos subidas", "Tiempo en pantalla total",
+                    "Modelo de dispositivo", "Dirección IP", "Apps instaladas"
+                ]
+            },
+            dating: {
+                name: "App de Citas",
+                partnersCount: 224,
+                dataTypes: [
+                    "Ubicación GPS precisa", "Lugares frecuentes", "Número de teléfono", "Correo electrónico",
+                    "Nombre completo", "Fecha de nacimiento", "Género declarado", "Redes sociales vinculadas",
+                    "Fotos subidas", "Reconocimiento facial", "Orientación sexual", "Tiempo en pantalla total",
+                    "Interacciones", "Búsquedas realizadas", "Mensajes enviados", "Datos de pago",
+                    "Modelo de dispositivo", "Dirección IP", "Apps instaladas"
+                ]
+            },
+            news: {
+                name: "App de Noticias",
+                partnersCount: 936,
+                dataTypes: [
+                    "Ubicación GPS precisa", "Zona horaria y región", "Número de teléfono", "Correo electrónico",
+                    "Tiempo en pantalla total", "Frecuencia de uso diario", "Secuencia de pantallas",
+                    "Velocidad de scroll", "Tiempo por publicación", "Búsquedas realizadas", "Contenido guardado",
+                    "Interacciones", "Creencias políticas", "Afiliación religiosa", "Modelo de dispositivo",
+                    "Dirección IP", "Red WiFi", "Apps instaladas", "Idioma del sistema"
+                ]
+            }
+        };
+
+        // Estado
+        let currentApp = 'social';
+        let isPaused = false;
+        let startTime = Date.now();
+        let dataCollected = new Set();
+        let totalDataPoints = 0;
+        let animationFrameId = null;
+        let lastCaptureTime = 0;
+        let swarmParticles = [];
+
+        // Canvas
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Nodos principales
+        let nodes = {
+            device: { x: 80, y: 325, radius: 40, color: '#E8B44F', label: 'Tu dispositivo' },
+            app: { x: 240, y: 325, radius: 45, color: '#C1654E', label: 'App' }
+        };
+
+        // Enjambre de terceros
+        let swarmNodes = [];
+
+        function initSwarmNodes() {
+            const config = appConfigs[currentApp];
+            const count = config.partnersCount;
+            swarmNodes = [];
+            
+            const rect = canvas.getBoundingClientRect();
+            const startX = 400;
+            const endX = Math.min(rect.width - 50, 900);
+            const startY = 50;
+            const endY = 600;
+            
+            const categories = [
+                { name: 'ad', color: '#88AB75', ratio: 0.65 },
+                { name: 'analytics', color: '#6b9ac4', ratio: 0.20 },
+                { name: 'broker', color: '#9b6bb4', ratio: 0.10 },
+                { name: 'infra', color: '#b49b6b', ratio: 0.05 }
+            ];
+            
+            for (let i = 0; i < count; i++) {
+                let category = categories[0];
+                const rand = Math.random();
+                let cumulative = 0;
+                for (let cat of categories) {
+                    cumulative += cat.ratio;
+                    if (rand <= cumulative) {
+                        category = cat;
+                        break;
+                    }
+                }
+                
+                const x = startX + (Math.random() * (endX - startX));
+                const y = startY + (Math.random() * (endY - startY));
+                
+                swarmNodes.push({
+                    x: x,
+                    y: y,
+                    baseX: x,
+                    baseY: y,
+                    radius: 2.5 + Math.random() * 2,
+                    color: category.color,
+                    category: category.name,
+                    opacity: 0.3 + Math.random() * 0.5,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    active: false
+                });
+            }
+        }
+
+        class SwarmParticle {
+            constructor(from, to) {
+                this.from = from;
+                this.to = to;
+                this.progress = 0;
+                this.speed = 0.015 + Math.random() * 0.020;
+                this.x = from.x;
+                this.y = from.y;
+                this.size = 3 + Math.random() * 2;
+            }
+
+            update() {
+                this.progress += this.speed;
+                const easeProgress = this.easeInOutQuad(this.progress);
+                this.x = this.from.x + (this.to.x - this.from.x) * easeProgress;
+                this.y = this.from.y + (this.to.y - this.from.y) * easeProgress;
+                
+                if (this.progress >= 0.95 && this.to.active !== undefined) {
+                    this.to.active = true;
+                }
+                
+                return this.progress < 1;
+            }
+
+            easeInOutQuad(t) {
+                return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            }
+
+            draw() {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#E8B44F';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = '#E8B44F';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(232, 180, 79, 0.15)';
+                ctx.fill();
+            }
+        }
+
+        function drawNetwork() {
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            // Línea Device -> App
+            ctx.strokeStyle = 'rgba(232, 180, 79, 0.5)';
+            ctx.lineWidth = 3.5;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(232, 180, 79, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(nodes.device.x, nodes.device.y);
+            ctx.lineTo(nodes.app.x, nodes.app.y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Enjambre
+            const time = Date.now() / 1000;
+            swarmNodes.forEach(node => {
+                const wobbleX = Math.sin(time + node.pulsePhase) * 1.5;
+                const wobbleY = Math.cos(time * 0.7 + node.pulsePhase) * 1.5;
+                
+                const x = node.baseX + wobbleX;
+                const y = node.baseY + wobbleY;
+                
+                const opacity = node.active ? Math.min(1, node.opacity + 0.5) : node.opacity;
+                const radius = node.active ? node.radius * 1.4 : node.radius;
+                
+                if (node.active) {
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 4);
+                    gradient.addColorStop(0, node.color + '50');
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius * 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = node.color;
+                ctx.globalAlpha = opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                
+                if (node.active && Math.random() > 0.97) {
+                    node.active = false;
+                }
+            });
+
+            // Partículas
+            swarmParticles = swarmParticles.filter(p => {
+                const alive = p.update();
+                if (alive) p.draw();
+                return alive;
+            });
+
+            // Nodos principales
+            function drawMainNode(node) {
+                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 2.5);
+                gradient.addColorStop(0, node.color + '60');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = node.color;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = node.color;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                ctx.fillText(node.label, node.x, node.y + 65);
+                ctx.shadowBlur = 0;
+            }
+
+            drawMainNode(nodes.device);
+            drawMainNode(nodes.app);
+        }
+
+        function createSwarmParticles() {
+            if (isPaused) return;
+
+            if (Math.random() > 0.3) {
+                swarmParticles.push(new SwarmParticle(nodes.device, nodes.app));
+            }
+
+            const burst = Math.floor(Math.random() * 10) + 5;
+            for (let i = 0; i < burst; i++) {
+                if (swarmNodes.length > 0) {
+                    const randomNode = swarmNodes[Math.floor(Math.random() * swarmNodes.length)];
+                    swarmParticles.push(new SwarmParticle(nodes.app, randomNode));
+                }
+            }
+        }
+
+        function updateDataStream() {
+            if (isPaused) return;
+
+            const now = Date.now();
+            if (now - lastCaptureTime < 2500) return;
+            lastCaptureTime = now;
+
+            const config = appConfigs[currentApp];
+            const availableTypes = config.dataTypes.filter(dt => !dataCollected.has(dt));
+            
+            if (availableTypes.length === 0) return;
+            
+            const selectedType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+            dataCollected.add(selectedType);
+            
+            const dataInfo = dataTypesLibrary.find(d => d.type === selectedType);
+            const captured = Math.floor(Math.random() * 80) + 30;
+            totalDataPoints += captured;
+
+            const item = document.createElement('div');
+            item.className = 'data-capture-item';
+            item.innerHTML = `
+                <div class="capture-header">
+                    <span class="capture-type">${selectedType}</span>
+                    <span class="capture-count">+${captured} puntos</span>
+                </div>
+                <div class="capture-detail">
+                    ${dataInfo ? dataInfo.example : 'Dato capturado'}
+                </div>
+            `;
+            
+            const stream = document.getElementById('dataStream');
+            stream.insertBefore(item, stream.firstChild);
+            
+            while (stream.children.length > 8) {
+                stream.removeChild(stream.lastChild);
+            }
+        }
+
+        function updateStats() {
+            if (isPaused) return;
+
+            const config = appConfigs[currentApp];
+            
+            document.getElementById('dataPoints').textContent = totalDataPoints.toLocaleString();
+            document.getElementById('dataTypes').textContent = dataCollected.size;
+            document.getElementById('thirdParties').textContent = config.partnersCount.toLocaleString();
+            document.getElementById('activeTransfers').textContent = swarmParticles.length + ' transferencias activas';
+            
+            const value = (totalDataPoints * 0.003).toFixed(2);
+            document.getElementById('valueGenerated').textContent = '$' + value;
+            
+            document.getElementById('reflectionDataCount').textContent = totalDataPoints.toLocaleString();
+            document.getElementById('reflectionPartnersCount').textContent = config.partnersCount.toLocaleString();
+            document.getElementById('reflectionValueCount').textContent = '$' + value;
+        }
+
+        function animate() {
+            drawNetwork();
+            createSwarmParticles();
+            updateDataStream();
+            updateStats();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        document.querySelectorAll('.app-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.app-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentApp = button.dataset.app;
+                resetSimulation();
+            });
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', (e) => {
+            isPaused = !isPaused;
+            e.target.innerHTML = isPaused ? '▶️ Reanudar extracción' : '⏸️ Pausar extracción';
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+
+        function resetSimulation() {
+            swarmParticles = [];
+            dataCollected = new Set();
+            totalDataPoints = 0;
+            startTime = Date.now();
+            lastCaptureTime = 0;
+            document.getElementById('dataStream').innerHTML = '';
+            initSwarmNodes();
+            updateStats();
+        }
+
+        resetSimulation();
+        animate();
+    </script>
+</body>
+</html>

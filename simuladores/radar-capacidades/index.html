@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar de Capacidades Periodísticas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .controls-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            height: 500px;
+        }
+        
+        .dimension-group {
+            margin-bottom: 25px;
+        }
+        
+        .dimension-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .dimension-value {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .dimension-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+        
+        .media-selector {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .media-selector h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .media-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .media-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .media-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .comparison-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .comparison-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .comparison-header h2 {
+            color: #333;
+        }
+        
+        .add-comparison-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .add-comparison-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .analysis-output {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .analysis-output h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .strength-list, .improvement-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .strength-list li, .improvement-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .strength-list li:before {
+            content: "✓";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .improvement-list li:before {
+            content: "→";
+            color: #ff9800;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .export-pdf {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .export-data {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .comparison-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-input-group {
+            margin-bottom: 20px;
+        }
+        
+        .modal-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .modal-input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .modal-dimension-group {
+            margin-bottom: 15px;
+        }
+        
+        .modal-dimension-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .modal-save {
+            background: #667eea;
+            color: white;
+        }
+        
+        .modal-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .saved-comparisons {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .saved-comparisons h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .comparison-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .comparison-item button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .info-badge {
+            background: #ffc107;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-badge:before {
+            content: "ℹ️";
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Radar de Capacidades Periodísticas</h1>
+            <p>Herramienta de diagnóstico para medios nativos digitales regionales</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="controls-panel">
+                <div class="media-selector">
+                    <h3>Medio a evaluar</h3>
+                    <div class="media-input-group">
+                        <input type="text" id="mediaNameInput" class="media-input" placeholder="Nombre del medio">
+                    </div>
+                    <select id="mediaSelect" onchange="loadPreset()">
+                        <option value="custom">-- Cargar ejemplo --</option>
+                        <option value="pacifista">Pacifista (ejemplo)</option>
+                        <option value="voragine">Vorágine (ejemplo)</option>
+                        <option value="silla">La Silla Vacía (ejemplo)</option>
+                        <option value="local">Medio local típico</option>
+                        <option value="universitario">Medio universitario</option>
+                    </select>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>1. Sostenibilidad económica</span>
+                        <span class="dimension-value" id="val1">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim1" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Diversificación de ingresos, estabilidad financiera, modelo de negocio viable</p>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>2. Conexión comunitaria</span>
+                        <span class="dimension-value" id="val2">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim2" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Participación de audiencias, representación local, legitimidad territorial</p>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>3. Innovación tecnológica</span>
+                        <span class="dimension-value" id="val3">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim3" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Uso de nuevas herramientas, formatos multimedia, estrategias digitales</p>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>4. Diversidad de voces</span>
+                        <span class="dimension-value" id="val4">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim4" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Inclusión de perspectivas, representación de minorías, pluralidad</p>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>5. Impacto verificable</span>
+                        <span class="dimension-value" id="val5">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim5" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Cambios documentados, influencia en políticas, transformaciones sociales</p>
+                </div>
+                
+                <div class="dimension-group">
+                    <div class="dimension-label">
+                        <span>6. Colaboración sectorial</span>
+                        <span class="dimension-value" id="val6">3</span>
+                    </div>
+                    <input type="range" class="slider" id="dim6" min="0" max="5" value="3" step="0.5">
+                    <p class="dimension-description">Alianzas con otros medios, trabajo en red, sinergias institucionales</p>
+                </div>
+                
+                <div class="export-section">
+                    <button class="export-btn export-pdf" onclick="exportPDF()">
+                        📄 Exportar PDF
+                    </button>
+                    <button class="export-btn export-data" onclick="exportData()">
+                        📊 Exportar JSON
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="comparison-section">
+            <div class="comparison-header">
+                <h2>Análisis comparativo</h2>
+                <button class="add-comparison-btn" onclick="openComparisonModal()">
+                    + Agregar medio de comparación
+                </button>
+            </div>
+            
+            <div class="saved-comparisons" id="savedComparisons" style="display: none;">
+                <h4>Medios en comparación:</h4>
+                <div id="comparisonsList"></div>
+            </div>
+            
+            <div class="analysis-output">
+                <h3>Análisis automático</h3>
+                <div id="analysisResults">
+                    <p>Ajusta los valores en los controles para ver el análisis del medio.</p>
+                </div>
+            </div>
+            
+            <div class="info-badge">
+                <span>Esta herramienta permite evaluar hasta 6 dimensiones clave de capacidad periodística. Los valores van de 0 (inexistente) a 5 (excelente). Puedes comparar múltiples medios simultáneamente.</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para agregar comparación -->
+    <div id="comparisonModal" class="comparison-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Agregar medio de comparación</h2>
+                <button class="close-modal" onclick="closeComparisonModal()">&times;</button>
+            </div>
+            
+            <div class="modal-input-group">
+                <label>Nombre del medio</label>
+                <input type="text" id="comparisonMediaName" placeholder="Ej: Medio Regional X">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Sostenibilidad económica</span>
+                    <span id="comp-val1">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim1" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(1)">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Conexión comunitaria</span>
+                    <span id="comp-val2">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim2" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(2)">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Innovación tecnológica</span>
+                    <span id="comp-val3">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim3" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(3)">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Diversidad de voces</span>
+                    <span id="comp-val4">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim4" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(4)">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Impacto verificable</span>
+                    <span id="comp-val5">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim5" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(5)">
+            </div>
+            
+            <div class="modal-dimension-group">
+                <div class="modal-dimension-label">
+                    <span>Colaboración sectorial</span>
+                    <span id="comp-val6">3</span>
+                </div>
+                <input type="range" class="slider" id="comp-dim6" min="0" max="5" value="3" step="0.5" oninput="updateCompValue(6)">
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn modal-save" onclick="saveComparison()">Guardar comparación</button>
+                <button class="modal-btn modal-cancel" onclick="closeComparisonModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuración inicial
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        let comparisonDatasets = [];
+        let savedMediaComparisons = [];
+        
+        // Configuración del gráfico
+        const radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: [
+                    'Sostenibilidad económica',
+                    'Conexión comunitaria',
+                    'Innovación tecnológica',
+                    'Diversidad de voces',
+                    'Impacto verificable',
+                    'Colaboración sectorial'
+                ],
+                datasets: [{
+                    label: 'Evaluación actual',
+                    data: [3, 3, 3, 3, 3, 3],
+                    fill: true,
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: 'rgb(102, 126, 234)',
+                    pointBackgroundColor: 'rgb(102, 126, 234)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(102, 126, 234)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                elements: {
+                    line: {
+                        borderWidth: 3
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 5,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 13,
+                                weight: '500'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.r + '/5';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Event listeners para los sliders
+        for (let i = 1; i <= 6; i++) {
+            document.getElementById(`dim${i}`).addEventListener('input', function() {
+                updateChart();
+            });
+        }
+        
+        // Event listener para el nombre del medio
+        document.getElementById('mediaNameInput').addEventListener('input', function() {
+            const mediaName = this.value || 'Evaluación actual';
+            radarChart.data.datasets[0].label = mediaName;
+            radarChart.update();
+        });
+        
+        // Función para actualizar el gráfico
+        function updateChart() {
+            const values = [];
+            for (let i = 1; i <= 6; i++) {
+                const value = parseFloat(document.getElementById(`dim${i}`).value);
+                values.push(value);
+                document.getElementById(`val${i}`).textContent = value;
+            }
+            
+            radarChart.data.datasets[0].data = values;
+            radarChart.update();
+            
+            updateAnalysis(values);
+        }
+        
+        // Función de análisis automático
+        function updateAnalysis(values) {
+            const labels = [
+                'Sostenibilidad económica',
+                'Conexión comunitaria',
+                'Innovación tecnológica',
+                'Diversidad de voces',
+                'Impacto verificable',
+                'Colaboración sectorial'
+            ];
+            
+            const mediaName = document.getElementById('mediaNameInput').value || 'El medio evaluado';
+            const average = values.reduce((a, b) => a + b, 0) / values.length;
+            const strengths = [];
+            const improvements = [];
+            const moderate = [];
+            
+            values.forEach((value, index) => {
+                if (value >= 4) {
+                    strengths.push(labels[index]);
+                } else if (value <= 2) {
+                    improvements.push(labels[index]);
+                } else {
+                    moderate.push(labels[index]);
+                }
+            });
+            
+            let analysisHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>${mediaName} - Promedio general:</strong> ${average.toFixed(1)}/5
+                </div>
+            `;
+            
+            if (strengths.length > 0) {
+                analysisHTML += `
+                    <div style="margin-bottom: 15px;">
+                        <strong>Fortalezas identificadas (≥4.0):</strong>
+                        <ul class="strength-list">
+                            ${strengths.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (moderate.length > 0) {
+                analysisHTML += `
+                    <div style="margin-bottom: 15px;">
+                        <strong>Áreas en desarrollo (2.5-3.5):</strong>
+                        <ul style="list-style: none; padding: 0;">
+                            ${moderate.map(m => `<li style="padding: 5px 0; border-bottom: 1px solid #e0e0e0;">• ${m}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (improvements.length > 0) {
+                analysisHTML += `
+                    <div>
+                        <strong>Áreas de mejora prioritarias (≤2.0):</strong>
+                        <ul class="improvement-list">
+                            ${improvements.map(i => `<li>${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (average >= 4) {
+                analysisHTML += `<p style="color: #4caf50; margin-top: 15px;"><strong>Diagnóstico:</strong> Medio con capacidades consolidadas y maduras</p>`;
+            } else if (average >= 3) {
+                analysisHTML += `<p style="color: #ff9800; margin-top: 15px;"><strong>Diagnóstico:</strong> Medio en proceso de fortalecimiento con oportunidades claras de mejora</p>`;
+            } else {
+                analysisHTML += `<p style="color: #f44336; margin-top: 15px;"><strong>Diagnóstico:</strong> Medio que requiere apoyo integral y estratégico</p>`;
+            }
+            
+            // Recomendaciones específicas
+            analysisHTML += `<div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                <strong>Recomendaciones estratégicas:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">`;
+            
+            if (values[0] <= 2.5) {
+                analysisHTML += `<li>Explorar modelos de sostenibilidad diversificados (membresías, grants, servicios)</li>`;
+            }
+            if (values[1] <= 2.5) {
+                analysisHTML += `<li>Fortalecer canales de participación y retroalimentación con audiencias</li>`;
+            }
+            if (values[2] <= 2.5) {
+                analysisHTML += `<li>Implementar herramientas digitales y formatos innovadores gradualmente</li>`;
+            }
+            if (values[3] <= 2.5) {
+                analysisHTML += `<li>Ampliar fuentes y voces representadas en la cobertura</li>`;
+            }
+            if (values[4] <= 2.5) {
+                analysisHTML += `<li>Desarrollar métricas de impacto y documentar cambios generados</li>`;
+            }
+            if (values[5] <= 2.5) {
+                analysisHTML += `<li>Buscar alianzas estratégicas con otros medios y organizaciones</li>`;
+            }
+            
+            analysisHTML += `</ul></div>`;
+            
+            document.getElementById('analysisResults').innerHTML = analysisHTML;
+        }
+        
+        // Presets de ejemplo
+        function loadPreset() {
+            const preset = document.getElementById('mediaSelect').value;
+            let values = [];
+            let mediaName = '';
+            
+            switch(preset) {
+                case 'pacifista':
+                    values = [3.5, 4, 4.5, 4.5, 4, 3.5];
+                    mediaName = 'Pacifista';
+                    break;
+                case 'voragine':
+                    values = [3, 4.5, 3.5, 4, 3.5, 4];
+                    mediaName = 'Vorágine';
+                    break;
+                case 'silla':
+                    values = [4, 3.5, 4, 4.5, 4.5, 4];
+                    mediaName = 'La Silla Vacía';
+                    break;
+                case 'local':
+                    values = [2, 4.5, 2.5, 3, 2.5, 2];
+                    mediaName = 'Medio Local Típico';
+                    break;
+                case 'universitario':
+                    values = [1.5, 3.5, 3, 3.5, 2, 3];
+                    mediaName = 'Medio Universitario';
+                    break;
+                default:
+                    values = [3, 3, 3, 3, 3, 3];
+                    mediaName = '';
+            }
+            
+            if (mediaName) {
+                document.getElementById('mediaNameInput').value = mediaName;
+                radarChart.data.datasets[0].label = mediaName;
+            }
+            
+            values.forEach((value, index) => {
+                document.getElementById(`dim${index + 1}`).value = value;
+            });
+            
+            updateChart();
+        }
+        
+        // Modal functions
+        function openComparisonModal() {
+            document.getElementById('comparisonModal').style.display = 'block';
+            // Reset values
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`comp-dim${i}`).value = 3;
+                document.getElementById(`comp-val${i}`).textContent = 3;
+            }
+            document.getElementById('comparisonMediaName').value = '';
+        }
+        
+        function closeComparisonModal() {
+            document.getElementById('comparisonModal').style.display = 'none';
+        }
+        
+        function updateCompValue(index) {
+            const value = document.getElementById(`comp-dim${index}`).value;
+            document.getElementById(`comp-val${index}`).textContent = value;
+        }
+        
+        function saveComparison() {
+            const mediaName = document.getElementById('comparisonMediaName').value;
+            if (!mediaName) {
+                alert('Por favor ingrese el nombre del medio');
+                return;
+            }
+            
+            const values = [];
+            for (let i = 1; i <= 6; i++) {
+                values.push(parseFloat(document.getElementById(`comp-dim${i}`).value));
+            }
+            
+            const colors = [
+                { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgb(255, 99, 132)' },
+                { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgb(54, 162, 235)' },
+                { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgb(255, 206, 86)' },
+                { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgb(75, 192, 192)' },
+                { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgb(153, 102, 255)' }
+            ];
+            
+            const colorIndex = comparisonDatasets.length % colors.length;
+            const color = colors[colorIndex];
+            
+            const newDataset = {
+                label: mediaName,
+                data: values,
+                fill: true,
+                backgroundColor: color.bg,
+                borderColor: color.border,
+                pointBackgroundColor: color.border,
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: color.border,
+                borderWidth: 2
+            };
+            
+            comparisonDatasets.push(newDataset);
+            radarChart.data.datasets.push(newDataset);
+            radarChart.update();
+            
+            // Save to list
+            savedMediaComparisons.push({ name: mediaName, values: values });
+            updateComparisonsList();
+            
+            closeComparisonModal();
+        }
+        
+        function updateComparisonsList() {
+            const container = document.getElementById('savedComparisons');
+            const list = document.getElementById('comparisonsList');
+            
+            if (savedMediaComparisons.length > 0) {
+                container.style.display = 'block';
+                list.innerHTML = savedMediaComparisons.map((media, index) => `
+                    <div class="comparison-item">
+                        <span>${media.name} (Promedio: ${(media.values.reduce((a,b) => a+b, 0) / 6).toFixed(1)})</span>
+                        <button onclick="removeComparison(${index})">Eliminar</button>
+                    </div>
+                `).join('');
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
+        function removeComparison(index) {
+            savedMediaComparisons.splice(index, 1);
+            comparisonDatasets.splice(index, 1);
+            radarChart.data.datasets.splice(index + 1, 1); // +1 because first dataset is the main one
+            radarChart.update();
+            updateComparisonsList();
+        }
+        
+        // Export functions
+        function exportData() {
+            const mediaName = document.getElementById('mediaNameInput').value || 'Sin nombre';
+            const values = [];
+            for (let i = 1; i <= 6; i++) {
+                values.push(parseFloat(document.getElementById(`dim${i}`).value));
+            }
+            
+            const data = {
+                fecha: new Date().toLocaleString('es-CO'),
+                medio_principal: {
+                    nombre: mediaName,
+                    dimensiones: {
+                        sostenibilidad_economica: values[0],
+                        conexion_comunitaria: values[1],
+                        innovacion_tecnologica: values[2],
+                        diversidad_voces: values[3],
+                        impacto_verificable: values[4],
+                        colaboracion_sectorial: values[5]
+                    },
+                    promedio: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2)
+                },
+                comparaciones: savedMediaComparisons.map(media => ({
+                    nombre: media.name,
+                    dimensiones: {
+                        sostenibilidad_economica: media.values[0],
+                        conexion_comunitaria: media.values[1],
+                        innovacion_tecnologica: media.values[2],
+                        diversidad_voces: media.values[3],
+                        impacto_verificable: media.values[4],
+                        colaboracion_sectorial: media.values[5]
+                    },
+                    promedio: (media.values.reduce((a, b) => a + b, 0) / 6).toFixed(2)
+                }))
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const fecha = new Date().toISOString().split('T')[0];
+            const exportFileDefaultName = `diagnostico_${mediaName.replace(/\s+/g, '_')}_${fecha}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const mediaName = document.getElementById('mediaNameInput').value || 'Sin nombre';
+            const values = [];
+            const dimensions = [
+                'Sostenibilidad económica',
+                'Conexión comunitaria',
+                'Innovación tecnológica',
+                'Diversidad de voces',
+                'Impacto verificable',
+                'Colaboración sectorial'
+            ];
+            
+            for (let i = 1; i <= 6; i++) {
+                values.push(parseFloat(document.getElementById(`dim${i}`).value));
+            }
+            
+            const average = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+            
+            // Header
+            doc.setFontSize(20);
+            doc.text('Radar de Capacidades Periodísticas', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('Diagnóstico de Medio Digital', 105, 30, { align: 'center' });
+            
+            // Date and media name
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${new Date().toLocaleString('es-CO')}`, 20, 45);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Medio evaluado: ${mediaName}`, 20, 55);
+            
+            // Results
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(12);
+            doc.text('Resultados por dimensión:', 20, 70);
+            
+            let yPosition = 80;
+            dimensions.forEach((dim, index) => {
+                const value = values[index];
+                let color = [0, 0, 0];
+                if (value >= 4) color = [0, 128, 0];
+                else if (value <= 2) color = [255, 0, 0];
+                else color = [255, 140, 0];
+                
+                doc.setTextColor(...color);
+                doc.text(`${dim}: ${value}/5`, 25, yPosition);
+                yPosition += 8;
+            });
+            
+            // Average
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Promedio general: ${average}/5`, 20, yPosition + 10);
+            
+            // Analysis
+            doc.setFont(undefined, 'normal');
+            yPosition += 25;
+            doc.text('Análisis:', 20, yPosition);
+            
+            yPosition += 10;
+            const strengths = values.map((v, i) => v >= 4 ? dimensions[i] : null).filter(Boolean);
+            const weaknesses = values.map((v, i) => v <= 2 ? dimensions[i] : null).filter(Boolean);
+            
+            if (strengths.length > 0) {
+                doc.setFont(undefined, 'bold');
+                doc.text('Fortalezas:', 25, yPosition);
+                doc.setFont(undefined, 'normal');
+                yPosition += 8;
+                strengths.forEach(s => {
+                    doc.text(`• ${s}`, 30, yPosition);
+                    yPosition += 6;
+                });
+            }
+            
+            if (weaknesses.length > 0) {
+                yPosition += 5;
+                doc.setFont(undefined, 'bold');
+                doc.text('Áreas de mejora:', 25, yPosition);
+                doc.setFont(undefined, 'normal');
+                yPosition += 8;
+                weaknesses.forEach(w => {
+                    doc.text(`• ${w}`, 30, yPosition);
+                    yPosition += 6;
+                });
+            }
+            
+            // Comparisons if any
+            if (savedMediaComparisons.length > 0) {
+                yPosition += 10;
+                doc.setFont(undefined, 'bold');
+                doc.text('Medios comparados:', 20, yPosition);
+                doc.setFont(undefined, 'normal');
+                yPosition += 8;
+                savedMediaComparisons.forEach(media => {
+                    const avg = (media.values.reduce((a,b) => a+b, 0) / 6).toFixed(1);
+                    doc.text(`• ${media.name}: Promedio ${avg}/5`, 25, yPosition);
+                    yPosition += 6;
+                });
+            }
+            
+            // Footer
+            doc.setFontSize(8);
+            doc.text('Generado con Radar de Capacidades Periodísticas - Universidad del Valle', 105, 280, { align: 'center' });
+            
+            // Save
+            const fecha = new Date().toISOString().split('T')[0];
+            doc.save(`diagnostico_${mediaName.replace(/\s+/g, '_')}_${fecha}.pdf`);
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('comparisonModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Initialize
+        updateChart();
+    </script>
+</body>
+</html>

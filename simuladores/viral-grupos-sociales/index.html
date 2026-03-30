@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Propagación Viral Diferenciada</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container { display: flex; height: 100vh; }
+        
+        .controls {
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(56, 189, 248, 0.3);
+        }
+        
+        .simulation-area { flex: 1; position: relative; }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: radial-gradient(circle at center, #001122 0%, #000511 100%);
+        }
+        
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #38bdf8;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(56, 189, 248, 0.05) 100%);
+            border-radius: 12px;
+            border-left: 4px solid #38bdf8;
+        }
+        
+        .control-group h3 {
+            color: #38bdf8;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .slider-container { margin: 12px 0; }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #334155 0%, #38bdf8 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #38bdf8, #0ea5e9);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #38bdf8, #0ea5e9);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            color: #38bdf8;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: right;
+            margin-top: 4px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, #38bdf8, #0ea5e9);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .scenario-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .scenario-btn { padding: 10px 6px; font-size: 11px; background: linear-gradient(45deg, #a855f7, #9333ea); }
+        .scenario-btn:hover { background: linear-gradient(45deg, #9333ea, #7e22ce); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+        
+        .stat-box {
+            padding: 12px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        
+        .stat-title { font-size: 10px; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
+        .stat-value { font-size: 18px; font-weight: bold; }
+        
+        .urban { color: #fb923c; }
+        .indigenous { color: #4ade80; }
+        .rural { color: #c084fc; }
+        .speed { color: #38bdf8; }
+        
+        .hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+        
+        .hud-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .hud-item:last-child { margin-bottom: 0; }
+        
+        .hud-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .velocity-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            min-width: 220px;
+        }
+        
+        .velocity-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .velocity-bar {
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        
+        .velocity-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4ade80, #fb923c, #ef4444);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .velocity-text { font-size: 11px; color: #38bdf8; }
+        
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .camera-btn {
+            padding: 10px 14px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-btn:hover, .camera-btn.active {
+            background: rgba(56, 189, 248, 0.3);
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h1>🌍 Control de Propagación</h1>
+            
+            <div class="control-group">
+                <h3>📱 Características del Mensaje</h3>
+                <div class="slider-container">
+                    <label>Credibilidad Percibida</label>
+                    <input type="range" id="credibility" min="0" max="100" value="50">
+                    <div class="value-display" id="credibility-val">50%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Intensidad Emocional</label>
+                    <input type="range" id="emotional" min="0" max="100" value="70">
+                    <div class="value-display" id="emotional-val">70%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Simplicidad del Mensaje</label>
+                    <input type="range" id="complexity" min="0" max="100" value="70">
+                    <div class="value-display" id="complexity-val">70%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Relevancia Cultural</label>
+                    <input type="range" id="cultural" min="0" max="100" value="60">
+                    <div class="value-display" id="cultural-val">60%</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>🌐 Contexto Socio-Digital</h3>
+                <div class="slider-container">
+                    <label>Conectividad de Red</label>
+                    <input type="range" id="connectivity" min="0" max="100" value="60">
+                    <div class="value-display" id="connectivity-val">60%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Confianza Comunitaria</label>
+                    <input type="range" id="trust" min="0" max="100" value="40">
+                    <div class="value-display" id="trust-val">40%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Capacidad de Verificación</label>
+                    <input type="range" id="verification" min="0" max="100" value="20">
+                    <div class="value-display" id="verification-val">20%</div>
+                </div>
+                <div class="slider-container">
+                    <label>Presión Social</label>
+                    <input type="range" id="social-pressure" min="0" max="100" value="50">
+                    <div class="value-display" id="social-pressure-val">50%</div>
+                </div>
+            </div>
+            
+            <button id="btn-start">▶ Iniciar Propagación</button>
+            <button id="btn-pause" disabled>⏸ Pausar</button>
+            <button id="btn-reset">🔄 Reiniciar</button>
+            
+            <div class="scenario-buttons">
+                <button class="scenario-btn" data-scenario="1">📰 Fake News</button>
+                <button class="scenario-btn" data-scenario="2">😱 Pánico</button>
+                <button class="scenario-btn" data-scenario="3">🎭 Rumor</button>
+                <button class="scenario-btn" data-scenario="4">💰 Crisis</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-title">Urbano</div>
+                    <div class="stat-value urban" id="stat-urban">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">Indígena</div>
+                    <div class="stat-value indigenous" id="stat-indigenous">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">Rural</div>
+                    <div class="stat-value rural" id="stat-rural">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">Velocidad</div>
+                    <div class="stat-value speed" id="stat-speed">0.0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="simulation-area">
+            <canvas id="canvas"></canvas>
+            
+            <div class="hud">
+                <div class="hud-item">
+                    <div class="hud-color" style="background: #fb923c;"></div>
+                    <span>Comunidad Urbana</span>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-color" style="background: #4ade80;"></div>
+                    <span>Comunidad Indígena</span>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-color" style="background: #c084fc;"></div>
+                    <span>Comunidad Rural</span>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-color" style="background: #ef4444;"></div>
+                    <span>Información Propagada</span>
+                </div>
+            </div>
+            
+            <div class="velocity-panel">
+                <div class="velocity-label">⚡ Velocidad de Propagación</div>
+                <div class="velocity-bar">
+                    <div class="velocity-fill" id="velocity-bar"></div>
+                </div>
+                <div class="velocity-text" id="velocity-text">0.0 personas/seg</div>
+            </div>
+            
+            <div class="camera-controls">
+                <button class="camera-btn active" data-view="overview">Vista General</button>
+                <button class="camera-btn" data-view="urban">Vista Urbana</button>
+                <button class="camera-btn" data-view="indigenous">Vista Indígena</button>
+                <button class="camera-btn" data-view="rural">Vista Rural</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let isRunning = false;
+        let isPaused = false;
+        let animationId = null;
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let startTime = 0;
+        
+        const communities = {
+            urban: {
+                color: '#fb923c',
+                position: { x: 300, y: 250 },
+                baseSpeed: 0.9,
+                connectivityBonus: 1.8,
+                trustPenalty: 0.2,
+                verificationResistance: 0.1,
+                count: 0,
+                nodes: []
+            },
+            indigenous: {
+                color: '#4ade80',
+                position: { x: 700, y: 250 },
+                baseSpeed: 0.3,
+                connectivityBonus: 0.4,
+                trustPenalty: 0.9,
+                verificationResistance: 0.8,
+                count: 0,
+                nodes: []
+            },
+            rural: {
+                color: '#c084fc',
+                position: { x: 500, y: 500 },
+                baseSpeed: 0.6,
+                connectivityBonus: 0.8,
+                trustPenalty: 0.6,
+                verificationResistance: 0.5,
+                count: 0,
+                nodes: []
+            }
+        };
+        
+        const scenarios = {
+            1: { credibility: 30, emotional: 90, complexity: 80, cultural: 70, connectivity: 70, trust: 20, verification: 15, socialPressure: 85 },
+            2: { credibility: 60, emotional: 95, complexity: 60, cultural: 80, connectivity: 80, trust: 30, verification: 25, socialPressure: 90 },
+            3: { credibility: 70, emotional: 60, complexity: 70, cultural: 95, connectivity: 50, trust: 70, verification: 40, socialPressure: 60 },
+            4: { credibility: 50, emotional: 80, complexity: 40, cultural: 60, connectivity: 60, trust: 25, verification: 20, socialPressure: 75 }
+        };
+        
+        class Node {
+            constructor(x, y, community) {
+                this.x = x;
+                this.y = y;
+                this.community = community;
+                this.infected = false;
+                this.infectionTime = 0;
+                this.radius = 4;
+                this.connections = [];
+                this.spreadProbability = 0;
+                this.lastSpreadTime = 0;
+                this.pulseIntensity = 0;
+                this.originalX = x;
+                this.originalY = y;
+                this.glowSize = 0;
+            }
+            
+            calculateSpreadProbability() {
+                const controls = getControls();
+                const comm = communities[this.community];
+                
+                let prob = comm.baseSpeed;
+                prob += (controls.emotional / 100) * 0.4;
+                prob += (controls.complexity / 100) * 0.3;
+                prob += (controls.cultural / 100) * 0.25;
+                prob += (controls.connectivity / 100) * comm.connectivityBonus * 0.2;
+                prob += (controls.credibility / 100) * 0.2;
+                prob += (controls.socialPressure / 100) * 0.3;
+                prob -= (controls.trust / 100) * comm.trustPenalty * 0.25;
+                prob -= (controls.verification / 100) * comm.verificationResistance * 0.35;
+                
+                this.spreadProbability = Math.max(0, Math.min(1, prob));
+            }
+            
+            update() {
+                if (this.infected) {
+                    this.infectionTime++;
+                    this.pulseIntensity = Math.sin(this.infectionTime * 0.1) * 0.5 + 0.5;
+                    this.glowSize = this.pulseIntensity * 15;
+                    this.x = this.originalX + Math.sin(this.infectionTime * 0.05) * 2;
+                    this.y = this.originalY + Math.cos(this.infectionTime * 0.05) * 2;
+                    
+                    if (Math.random() < 0.05) {
+                        particles.push({
+                            x: this.x, y: this.y,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: (Math.random() - 0.5) * 4,
+                            life: 1.0, maxLife: 1.0,
+                            size: Math.random() * 3 + 1
+                        });
+                    }
+                }
+            }
+            
+            attemptSpread() {
+                const now = Date.now();
+                if (now - this.lastSpreadTime < 200) return;
+                
+                this.connections.forEach(conn => {
+                    const neighbor = conn.target;
+                    if (!neighbor.infected && Math.random() < this.spreadProbability * 0.02) {
+                        neighbor.infected = true;
+                        communities[neighbor.community].count++;
+                        this.lastSpreadTime = now;
+                        updateStats();
+                    }
+                });
+            }
+            
+            draw() {
+                const x = this.x + camera.x;
+                const y = this.y + camera.y;
+                
+                ctx.save();
+                
+                if (this.infected && this.glowSize > 0) {
+                    ctx.globalAlpha = this.pulseIntensity * 0.3;
+                    const grad = ctx.createRadialGradient(x, y, 0, x, y, this.glowSize);
+                    grad.addColorStop(0, '#ef4444');
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, this.glowSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = this.infected ? '#ef4444' : communities[this.community].color;
+                ctx.beginPath();
+                ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (this.infected) {
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = this.spreadProbability * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(x, y, this.radius + 3 + this.pulseIntensity * 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        function generateNetwork() {
+            nodes = [];
+            connections = [];
+            
+            Object.keys(communities).forEach(key => {
+                communities[key].count = 0;
+                communities[key].nodes = [];
+            });
+            
+            Object.entries(communities).forEach(([type, data]) => {
+                for (let i = 0; i < 100; i++) {
+                    const angle = (i / 100) * Math.PI * 2;
+                    const radius = Math.random() * 80 + 20;
+                    const x = data.position.x + Math.cos(angle) * radius + (Math.random() - 0.5) * 40;
+                    const y = data.position.y + Math.sin(angle) * radius + (Math.random() - 0.5) * 40;
+                    
+                    const node = new Node(x, y, type);
+                    nodes.push(node);
+                    data.nodes.push(node);
+                }
+            });
+            
+            nodes.forEach(node => {
+                const count = node.community === 'urban' ? 8 : node.community === 'indigenous' ? 4 : 6;
+                
+                const nearby = nodes.filter(other => {
+                    if (other === node) return false;
+                    const dist = Math.sqrt((node.x - other.x) ** 2 + (node.y - other.y) ** 2);
+                    const same = node.community === other.community;
+                    return dist < (same ? 120 : 200);
+                }).sort((a, b) => {
+                    const dA = Math.sqrt((node.x - a.x) ** 2 + (node.y - a.y) ** 2);
+                    const dB = Math.sqrt((node.x - b.x) ** 2 + (node.y - b.y) ** 2);
+                    return dA - dB;
+                });
+                
+                for (let i = 0; i < Math.min(count, nearby.length); i++) {
+                    const target = nearby[i];
+                    const same = node.community === target.community;
+                    if (Math.random() < (same ? 0.9 : 0.3)) {
+                        const conn = { source: node, target: target };
+                        connections.push(conn);
+                        node.connections.push(conn);
+                    }
+                }
+            });
+        }
+        
+        function getControls() {
+            return {
+                credibility: parseInt(document.getElementById('credibility').value),
+                emotional: parseInt(document.getElementById('emotional').value),
+                complexity: parseInt(document.getElementById('complexity').value),
+                cultural: parseInt(document.getElementById('cultural').value),
+                connectivity: parseInt(document.getElementById('connectivity').value),
+                trust: parseInt(document.getElementById('trust').value),
+                verification: parseInt(document.getElementById('verification').value),
+                socialPressure: parseInt(document.getElementById('social-pressure').value)
+            };
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-urban').textContent = communities.urban.count;
+            document.getElementById('stat-indigenous').textContent = communities.indigenous.count;
+            document.getElementById('stat-rural').textContent = communities.rural.count;
+            
+            const total = communities.urban.count + communities.indigenous.count + communities.rural.count;
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = elapsed > 0 ? (total / elapsed).toFixed(1) : '0.0';
+            
+            document.getElementById('stat-speed').textContent = speed;
+            document.getElementById('velocity-text').textContent = speed + ' personas/seg';
+            
+            const percent = Math.min((parseFloat(speed) / 5) * 100, 100);
+            document.getElementById('velocity-bar').style.width = percent + '%';
+        }
+        
+        function render() {
+            // Fondo con gradiente
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#001122');
+            grad.addColorStop(1, '#000511');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar conexiones
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            connections.forEach(conn => {
+                ctx.beginPath();
+                ctx.moveTo(conn.source.x + camera.x, conn.source.y + camera.y);
+                ctx.lineTo(conn.target.x + camera.x, conn.target.y + camera.y);
+                ctx.stroke();
+            });
+            
+            // Dibujar nodos
+            nodes.forEach(node => node.draw());
+            
+            // Dibujar partículas
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life / p.maxLife;
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(p.x + camera.x, p.y + camera.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+            
+            // Etiquetas de comunidades
+            ctx.save();
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 4;
+            
+            Object.entries(communities).forEach(([type, data]) => {
+                const x = data.position.x + camera.x;
+                const y = data.position.y + camera.y - 110;
+                
+                ctx.fillStyle = data.color;
+                ctx.fillText(type.charAt(0).toUpperCase() + type.slice(1), x, y);
+                
+                ctx.font = '12px Arial';
+                ctx.fillText(data.count + ' infectados', x, y + 18);
+                ctx.font = 'bold 16px Arial';
+            });
+            ctx.restore();
+        }
+        
+        function animate() {
+            if (!isRunning || isPaused) return;
+            
+            nodes.forEach(node => {
+                node.calculateSpreadProbability();
+                node.update();
+                if (node.infected) node.attemptSpread();
+            });
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.016;
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            
+            updateStats();
+        }
+        
+        function renderLoop() {
+            render();
+            requestAnimationFrame(renderLoop);
+        }
+        
+        function animateLoop() {
+            animate();
+            animationId = setTimeout(animateLoop, 16);
+        }
+        
+        function startSimulation() {
+            if (isRunning && !isPaused) return;
+            
+            isRunning = true;
+            isPaused = false;
+            startTime = Date.now();
+            
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-pause').disabled = false;
+            
+            Object.values(communities).forEach(data => {
+                if (data.nodes.length > 0) {
+                    const node = data.nodes[Math.floor(Math.random() * data.nodes.length)];
+                    node.infected = true;
+                    data.count++;
+                }
+            });
+            
+            updateStats();
+            animateLoop();
+        }
+        
+        function pauseSimulation() {
+            isPaused = !isPaused;
+            document.getElementById('btn-pause').textContent = isPaused ? '▶ Reanudar' : '⏸ Pausar';
+            if (!isPaused) animateLoop();
+        }
+        
+        function resetSimulation() {
+            isRunning = false;
+            isPaused = false;
+            if (animationId) clearTimeout(animationId);
+            
+            nodes.forEach(node => {
+                node.infected = false;
+                node.infectionTime = 0;
+                node.x = node.originalX;
+                node.y = node.originalY;
+                node.pulseIntensity = 0;
+                node.glowSize = 0;
+            });
+            
+            Object.keys(communities).forEach(key => communities[key].count = 0);
+            particles = [];
+            
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').textContent = '⏸ Pausar';
+            
+            updateStats();
+        }
+        
+        function applyScenario(num) {
+            const s = scenarios[num];
+            Object.entries(s).forEach(([key, val]) => {
+                const id = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.value = val;
+                    document.getElementById(id + '-val').textContent = val + '%';
+                }
+            });
+        }
+        
+        function setCameraView(view) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const views = {
+                urban: { x: centerX - communities.urban.position.x, y: centerY - communities.urban.position.y, zoom: 1.5 },
+                indigenous: { x: centerX - communities.indigenous.position.x, y: centerY - communities.indigenous.position.y, zoom: 1.5 },
+                rural: { x: centerX - communities.rural.position.x, y: centerY - communities.rural.position.y, zoom: 1.5 },
+                overview: { x: centerX - 400, y: centerY - 300, zoom: 1 }
+            };
+            
+            camera = views[view] || views.overview;
+            
+            document.querySelectorAll('.camera-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('btn-start').addEventListener('click', startSimulation);
+        document.getElementById('btn-pause').addEventListener('click', pauseSimulation);
+        document.getElementById('btn-reset').addEventListener('click', resetSimulation);
+        
+        document.querySelectorAll('.scenario-btn').forEach(btn => {
+            btn.addEventListener('click', () => applyScenario(btn.dataset.scenario));
+        });
+        
+        document.querySelectorAll('.camera-btn').forEach(btn => {
+            btn.addEventListener('click', () => setCameraView(btn.dataset.view));
+        });
+        
+        // Sliders
+        const sliders = ['credibility', 'emotional', 'complexity', 'cultural', 'connectivity', 'trust', 'verification', 'social-pressure'];
+        sliders.forEach(id => {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id + '-val');
+            slider.addEventListener('input', () => {
+                display.textContent = slider.value + '%';
+            });
+        });
+        
+        // Inicialización
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            generateNetwork();
+            camera = { 
+                x: canvas.width / 2 - 400, 
+                y: canvas.height / 2 - 300, 
+                zoom: 1 
+            };
+            renderLoop();
+        });
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            setCameraView('overview');
+        });
+    </script>
+</body>
+</html>

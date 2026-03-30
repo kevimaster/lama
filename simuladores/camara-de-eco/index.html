@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cámara de Eco Interactiva | LAMA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1A2332 0%, #2d3e50 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #C1654E 0%, #E8B44F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 1.1em;
+            color: #88AB75;
+            margin-bottom: 5px;
+        }
+
+        .header .project {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #E8B44F;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-item {
+            margin-bottom: 15px;
+        }
+
+        .control-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #C1654E;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #E8B44F;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #C1654E;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            min-width: 45px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #E8B44F;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #C1654E 0%, #E8B44F 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(193, 101, 78, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(136, 171, 117, 0.3);
+            color: #88AB75;
+            border: 1px solid #88AB75;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(136, 171, 117, 0.5);
+        }
+
+        .visualization-panel {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .metric-card .label {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #C1654E 0%, #E8B44F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .info-box {
+            background: rgba(136, 171, 117, 0.2);
+            border-left: 4px solid #88AB75;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .echo-indicator {
+            position: absolute;
+            background: rgba(193, 101, 78, 0.3);
+            border: 2px solid #C1654E;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .perspective-tag {
+            position: absolute;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+            font-size: 0.75em;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔊 Cámara de Eco Interactiva</h1>
+            <div class="subtitle">Descifrando algoritmos, tejiendo mediaciones</div>
+            <div class="project">LAMA - Laboratorio de Mediaciones Algorítmicas | Universidad del Valle</div>
+        </div>
+
+        <div class="main-grid">
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>⚙️ Configuración de la Red</h3>
+                    
+                    <div class="control-item">
+                        <label>Usuarios en la red</label>
+                        <div class="slider-container">
+                            <input type="range" id="userCount" min="20" max="150" value="60" step="10">
+                            <span class="value-display" id="userCountValue">60</span>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <label>Diversidad de perspectivas</label>
+                        <div class="slider-container">
+                            <input type="range" id="perspectives" min="2" max="8" value="4" step="1">
+                            <span class="value-display" id="perspectivesValue">4</span>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <label>Sesgo algorítmico</label>
+                        <div class="slider-container">
+                            <input type="range" id="algorithmBias" min="0" max="100" value="70" step="5">
+                            <span class="value-display" id="algorithmBiasValue">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>🎯 Comportamiento</h3>
+                    
+                    <div class="control-item">
+                        <label>Sesgo de confirmación</label>
+                        <div class="slider-container">
+                            <input type="range" id="confirmationBias" min="0" max="100" value="75" step="5">
+                            <span class="value-display" id="confirmationBiasValue">75%</span>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <label>Apertura a lo diferente</label>
+                        <div class="slider-container">
+                            <input type="range" id="openness" min="0" max="100" value="20" step="5">
+                            <span class="value-display" id="opennessValue">20%</span>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <label>Velocidad de interacción</label>
+                        <div class="slider-container">
+                            <input type="range" id="speed" min="1" max="10" value="5" step="1">
+                            <span class="value-display" id="speedValue">5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="resetSimulation()">🔄 Reiniciar</button>
+                    <button class="btn-secondary" onclick="toggleSimulation()" id="toggleBtn">⏸ Pausar</button>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Experimenta:</strong> Ajusta los controles para observar cómo se forman y refuerzan las cámaras de eco. Mayor sesgo algorítmico y de confirmación crean burbujas más cerradas.
+                </div>
+            </div>
+
+            <div class="visualization-panel">
+                <canvas id="canvas"></canvas>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF6B6B;"></div>
+                        <span>Perspectiva A</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4ECDC4;"></div>
+                        <span>Perspectiva B</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #45B7D1;"></div>
+                        <span>Perspectiva C</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFA07A;"></div>
+                        <span>Perspectiva D</span>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="label">Cámaras detectadas</div>
+                        <div class="value" id="echoChambers">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">Polarización</div>
+                        <div class="value" id="polarization">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">Diversidad de red</div>
+                        <div class="value" id="diversity">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">Conexiones inter-grupo</div>
+                        <div class="value" id="bridgeConnections">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let animationId;
+        let isRunning = true;
+        let users = [];
+        let connections = [];
+        let time = 0;
+
+        // Colores para diferentes perspectivas
+        const perspectiveColors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
+            '#96CEB4', '#FFEAA7', '#DFE6E9', '#A29BFE'
+        ];
+
+        // Configuración del canvas
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Clase Usuario
+        class User {
+            constructor(x, y, perspective) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.perspective = perspective;
+                this.radius = 8;
+                this.connections = [];
+                this.exposureScore = 0;
+            }
+
+            update(settings) {
+                // Movimiento browniano
+                this.vx += (Math.random() - 0.5) * 0.1;
+                this.vy += (Math.random() - 0.5) * 0.1;
+                
+                // Limitar velocidad
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > settings.speed * 0.5) {
+                    this.vx = (this.vx / speed) * settings.speed * 0.5;
+                    this.vy = (this.vy / speed) * settings.speed * 0.5;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Rebotar en los bordes
+                if (this.x < this.radius || this.x > canvas.width - this.radius) {
+                    this.vx *= -1;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                }
+                if (this.y < this.radius || this.y > canvas.height - this.radius) {
+                    this.vy *= -1;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                }
+
+                // Atracción hacia usuarios similares (efecto cámara de eco)
+                const bias = settings.algorithmBias / 100;
+                users.forEach(other => {
+                    if (other !== this) {
+                        const dx = other.x - this.x;
+                        const dy = other.y - this.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 200 && distance > 0) {
+                            const similarity = this.perspective === other.perspective ? 1 : 0;
+                            const attraction = similarity * bias * 0.01;
+                            const repulsion = (1 - similarity) * settings.confirmationBias / 100 * 0.005;
+                            
+                            this.vx += (dx / distance) * (attraction - repulsion);
+                            this.vy += (dy / distance) * (attraction - repulsion);
+                        }
+                    }
+                });
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = perspectiveColors[this.perspective];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Halo si está en una cámara de eco
+                if (this.connections.length > 3) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = perspectiveColors[this.perspective];
+                    ctx.lineWidth = 1;
+                    ctx.globalAlpha = 0.3;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        // Inicializar simulación
+        function initSimulation() {
+            const settings = getSettings();
+            users = [];
+            connections = [];
+
+            for (let i = 0; i < settings.userCount; i++) {
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
+                const perspective = Math.floor(Math.random() * settings.perspectives);
+                users.push(new User(x, y, perspective));
+            }
+        }
+
+        // Obtener configuración actual
+        function getSettings() {
+            return {
+                userCount: parseInt(document.getElementById('userCount').value),
+                perspectives: parseInt(document.getElementById('perspectives').value),
+                algorithmBias: parseInt(document.getElementById('algorithmBias').value),
+                confirmationBias: parseInt(document.getElementById('confirmationBias').value),
+                openness: parseInt(document.getElementById('openness').value),
+                speed: parseInt(document.getElementById('speed').value)
+            };
+        }
+
+        // Detectar conexiones
+        function detectConnections(settings) {
+            connections = [];
+            users.forEach(user => {
+                user.connections = [];
+            });
+
+            users.forEach((user, i) => {
+                users.slice(i + 1).forEach(other => {
+                    const dx = other.x - user.x;
+                    const dy = other.y - user.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Probabilidad de conexión basada en algoritmo y comportamiento
+                    if (distance < 150) {
+                        const samePerspective = user.perspective === other.perspective;
+                        const biasModifier = settings.algorithmBias / 100;
+                        const opennessModifier = settings.openness / 100;
+                        
+                        let connectionProbability;
+                        if (samePerspective) {
+                            connectionProbability = 0.3 + biasModifier * 0.6;
+                        } else {
+                            connectionProbability = 0.05 + opennessModifier * 0.3;
+                        }
+
+                        if (Math.random() < connectionProbability) {
+                            connections.push({ user1: user, user2: other, samePerspective });
+                            user.connections.push(other);
+                            other.connections.push(user);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Calcular métricas
+        function calculateMetrics(settings) {
+            detectConnections(settings);
+
+            // Detectar cámaras de eco (clusters de usuarios con misma perspectiva muy conectados)
+            const echoChambers = new Set();
+            users.forEach(user => {
+                const samePersp = user.connections.filter(c => c.perspective === user.perspective);
+                if (samePersp.length >= 4) {
+                    echoChambers.add(user.perspective);
+                }
+            });
+
+            // Calcular polarización
+            const totalConnections = connections.length;
+            const samePerpsConnections = connections.filter(c => c.samePerspective).length;
+            const polarization = totalConnections > 0 
+                ? Math.round((samePerpsConnections / totalConnections) * 100) 
+                : 0;
+
+            // Calcular diversidad
+            const perspectiveCounts = new Array(settings.perspectives).fill(0);
+            users.forEach(u => perspectiveCounts[u.perspective]++);
+            const diversity = Math.round(
+                (1 - perspectiveCounts.reduce((sum, c) => sum + Math.pow(c / users.length, 2), 0)) * 100
+            );
+
+            // Conexiones puente
+            const bridgeConnections = connections.filter(c => !c.samePerspective).length;
+
+            // Actualizar UI
+            document.getElementById('echoChambers').textContent = echoChambers.size;
+            document.getElementById('polarization').textContent = polarization + '%';
+            document.getElementById('diversity').textContent = diversity + '%';
+            document.getElementById('bridgeConnections').textContent = bridgeConnections;
+        }
+
+        // Dibujar conexiones
+        function drawConnections() {
+            connections.forEach(conn => {
+                ctx.beginPath();
+                ctx.moveTo(conn.user1.x, conn.user1.y);
+                ctx.lineTo(conn.user2.x, conn.user2.y);
+                
+                if (conn.samePerspective) {
+                    ctx.strokeStyle = 'rgba(193, 101, 78, 0.3)';
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = 'rgba(136, 171, 117, 0.2)';
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+            });
+        }
+
+        // Loop de animación
+        function animate() {
+            if (!isRunning) return;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const settings = getSettings();
+
+            // Actualizar y dibujar
+            users.forEach(user => user.update(settings));
+            
+            drawConnections();
+            users.forEach(user => user.draw());
+
+            // Actualizar métricas cada cierto tiempo
+            time++;
+            if (time % 30 === 0) {
+                calculateMetrics(settings);
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Controles
+        function resetSimulation() {
+            initSimulation();
+            time = 0;
+        }
+
+        function toggleSimulation() {
+            isRunning = !isRunning;
+            const btn = document.getElementById('toggleBtn');
+            btn.textContent = isRunning ? '⏸ Pausar' : '▶️ Reanudar';
+            if (isRunning) animate();
+        }
+
+        // Actualizar displays de valores
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            const valueDisplay = document.getElementById(slider.id + 'Value');
+            slider.addEventListener('input', (e) => {
+                let value = e.target.value;
+                if (slider.id === 'algorithmBias' || slider.id === 'confirmationBias' || 
+                    slider.id === 'openness') {
+                    value += '%';
+                }
+                valueDisplay.textContent = value;
+            });
+        });
+
+        // Event listeners para cambios que requieren reinicio
+        ['userCount', 'perspectives'].forEach(id => {
+            document.getElementById(id).addEventListener('change', resetSimulation);
+        });
+
+        // Iniciar
+        initSimulation();
+        animate();
+    </script>
+</body>
+</html>

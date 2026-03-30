@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Feed - Simulador de Alfabetización Crítica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: #0a0a12;
+            color: #fff;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hidden { display: none !important; }
+
+        /* ===== PANTALLAS ===== */
+        .screen {
+            min-height: 100vh;
+            display: none;
+        }
+        .screen.active { display: block; }
+
+        /* ===== COLD OPEN ===== */
+        #cold-open {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #cold-open.active { display: flex; }
+
+        .cold-text {
+            text-align: center;
+            max-width: 600px;
+        }
+        .cold-text p {
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .cold-text p.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .cold-text p:last-child {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        /* ===== CONTEXT ===== */
+        #context {
+            background: linear-gradient(180deg, #0a0a12 0%, #12121f 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #context.active { display: flex; }
+
+        .context-container {
+            max-width: 500px;
+            width: 100%;
+        }
+        .context-step { display: none; }
+        .context-step.active { display: block; }
+
+        .label-tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        .label-tag.red { color: #ef4444; }
+        .label-tag.blue { color: #3b82f6; }
+        .label-tag.green { color: #22c55e; }
+        .label-tag.gray { color: #888; }
+
+        .context-title {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        .context-desc {
+            color: #888;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .context-desc span { color: #666; }
+
+        .input-field {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #fff;
+            outline: none;
+            margin-bottom: 24px;
+            transition: border-color 0.2s ease;
+        }
+        .input-field:focus {
+            border-color: #ef4444;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Crimson Pro', Georgia, serif;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .btn.red { background: #ef4444; color: #fff; }
+        .btn.blue { background: #3b82f6; color: #fff; }
+        .btn.green { background: #22c55e; color: #fff; }
+        .btn.outline {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: #888;
+        }
+
+        .tendency-options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .tendency-btn {
+            padding: 16px 20px;
+            font-size: 16px;
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #888;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+        .tendency-btn.selected {
+            border-color: var(--color);
+            background: var(--bg);
+            color: var(--color);
+        }
+        .tendency-btn[data-tendency="progresista"] { --color: #8b5cf6; --bg: rgba(139,92,246,0.15); }
+        .tendency-btn[data-tendency="conservador"] { --color: #f97316; --bg: rgba(249,115,22,0.15); }
+        .tendency-btn[data-tendency="neutral"] { --color: #22c55e; --bg: rgba(34,197,94,0.15); }
+
+        .privacy-note {
+            font-size: 13px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        /* ===== SIMULATION ===== */
+        #simulation {
+            background: #0a0a12;
+        }
+
+        .sim-header {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 18, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 12px 16px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sim-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sim-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+        }
+        .sim-header-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .sim-header-info p {
+            font-size: 11px;
+            color: #666;
+        }
+        .sim-header-right {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .sim-timer {
+            font-size: 11px;
+            color: #666;
+            font-family: 'Space Mono', monospace;
+        }
+        .sim-notif {
+            position: relative;
+            font-size: 20px;
+        }
+        .sim-notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 16px;
+            height: 16px;
+            background: #ef4444;
+            border-radius: 50%;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        .sim-notif-badge.hidden { display: none; }
+
+        .sim-subheader {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 10px;
+            color: #555;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .feed-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Feed items */
+        .feed-item {
+            background: rgba(255,255,255,0.02);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+            transition: background 0.2s ease;
+        }
+        .feed-item:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        .feed-item.system {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            cursor: default;
+        }
+        .feed-item.system pre {
+            white-space: pre-wrap;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            color: #ef4444;
+            line-height: 1.8;
+        }
+
+        .feed-new-badge {
+            position: absolute;
+            top: -8px;
+            right: 16px;
+            background: #3b82f6;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .feed-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .feed-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .feed-author {
+            flex: 1;
+            min-width: 0;
+        }
+        .feed-author-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .feed-author-name strong {
+            font-size: 14px;
+        }
+        .feed-verified {
+            background: #3b82f6;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            flex-shrink: 0;
+        }
+        .feed-author-handle {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .feed-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+            margin-bottom: 16px;
+        }
+
+        .feed-engagement {
+            display: flex;
+            gap: 24px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 13px;
+            color: #666;
+        }
+
+        .feed-decision {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+        }
+        .feed-decision.compartir { color: #ef4444; }
+        .feed-decision.reportar { color: #22c55e; }
+        .feed-decision.verificar { color: #3b82f6; }
+        .feed-decision.ignorar { color: #666; }
+
+        .feed-loader {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notificaciones flotantes */
+        .notifications-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .notification {
+            background: rgba(59, 130, 246, 0.95);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            max-width: 280px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Modal de acción */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow: auto;
+        }
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 auto 20px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .modal-desc {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+        .modal-actions {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-action-btn {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Crimson Pro', Georgia, serif;
+            transition: all 0.2s ease;
+        }
+        .modal-action-btn:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .modal-action-btn strong {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .modal-action-btn span {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .modal-spoiler-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: 'Crimson Pro', Georgia, serif;
+        }
+        .modal-analysis {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            display: none;
+        }
+        .modal-analysis.show { display: block; }
+        .modal-analysis h4 {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .modal-analysis ul {
+            margin: 0;
+            padding: 0 0 0 16px;
+            font-size: 12px;
+            color: #a0a0a0;
+            line-height: 1.8;
+        }
+
+        /* Breaking moment */
+        .breaking-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .breaking-overlay.active { display: flex; }
+        .breaking-content {
+            text-align: center;
+        }
+        .breaking-icon {
+            font-size: 48px;
+            margin-bottom: 24px;
+            animation: pulse 1s ease infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .breaking-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .breaking-desc {
+            color: #888;
+            font-size: 18px;
+        }
+
+        /* ===== REVEAL ===== */
+        #reveal {
+            background: linear-gradient(180deg, #0a0a12 0%, #1a0a0a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #reveal.active { display: flex; }
+
+        .reveal-container {
+            max-width: 600px;
+            width: 100%;
+        }
+        .reveal-item {
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        .reveal-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-item h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .reveal-item p {
+            font-size: 18px;
+            color: #d4d4d4;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .reveal-item .detail {
+            font-size: 14px;
+            color: #888;
+        }
+        .reveal-item ul {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0 0 0;
+        }
+        .reveal-item li {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #a0a0a0;
+            border-left: 3px solid #ef4444;
+        }
+
+        /* ===== REFLECTION ===== */
+        #reflection {
+            background: linear-gradient(180deg, #0a0a12 0%, #12121f 100%);
+            padding: 40px 20px;
+        }
+
+        .reflection-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .reflection-title {
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+        .learning-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .learning-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .learning-card .icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        .learning-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .learning-card p {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.7;
+        }
+
+        /* ===== RESULTS ===== */
+        #results {
+            background: linear-gradient(180deg, #0a0a12 0%, #12121f 100%);
+            padding: 40px 20px;
+        }
+
+        .results-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .results-name {
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .results-level {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .results-desc {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .results-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .results-stat {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 24px 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .results-stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            margin-bottom: 8px;
+        }
+        .results-stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .results-algorithm {
+            background: rgba(255,255,255,0.02);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 40px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .results-algorithm h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .metric-row {
+            margin-bottom: 12px;
+        }
+        .metric-row .metric-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #888;
+        }
+        .metric-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .results-tip {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .results-tip h4 {
+            font-size: 16px;
+            color: #3b82f6;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .results-tip p {
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- COLD OPEN -->
+    <div id="cold-open" class="screen active">
+        <div class="cold-text">
+            <p>Es día de elecciones.</p>
+            <p>Abres tu red social favorita.</p>
+            <p>Solo quieres ver qué está pasando.</p>
+            <p>Pero el algoritmo ya sabe qué mostrarte.</p>
+            <p>Y tú no lo sabes.</p>
+        </div>
+    </div>
+
+    <!-- CONTEXT -->
+    <div id="context" class="screen">
+        <div class="context-container">
+            <!-- Step 1: Nombre -->
+            <div id="context-step1" class="context-step active">
+                <div class="label-tag red">CONFIGURACIÓN</div>
+                <h2 class="context-title">¿Cómo te llamas?</h2>
+                <p class="context-desc">El simulador personalizará la experiencia.</p>
+                <input type="text" id="nombre-input" class="input-field" placeholder="Tu nombre o apodo">
+                <button id="btn-step1" class="btn red" disabled>Continuar</button>
+            </div>
+            <!-- Step 2: Tendencia -->
+            <div id="context-step2" class="context-step">
+                <div class="label-tag blue">CONTEXTO NARRATIVO</div>
+                <h2 class="context-title" id="context-greeting"></h2>
+                <p class="context-desc">
+                    Abres tu red social para ver qué está pasando. 
+                    Para que el simulador funcione, necesitamos saber tu inclinación política
+                    <span>(esto solo afecta qué contenido verás)</span>
+                </p>
+                <div class="tendency-options">
+                    <button class="tendency-btn" data-tendency="progresista">Progresista / Izquierda</button>
+                    <button class="tendency-btn" data-tendency="conservador">Conservador / Derecha</button>
+                    <button class="tendency-btn" data-tendency="neutral">Independiente / Centro</button>
+                </div>
+                <p class="privacy-note">🔒 Esta información no se guarda y solo se usa para el simulador.</p>
+                <button id="btn-step2" class="btn blue" disabled>Comenzar simulación →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMULATION -->
+    <div id="simulation" class="screen">
+        <div class="sim-header">
+            <div class="sim-header-left">
+                <div class="sim-avatar" id="sim-avatar">?</div>
+                <div class="sim-header-info">
+                    <h3>Inicio</h3>
+                    <p>🌅 Día electoral</p>
+                </div>
+            </div>
+            <div class="sim-header-right">
+                <div class="sim-timer" id="sim-timer">0:00</div>
+                <div class="sim-notif">
+                    🔔
+                    <span class="sim-notif-badge hidden" id="notif-badge">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="sim-subheader">
+            📊 Personalizado para ti &nbsp;|&nbsp; 🔄 Actualizado hace 2 min
+        </div>
+        <div class="feed-container" id="feed-container">
+            <!-- Feed items se insertan aquí -->
+        </div>
+        <div class="feed-loader" id="feed-loader">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Notificaciones -->
+        <div class="notifications-container" id="notifications-container"></div>
+
+        <!-- Modal -->
+        <div class="modal-overlay" id="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-handle"></div>
+                <h3 class="modal-title">¿Qué quieres hacer con esta publicación?</h3>
+                <p class="modal-desc">Tu decisión afectará lo que ves y lo que otros ven.</p>
+                <div class="modal-actions">
+                    <button class="modal-action-btn" data-action="compartir">
+                        <strong>🔄 Compartir</strong>
+                        <span>Tus seguidores lo verán</span>
+                    </button>
+                    <button class="modal-action-btn" data-action="ignorar">
+                        <strong>👁️ Pasar de largo</strong>
+                        <span>No interactuar</span>
+                    </button>
+                    <button class="modal-action-btn" data-action="reportar">
+                        <strong>🚩 Reportar</strong>
+                        <span>Marcar como problemático</span>
+                    </button>
+                    <button class="modal-action-btn" data-action="verificar">
+                        <strong>🔍 Verificar primero</strong>
+                        <span>Buscar más información</span>
+                    </button>
+                </div>
+                <button class="modal-spoiler-btn" id="spoiler-btn">▶ Ver análisis previo (spoiler)</button>
+                <div class="modal-analysis" id="modal-analysis">
+                    <h4>⚠️ Elementos detectados:</h4>
+                    <ul id="analysis-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breaking moment -->
+        <div class="breaking-overlay" id="breaking-overlay">
+            <div class="breaking-content">
+                <div class="breaking-icon">⚠️</div>
+                <h2 class="breaking-title">MOMENTO DE PAUSA</h2>
+                <p class="breaking-desc">Algo importante necesita tu atención...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVEAL -->
+    <div id="reveal" class="screen">
+        <div class="reveal-container" id="reveal-container">
+            <!-- Revelaciones se insertan aquí -->
+        </div>
+    </div>
+
+    <!-- REFLECTION -->
+    <div id="reflection" class="screen">
+        <div class="reflection-container">
+            <div class="label-tag green">APRENDIZAJE</div>
+            <h2 class="reflection-title" id="reflection-title"></h2>
+            <div class="learning-grid">
+                <div class="learning-card">
+                    <div class="icon">🎯</div>
+                    <h3>Discurso de odio vs. Crítica legítima</h3>
+                    <p>El discurso de odio deshumaniza, amenaza y divide. La crítica legítima presenta argumentos verificables y reconoce matices.</p>
+                </div>
+                <div class="learning-card">
+                    <div class="icon">🔍</div>
+                    <h3>Señales de desinformación</h3>
+                    <p>Urgencia artificial, fuentes anónimas, documentos "filtrados", narrativas de censura. Si ves estas señales, detente.</p>
+                </div>
+                <div class="learning-card">
+                    <div class="icon">🧠</div>
+                    <h3>Manipulación emocional</h3>
+                    <p>Si un contenido te hace sentir indignación o rabia instantánea, probablemente fue diseñado para eso.</p>
+                </div>
+                <div class="learning-card">
+                    <div class="icon">🫧</div>
+                    <h3>Burbujas informativas</h3>
+                    <p>El algoritmo te muestra más de lo que ya crees. Diversificar fuentes es la única forma de salir.</p>
+                </div>
+                <div class="learning-card">
+                    <div class="icon">📡</div>
+                    <h3>Amplificación algorítmica</h3>
+                    <p>Cuando compartes, no solo llega a tus seguidores. El contenido emocional se amplifica exponencialmente.</p>
+                </div>
+                <div class="learning-card">
+                    <div class="icon">🛡️</div>
+                    <h3>Estrategias de defensa</h3>
+                    <p>Pausa antes de reaccionar. Verifica en múltiples fuentes. Reporta contenido de odio.</p>
+                </div>
+            </div>
+            <button class="btn green" id="btn-reflection">Ver mi perfil final →</button>
+        </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results" class="screen">
+        <div class="results-container">
+            <div class="label-tag gray">SIMULACIÓN COMPLETADA</div>
+            <h2 class="results-name" id="results-name"></h2>
+            <div class="results-level" id="results-level"></div>
+            <p class="results-desc" id="results-desc"></p>
+
+            <div class="results-stats">
+                <div class="results-stat">
+                    <div class="results-stat-value" id="stat-aciertos" style="color: #22c55e;">0%</div>
+                    <div class="results-stat-label">Aciertos</div>
+                </div>
+                <div class="results-stat">
+                    <div class="results-stat-value" id="stat-compartidos">0</div>
+                    <div class="results-stat-label">Compartidos</div>
+                </div>
+                <div class="results-stat">
+                    <div class="results-stat-value" id="stat-verificados" style="color: #3b82f6;">0</div>
+                    <div class="results-stat-label">Verificaciones</div>
+                </div>
+                <div class="results-stat">
+                    <div class="results-stat-value" id="stat-reportados" style="color: #8b5cf6;">0</div>
+                    <div class="results-stat-label">Reportes</div>
+                </div>
+            </div>
+
+            <div class="results-algorithm">
+                <h3>🤖 Lo que el algoritmo aprendió de ti</h3>
+                <div class="metric-row">
+                    <div class="metric-header">
+                        <span>Burbuja informativa</span>
+                        <span id="metric-burbuja-val">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" id="metric-burbuja" style="width: 0%; background: #22c55e;"></div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-header">
+                        <span>Exposición a odio</span>
+                        <span id="metric-odio-val">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" id="metric-odio" style="width: 0%; background: #22c55e;"></div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-header">
+                        <span>Diversidad de feed</span>
+                        <span id="metric-diversidad-val">100%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" id="metric-diversidad" style="width: 100%; background: #22c55e;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-tip">
+                <h4>💡 Tu próximo paso</h4>
+                <p>La próxima vez que abras tu red social, recuerda: cada scroll es una decisión. Cada compartida tiene consecuencias.</p>
+            </div>
+
+            <button class="btn outline" id="btn-restart">Reiniciar experiencia</button>
+        </div>
+    </div>
+
+<script>
+// ============================================
+// EL FEED - SIMULADOR V3.0 (HTML/JS PURO)
+// ============================================
+
+(function() {
+    'use strict';
+
+    // Estado global
+    const state = {
+        nombre: '',
+        tendencia: null,
+        elapsedTime: 0,
+        currentFeedIndex: 0,
+        decisions: [],
+        compartidos: 0,
+        reportados: 0,
+        ignorados: 0,
+        verificados: 0,
+        vulnerabilidades: [],
+        algorithm: {
+            burbuja: 0,
+            exposicionOdio: 0,
+            diversidad: 100
+        },
+        selectedItem: null,
+        timerInterval: null,
+        feedInterval: null
+    };
+
+    // Base de datos de contenido
+    const feedData = [
+        {
+            id: 'n1',
+            autor: { nombre: 'Marta Restrepo', handle: '@martarestrepo', avatar: '👩‍🏫', verificado: true },
+            contenido: 'Hoy es un día importante para la democracia. Independientemente de por quién votes, lo valioso es participar. Recuerden verificar su puesto de votación. 🗳️',
+            engagement: { likes: 1243, compartidos: 89, comentarios: 45 },
+            tiempo: 'hace 2h',
+            categoria: 'neutral',
+            riesgo: 0,
+            elementos: []
+        },
+        {
+            id: 'n2',
+            autor: { nombre: 'Observatorio Electoral', handle: '@obs_electoral', avatar: '📊', verificado: true },
+            contenido: 'Datos actualizados: La participación hasta las 10am es del 23%, similar al mismo horario en elecciones anteriores. Seguiremos informando con datos verificados.',
+            engagement: { likes: 567, compartidos: 234, comentarios: 23 },
+            tiempo: 'hace 45min',
+            categoria: 'informativo',
+            riesgo: 0,
+            elementos: []
+        },
+        {
+            id: 'd1',
+            autor: { nombre: 'Periodismo Ciudadano', handle: '@periodicociudadano', avatar: '📰', verificado: false },
+            contenido: 'ATENCIÓN: Reportes no confirmados de irregularidades en mesas del sur de la ciudad. Estamos verificando. Compartan para que llegue a los jurados.',
+            engagement: { likes: 4521, compartidos: 2341, comentarios: 567 },
+            tiempo: 'hace 30min',
+            categoria: 'desinformacion_sutil',
+            riesgo: 40,
+            elementos: ['Uso de "no confirmados" como cobertura', 'Llamado a compartir antes de verificar', 'Vaguedad estratégica ("el sur")'],
+            tactica: 'Siembra de duda preventiva'
+        },
+        {
+            id: 'n3',
+            autor: { nombre: 'Centro Comunitario Valle', handle: '@ccvalle', avatar: '🏠', verificado: false },
+            contenido: 'Recordatorio: después de votar pueden pasar por nuestro bazar comunitario. Hay empanadas y café para todos. La democracia también se celebra en comunidad ☕',
+            engagement: { likes: 892, compartidos: 156, comentarios: 67 },
+            tiempo: 'hace 1h',
+            categoria: 'neutral',
+            riesgo: 0,
+            elementos: []
+        },
+        {
+            id: 'm1',
+            autor: { nombre: 'Ana María', handle: '@anamaria_madre', avatar: '👩', verificado: false },
+            contenido: 'Acabo de salir de votar con lágrimas en los ojos. Voté pensando en mis hijos, en su futuro. Si gana [Candidato X], no sé qué va a ser de ellos. Tengo miedo. 😢',
+            engagement: { likes: 15600, compartidos: 7800, comentarios: 2300 },
+            tiempo: 'hace 50min',
+            categoria: 'manipulacion_emocional',
+            riesgo: 55,
+            elementos: ['Apelación a maternidad', 'Miedo por el futuro', 'Catastrofismo sin datos'],
+            tactica: 'Activación de instinto protector'
+        },
+        {
+            id: 'l1',
+            autor: { nombre: 'Dr. Carlos Mejía', handle: '@carlosmejia_pol', avatar: '🎓', verificado: true },
+            contenido: 'Análisis del comportamiento electoral hasta ahora: La participación urbana supera a la rural en 12 puntos. Esto podría favorecer a [Candidato Y] según modelos históricos. Datos del Registrador: [link]',
+            engagement: { likes: 2300, compartidos: 890, comentarios: 234 },
+            tiempo: 'hace 1h',
+            categoria: 'analisis_legitimo',
+            riesgo: 0,
+            elementos: ['Fuente citada', 'Datos verificables', 'Lenguaje técnico', 'Link a fuente primaria']
+        },
+        {
+            id: 'o1',
+            autor: { nombre: 'Ciudadano Indignado', handle: '@ciudadanoreal99', avatar: '😤', verificado: false },
+            contenido: 'Es increíble que haya gente que todavía vote por [Candidato X]. ¿De verdad no ven lo que está pasando? A veces pienso que no merecemos democracia.',
+            engagement: { likes: 3400, compartidos: 890, comentarios: 456 },
+            tiempo: 'hace 1h',
+            categoria: 'polarizante_leve',
+            riesgo: 30,
+            elementos: ['Frustración generalizada', 'Cuestionamiento del otro', 'No deshumanizante aún'],
+            tactica: 'Polarización inicial'
+        },
+        {
+            id: 'd2',
+            autor: { nombre: 'Alerta Nacional', handle: '@alertanacional24', avatar: '🚨', verificado: false },
+            contenido: '🚨URGENTE🚨 Fuentes cercanas al proceso electoral confirman que se han detectado "inconsistencias" en el software de conteo. Los técnicos están "preocupados". RT MASIVO.',
+            engagement: { likes: 23400, compartidos: 15600, comentarios: 3400 },
+            tiempo: 'hace 20min',
+            categoria: 'desinformacion',
+            riesgo: 70,
+            elementos: ['Urgencia artificial', 'Fuentes anónimas', 'Comillas para simular citas', 'Llamado a viralización'],
+            tactica: 'Narrativa de fraude preventivo'
+        },
+        {
+            id: 'o2',
+            autor: { nombre: 'Patria Primero', handle: '@patriaprimero_', avatar: '🇨🇴', verificado: false },
+            contenido: 'Los que votan por [Partido Y] son ENEMIGOS del pueblo. No son compatriotas, son vendidos. Hay que recordar sus caras para cuando llegue el momento.',
+            engagement: { likes: 12300, compartidos: 5600, comentarios: 2300 },
+            tiempo: 'hace 40min',
+            categoria: 'discurso_odio',
+            riesgo: 85,
+            elementos: ['Deshumanización', 'Etiquetado de "enemigos"', 'Amenaza implícita', 'Lenguaje de purga'],
+            tactica: 'Deshumanización política'
+        },
+        {
+            id: 'm2',
+            autor: { nombre: 'Veterano de Guerra', handle: '@veterano_honored', avatar: '🎖️', verificado: false },
+            contenido: 'Luché por este país hace 30 años. Perdí compañeros. ¿Para esto? ¿Para que ahora voten por quienes quieren destruir todo? Mi sacrificio no valió nada. Perdón, Colombia.',
+            engagement: { likes: 34000, compartidos: 18000, comentarios: 5600 },
+            tiempo: 'hace 35min',
+            categoria: 'manipulacion_emocional',
+            riesgo: 70,
+            elementos: ['Autoridad moral del sacrificio', 'Culpabilización colectiva', 'Narrativa de traición'],
+            tactica: 'Weaponización de la nostalgia'
+        },
+        {
+            id: 'l2',
+            autor: { nombre: 'Veeduría Electoral', handle: '@veeduria_elect', avatar: '⚖️', verificado: true },
+            contenido: 'Aclaración importante: Los reportes de "irregularidades" que circulan no han sido verificados por ningún organismo oficial. Invitamos a reportar incidentes reales a nuestra línea. No compartan información sin confirmar.',
+            engagement: { likes: 890, compartidos: 456, comentarios: 123 },
+            tiempo: 'hace 25min',
+            categoria: 'verificacion',
+            riesgo: 0,
+            elementos: ['Desmentido oficial', 'Llamado a verificar', 'Canal oficial de reporte']
+        },
+        {
+            id: 'd3',
+            autor: { nombre: 'La Verdad Oculta', handle: '@verdadoculta_oficial', avatar: '👁️', verificado: false },
+            contenido: 'HILO IMPORTANTE 🧵 Lo que los medios NO te van a contar sobre lo que está pasando hoy. Tengo documentos EXCLUSIVOS que prueban TODO. Lean antes de que me censuren (1/15)',
+            engagement: { likes: 45000, compartidos: 28000, comentarios: 8900 },
+            tiempo: 'hace 15min',
+            categoria: 'desinformacion_grave',
+            riesgo: 90,
+            elementos: ['Narrativa de censura', 'Documentos "exclusivos"', 'Conspiración mediática', 'Hilo para retención'],
+            tactica: 'Teoría conspirativa completa'
+        },
+        {
+            id: 'o3',
+            autor: { nombre: 'Comando Patriota', handle: '@comandopatr10ta', avatar: '⚔️', verificado: false },
+            contenido: 'Ya tenemos identificados a los principales promotores de [Partido Y] en cada barrio. La lista está lista. Después de hoy, van a conocer la justicia del pueblo. 🔥',
+            engagement: { likes: 8900, compartidos: 4500, comentarios: 1200 },
+            tiempo: 'hace 25min',
+            categoria: 'incitacion_violencia',
+            riesgo: 100,
+            elementos: ['Amenaza explícita', 'Listas de personas', 'Incitación a violencia', 'Lenguaje paramilitar'],
+            tactica: 'Incitación directa'
+        },
+        {
+            id: 't1',
+            tipo: 'sistema',
+            contenido: '⚠️ PAUSA DEL SIMULADOR ⚠️\n\nLo que acabas de ver no fue aleatorio.\n\nEl algoritmo detectó tus preferencias y te mostró contenido diseñado para activar tus sesgos específicos.\n\n¿Notaste cómo algunos posts te generaron más reacción que otros?\n\nVeamos qué pasó realmente...',
+            categoria: 'revelacion'
+        }
+    ];
+
+    // Elementos DOM
+    const screens = {
+        coldOpen: document.getElementById('cold-open'),
+        context: document.getElementById('context'),
+        simulation: document.getElementById('simulation'),
+        reveal: document.getElementById('reveal'),
+        reflection: document.getElementById('reflection'),
+        results: document.getElementById('results')
+    };
+
+    const els = {
+        coldTexts: document.querySelectorAll('.cold-text p'),
+        nombreInput: document.getElementById('nombre-input'),
+        btnStep1: document.getElementById('btn-step1'),
+        contextStep1: document.getElementById('context-step1'),
+        contextStep2: document.getElementById('context-step2'),
+        contextGreeting: document.getElementById('context-greeting'),
+        tendencyBtns: document.querySelectorAll('.tendency-btn'),
+        btnStep2: document.getElementById('btn-step2'),
+        simAvatar: document.getElementById('sim-avatar'),
+        simTimer: document.getElementById('sim-timer'),
+        notifBadge: document.getElementById('notif-badge'),
+        feedContainer: document.getElementById('feed-container'),
+        feedLoader: document.getElementById('feed-loader'),
+        notificationsContainer: document.getElementById('notifications-container'),
+        modalOverlay: document.getElementById('modal-overlay'),
+        modalActionBtns: document.querySelectorAll('.modal-action-btn'),
+        spoilerBtn: document.getElementById('spoiler-btn'),
+        modalAnalysis: document.getElementById('modal-analysis'),
+        analysisList: document.getElementById('analysis-list'),
+        breakingOverlay: document.getElementById('breaking-overlay'),
+        revealContainer: document.getElementById('reveal-container'),
+        reflectionTitle: document.getElementById('reflection-title'),
+        btnReflection: document.getElementById('btn-reflection'),
+        resultsName: document.getElementById('results-name'),
+        resultsLevel: document.getElementById('results-level'),
+        resultsDesc: document.getElementById('results-desc'),
+        statAciertos: document.getElementById('stat-aciertos'),
+        statCompartidos: document.getElementById('stat-compartidos'),
+        statVerificados: document.getElementById('stat-verificados'),
+        statReportados: document.getElementById('stat-reportados'),
+        metricBurbuja: document.getElementById('metric-burbuja'),
+        metricBurbujaVal: document.getElementById('metric-burbuja-val'),
+        metricOdio: document.getElementById('metric-odio'),
+        metricOdioVal: document.getElementById('metric-odio-val'),
+        metricDiversidad: document.getElementById('metric-diversidad'),
+        metricDiversidadVal: document.getElementById('metric-diversidad-val'),
+        btnRestart: document.getElementById('btn-restart')
+    };
+
+    // Utilidades
+    function showScreen(screenId) {
+        Object.values(screens).forEach(s => s.classList.remove('active'));
+        screens[screenId].classList.add('active');
+    }
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Cold Open
+    function initColdOpen() {
+        let index = 0;
+        const texts = els.coldTexts;
+        
+        function showNext() {
+            if (index < texts.length) {
+                texts[index].classList.add('visible');
+                index++;
+                if (index < texts.length) {
+                    setTimeout(showNext, 2500);
+                } else {
+                    setTimeout(() => showScreen('context'), 2000);
+                }
+            }
+        }
+        
+        setTimeout(showNext, 500);
+    }
+
+    // Context
+    function initContext() {
+        els.nombreInput.addEventListener('input', function() {
+            els.btnStep1.disabled = !this.value.trim();
+        });
+
+        els.btnStep1.addEventListener('click', function() {
+            state.nombre = els.nombreInput.value.trim();
+            els.contextStep1.classList.remove('active');
+            els.contextStep2.classList.add('active');
+            els.contextGreeting.textContent = `${state.nombre}, imagina que hoy hay elecciones en tu país.`;
+        });
+
+        els.tendencyBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                els.tendencyBtns.forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                state.tendencia = this.dataset.tendency;
+                els.btnStep2.disabled = false;
+            });
+        });
+
+        els.btnStep2.addEventListener('click', function() {
+            showScreen('simulation');
+            initSimulation();
+        });
+    }
+
+    // Simulation
+    function initSimulation() {
+        els.simAvatar.textContent = state.nombre.charAt(0).toUpperCase();
+        state.currentFeedIndex = 0;
+        state.elapsedTime = 0;
+
+        // Timer
+        state.timerInterval = setInterval(() => {
+            state.elapsedTime++;
+            els.simTimer.textContent = formatTime(state.elapsedTime);
+        }, 1000);
+
+        // Cargar primer item inmediatamente
+        addFeedItem();
+
+        // Cargar items adicionales cada 4 segundos
+        state.feedInterval = setInterval(() => {
+            if (state.currentFeedIndex < feedData.length) {
+                addFeedItem();
+            } else {
+                clearInterval(state.feedInterval);
+                els.feedLoader.classList.add('hidden');
+            }
+        }, 4000);
+    }
+
+    function addFeedItem() {
+        if (state.currentFeedIndex >= feedData.length) return;
+
+        const item = feedData[state.currentFeedIndex];
+        const isLast = state.currentFeedIndex === feedData.length - 1 || 
+                       (state.currentFeedIndex > 0 && !feedData[state.currentFeedIndex - 1].decision);
+        
+        // Verificar si es el twist
+        if (item.categoria === 'revelacion') {
+            els.feedLoader.classList.add('hidden');
+            clearInterval(state.feedInterval);
+            
+            // Mostrar breaking moment
+            els.breakingOverlay.classList.add('active');
+            setTimeout(() => {
+                els.breakingOverlay.classList.remove('active');
+                showScreen('reveal');
+                initReveal();
+            }, 3000);
+            return;
+        }
+
+        const feedItem = createFeedItemElement(item, isLast);
+        els.feedContainer.appendChild(feedItem);
+        
+        // Quitar badge "NUEVO" del item anterior
+        const prevNew = els.feedContainer.querySelector('.feed-new-badge:not(:last-child)');
+        if (prevNew && prevNew.parentElement !== feedItem) {
+            prevNew.remove();
+        }
+
+        state.currentFeedIndex++;
+    }
+
+    function createFeedItemElement(item, showNewBadge) {
+        const div = document.createElement('div');
+        div.className = 'feed-item' + (item.tipo === 'sistema' ? ' system' : '');
+        div.dataset.id = item.id;
+
+        if (item.tipo === 'sistema') {
+            div.innerHTML = `<pre>${item.contenido}</pre>`;
+            return div;
+        }
+
+        const newBadge = showNewBadge ? '<div class="feed-new-badge">NUEVO</div>' : '';
+        const verified = item.autor.verificado ? '<span class="feed-verified">✓</span>' : '';
+
+        div.innerHTML = `
+            ${newBadge}
+            <div class="feed-header">
+                <div class="feed-avatar">${item.autor.avatar}</div>
+                <div class="feed-author">
+                    <div class="feed-author-name">
+                        <strong>${item.autor.nombre}</strong>
+                        ${verified}
+                    </div>
+                    <div class="feed-author-handle">${item.autor.handle} · ${item.tiempo}</div>
+                </div>
+            </div>
+            <div class="feed-content">${item.contenido}</div>
+            <div class="feed-engagement">
+                <span>❤️ ${item.engagement.likes.toLocaleString()}</span>
+                <span>🔄 ${item.engagement.compartidos.toLocaleString()}</span>
+                <span>💬 ${item.engagement.comentarios.toLocaleString()}</span>
+            </div>
+        `;
+
+        div.addEventListener('click', () => openModal(item));
+
+        return div;
+    }
+
+    function openModal(item) {
+        state.selectedItem = item;
+        els.modalAnalysis.classList.remove('show');
+        els.spoilerBtn.textContent = '▶ Ver análisis previo (spoiler)';
+        
+        // Llenar análisis
+        els.analysisList.innerHTML = '';
+        if (item.elementos && item.elementos.length > 0) {
+            item.elementos.forEach(el => {
+                const li = document.createElement('li');
+                li.textContent = el;
+                els.analysisList.appendChild(li);
+            });
+            els.spoilerBtn.classList.remove('hidden');
+        } else {
+            els.spoilerBtn.classList.add('hidden');
+        }
+
+        els.modalOverlay.classList.add('active');
+    }
+
+    function closeModal() {
+        els.modalOverlay.classList.remove('active');
+        state.selectedItem = null;
+    }
+
+    function handleDecision(action) {
+        const item = state.selectedItem;
+        if (!item) return;
+
+        // Registrar decisión
+        state.decisions.push({
+            itemId: item.id,
+            decision: action,
+            riesgo: item.riesgo || 0
+        });
+
+        // Actualizar contadores
+        if (action === 'compartir') {
+            state.compartidos++;
+            state.algorithm.burbuja = Math.min(100, state.algorithm.burbuja + (item.riesgo > 50 ? 15 : 5));
+            state.algorithm.diversidad = Math.max(0, state.algorithm.diversidad - 10);
+            
+            if (item.categoria && item.categoria.includes('odio')) {
+                state.algorithm.exposicionOdio = Math.min(100, state.algorithm.exposicionOdio + 25);
+            }
+            
+            if (item.riesgo > 50) {
+                if (item.tactica) state.vulnerabilidades.push(item.tactica);
+                showNotification();
+            }
+        } else if (action === 'reportar') {
+            state.reportados++;
+        } else if (action === 'verificar') {
+            state.verificados++;
+            state.algorithm.diversidad = Math.min(100, state.algorithm.diversidad + 5);
+            state.algorithm.burbuja = Math.max(0, state.algorithm.burbuja - 5);
+        } else {
+            state.ignorados++;
+        }
+
+        // Marcar visualmente
+        const feedItem = document.querySelector(`.feed-item[data-id="${item.id}"]`);
+        if (feedItem) {
+            const existingDecision = feedItem.querySelector('.feed-decision');
+            if (existingDecision) existingDecision.remove();
+            
+            const decisionEl = document.createElement('div');
+            decisionEl.className = `feed-decision ${action}`;
+            const labels = {
+                compartir: '📤 Compartido',
+                reportar: '🚩 Reportado',
+                verificar: '🔍 Verificado',
+                ignorar: '👁️ Ignorado'
+            };
+            decisionEl.textContent = labels[action];
+            feedItem.appendChild(decisionEl);
+            
+            // Quitar badge NUEVO
+            const badge = feedItem.querySelector('.feed-new-badge');
+            if (badge) badge.remove();
+        }
+
+        closeModal();
+    }
+
+    function showNotification() {
+        const messages = [
+            '🔄 15 personas compartieron tu publicación',
+            '💬 "Exacto! Por fin alguien lo dice" - nuevo comentario',
+            '🔥 Tu publicación se está volviendo viral',
+            '👥 23 personas más están viendo esto gracias a ti'
+        ];
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        
+        const notif = document.createElement('div');
+        notif.className = 'notification';
+        notif.textContent = msg;
+        els.notificationsContainer.appendChild(notif);
+        
+        // Mostrar
+        setTimeout(() => notif.classList.add('show'), 10);
+        
+        // Actualizar badge
+        const currentCount = parseInt(els.notifBadge.textContent) || 0;
+        els.notifBadge.textContent = currentCount + 1;
+        els.notifBadge.classList.remove('hidden');
+        
+        // Ocultar después de 3 segundos
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => notif.remove(), 300);
+        }, 3000);
+    }
+
+    // Modal events
+    els.modalOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    els.modalActionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            handleDecision(this.dataset.action);
+        });
+    });
+
+    els.spoilerBtn.addEventListener('click', function() {
+        const isShowing = els.modalAnalysis.classList.toggle('show');
+        this.textContent = isShowing ? '▼ Ocultar análisis' : '▶ Ver análisis previo (spoiler)';
+    });
+
+    // Reveal
+    function initReveal() {
+        clearInterval(state.timerInterval);
+        clearInterval(state.feedInterval);
+
+        const revelations = [
+            {
+                titulo: "Tu perfil de vulnerabilidad",
+                contenido: `${state.nombre}, durante los últimos ${Math.floor(state.elapsedTime / 60)} minutos, el algoritmo te mostró contenido diseñado para activar tus sesgos.`,
+                detalle: `Compartiste ${state.compartidos} publicaciones. ${state.compartidos > 2 ? 'Eso es más de lo recomendable sin verificar.' : 'Mostraste cautela.'}`
+            },
+            {
+                titulo: "Lo que el algoritmo aprendió de ti",
+                contenido: "Cada interacción le enseñó algo:",
+                detalles: [
+                    `Tu burbuja informativa creció ${state.algorithm.burbuja}%`,
+                    `Tu exposición a contenido de odio: ${state.algorithm.exposicionOdio}%`,
+                    `Diversidad de tu feed: ${state.algorithm.diversidad}%`
+                ]
+            },
+            {
+                titulo: "El efecto de tus decisiones",
+                contenido: state.compartidos > 0 
+                    ? `Cuando compartiste contenido problemático, en promedio llegó a ${Math.pow(3, state.compartidos) * 15} personas más.`
+                    : "No compartiste contenido problemático. No contribuiste a amplificar desinformación.",
+                detalle: state.vulnerabilidades.length > 0 
+                    ? `Tácticas que te afectaron: ${[...new Set(state.vulnerabilidades)].join(', ')}`
+                    : "No identificamos vulnerabilidades específicas."
+            },
+            {
+                titulo: "La buena noticia",
+                contenido: "Ahora que entiendes cómo funciona, puedes defenderte.",
+                detalle: "El primer paso es la consciencia. El segundo, la verificación. El tercero, la pausa antes de compartir."
+            }
+        ];
+
+        els.revealContainer.innerHTML = '';
+        
+        revelations.forEach((rev, i) => {
+            const div = document.createElement('div');
+            div.className = 'reveal-item';
+            
+            let detailsHtml = '';
+            if (rev.detalles) {
+                detailsHtml = '<ul>' + rev.detalles.map(d => `<li>${d}</li>`).join('') + '</ul>';
+            } else if (rev.detalle) {
+                detailsHtml = `<p class="detail">${rev.detalle}</p>`;
+            }
+
+            div.innerHTML = `
+                <div class="label-tag red">REVELACIÓN ${i + 1} DE ${revelations.length}</div>
+                <h2>${rev.titulo}</h2>
+                <p>${rev.contenido}</p>
+                ${detailsHtml}
+            `;
+
+            els.revealContainer.appendChild(div);
+
+            // Mostrar con delay
+            setTimeout(() => div.classList.add('visible'), i * 5000);
+        });
+
+        // Botón continuar
+        setTimeout(() => {
+            const btn = document.createElement('button');
+            btn.className = 'btn blue';
+            btn.textContent = 'Continuar a reflexión final →';
+            btn.style.marginTop = '24px';
+            btn.addEventListener('click', () => {
+                showScreen('reflection');
+                initReflection();
+            });
+            els.revealContainer.appendChild(btn);
+            setTimeout(() => btn.style.opacity = '1', 100);
+        }, revelations.length * 5000);
+    }
+
+    // Reflection
+    function initReflection() {
+        els.reflectionTitle.textContent = `${state.nombre}, esto es lo que debes recordar`;
+    }
+
+    els.btnReflection.addEventListener('click', () => {
+        showScreen('results');
+        initResults();
+    });
+
+    // Results
+    function initResults() {
+        const total = state.decisions.length;
+        const correctas = state.decisions.filter(d => 
+            (d.riesgo > 50 && (d.decision === 'reportar' || d.decision === 'verificar')) ||
+            (d.riesgo <= 50 && d.decision !== 'compartir')
+        ).length;
+        const porcentaje = total > 0 ? Math.round((correctas / total) * 100) : 0;
+
+        let nivel, color, descripcion;
+        if (porcentaje >= 80) {
+            nivel = 'GUARDIÁN DIGITAL';
+            color = '#22c55e';
+            descripcion = 'Excelente capacidad de discernimiento. Eres un agente de cambio positivo.';
+        } else if (porcentaje >= 60) {
+            nivel = 'CIUDADANO CRÍTICO';
+            color = '#3b82f6';
+            descripcion = 'Buenas bases de pensamiento crítico. Sigue practicando.';
+        } else if (porcentaje >= 40) {
+            nivel = 'EN DESARROLLO';
+            color = '#f97316';
+            descripcion = 'Tienes potencial pero necesitas más práctica en verificación.';
+        } else {
+            nivel = 'VULNERABLE';
+            color = '#ef4444';
+            descripcion = 'Es urgente desarrollar pensamiento crítico.';
+        }
+
+        els.resultsName.textContent = state.nombre;
+        els.resultsLevel.textContent = nivel;
+        els.resultsLevel.style.color = color;
+        els.resultsDesc.textContent = descripcion;
+
+        els.statAciertos.textContent = porcentaje + '%';
+        els.statCompartidos.textContent = state.compartidos;
+        els.statCompartidos.style.color = state.compartidos > 3 ? '#ef4444' : '#22c55e';
+        els.statVerificados.textContent = state.verificados;
+        els.statReportados.textContent = state.reportados;
+
+        // Métricas del algoritmo
+        updateMetric('burbuja', state.algorithm.burbuja, true);
+        updateMetric('odio', state.algorithm.exposicionOdio, true);
+        updateMetric('diversidad', state.algorithm.diversidad, false);
+    }
+
+    function updateMetric(name, value, isBad) {
+        const bar = document.getElementById(`metric-${name}`);
+        const val = document.getElementById(`metric-${name}-val`);
+        const color = isBad 
+            ? (value > 50 ? '#ef4444' : '#22c55e')
+            : (value < 50 ? '#ef4444' : '#22c55e');
+        
+        bar.style.width = value + '%';
+        bar.style.background = color;
+        val.textContent = value + '%';
+        val.style.color = color;
+    }
+
+    els.btnRestart.addEventListener('click', () => {
+        // Reset state
+        state.nombre = '';
+        state.tendencia = null;
+        state.elapsedTime = 0;
+        state.currentFeedIndex = 0;
+        state.decisions = [];
+        state.compartidos = 0;
+        state.reportados = 0;
+        state.ignorados = 0;
+        state.verificados = 0;
+        state.vulnerabilidades = [];
+        state.algorithm = { burbuja: 0, exposicionOdio: 0, diversidad: 100 };
+        
+        // Reset UI
+        els.nombreInput.value = '';
+        els.btnStep1.disabled = true;
+        els.tendencyBtns.forEach(b => b.classList.remove('selected'));
+        els.btnStep2.disabled = true;
+        els.contextStep1.classList.add('active');
+        els.contextStep2.classList.remove('active');
+        els.feedContainer.innerHTML = '';
+        els.feedLoader.classList.remove('hidden');
+        els.notifBadge.classList.add('hidden');
+        els.notifBadge.textContent = '0';
+        els.coldTexts.forEach(t => t.classList.remove('visible'));
+        
+        clearInterval(state.timerInterval);
+        clearInterval(state.feedInterval);
+        
+        showScreen('coldOpen');
+        setTimeout(initColdOpen, 500);
+    });
+
+    // Iniciar
+    initColdOpen();
+    initContext();
+
+})();
+</script>
+
+</body>
+</html>
