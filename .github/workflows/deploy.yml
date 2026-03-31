@@ -27,6 +27,7 @@ jobs:
           - sesgos-narrativas-historicas
           - algoritmos-card-game
           - analizador-sesgos-busquedas
+          - mi-apuesta-editorial
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -68,7 +69,7 @@ jobs:
           # HTML simulators
           for dir in simuladores/*/; do
             sim=$(basename "$dir")
-            if [ -f "$dir/index.html" ] && [ ! -f "$dir/vite.config.js" ]; then
+            if [ -f "$dir/index.html" ] && [ ! -f "$dir/vite.config.js" ] && [ ! -f "$dir/vite.config.ts" ]; then
               mkdir -p "_site/simuladores/$sim"
               cp "$dir/index.html" "_site/simuladores/$sim/index.html"
               echo "  HTML: $sim"
