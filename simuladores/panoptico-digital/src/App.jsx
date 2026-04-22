@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ChevronRight, Map, Music, Coffee, BookOpen, ShoppingCart, Tv, Instagram, 
+  ChevronRight, Map, Music, Coffee, BookOpen, ShoppingCart, Tv, Smartphone, 
   Activity, Eye, Network, BookMarked, RefreshCw, AlertTriangle, Lock, Fingerprint, 
   Database, Cpu, ChevronDown, Briefcase, Clock, TrendingUp, MessageSquare, 
   Megaphone, Share2, Search, Video, ShieldAlert, Terminal, Receipt, Download
@@ -62,7 +62,7 @@ const SCENARIOS = {
         theory: 'El algoritmo te conoce a un nivel sub-representacional. Anticipa y moldea tus afectos antes de que pasen por tu conciencia crítica.'
       },
       {
-        id: 'dormir', time: '11:30 PM', icon: <Instagram className="w-5 h-5" />,
+        id: 'dormir', time: '11:30 PM', icon: <Smartphone className="w-5 h-5" />,
         question: 'Antes de dormir, revisas redes.',
         options: [
           { text: 'Subes una historia con filtro y ubicación', isDefault: true, tags: ['AUTOEXPLOTACIÓN_ACTIVA', 'EXTRACCIÓN_GEOLOCALIZADA'], penalty: 22 },
