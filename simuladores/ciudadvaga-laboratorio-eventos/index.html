@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ciudad Vaga — Laboratorio de Eventos</title>
+<style>
+:root{
+  --tinta:#1c1712;--tinta2:#2e2820;
+  --papel:#f5f0e8;--papel2:#ede7d9;--papel3:#e4ddd0;
+  --terrac:#b84a2a;--terrac-l:#d9664a;
+  --azul:#1e4d7a;--azul-l:#2e6fa8;
+  --verde:#2d6b4a;--verde-l:#3d8b62;
+  --dorado:#c8922a;--dorado-l:#e0b040;
+  --rojo:#8b1a1a;--rojo-l:#b52222;
+  --borde:rgba(28,23,18,.14);--borde2:rgba(28,23,18,.24);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--papel);color:var(--tinta);min-height:100vh;overflow-x:hidden}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes inkIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+
+/* PORTADA */
+#s-intro{position:fixed;inset:0;z-index:200;background:var(--tinta);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;overflow:hidden}
+.intro-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:40px 40px}
+.intro-wrap{position:relative;z-index:2;max-width:640px;width:100%;text-align:center;animation:fadeUp .7s ease}
+.intro-eyebrow{font-family:Courier,'Courier New',monospace;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dorado-l);margin-bottom:2rem;display:flex;align-items:center;justify-content:center;gap:1rem}
+.intro-eyebrow::before,.intro-eyebrow::after{content:'';flex:1;max-width:50px;height:1px;background:var(--dorado-l);opacity:.4}
+.intro-logo{font-family:Georgia,serif;font-size:clamp(3rem,10vw,6rem);font-weight:700;color:var(--papel);line-height:.88;letter-spacing:-.02em;margin-bottom:.5rem}
+.intro-logo em{font-style:italic;color:var(--terrac-l)}
+.intro-tagline{font-style:italic;font-size:clamp(.9rem,2.2vw,1.15rem);color:rgba(245,240,232,.55);margin-bottom:2.2rem;line-height:1.5}
+.intro-rule{width:48px;height:2px;background:var(--terrac);margin:0 auto 2rem}
+.intro-desc{font-size:.9rem;color:rgba(245,240,232,.68);line-height:1.78;max-width:480px;margin:0 auto 2.2rem}
+.intro-chips{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.4rem}
+.intro-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:.3rem .9rem;font-family:Courier,'Courier New',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,240,232,.6)}
+.btn-start{display:inline-flex;align-items:center;gap:.7rem;background:var(--terrac);border:none;border-radius:3px;padding:1rem 2.6rem;font-family:Georgia,serif;font-size:1rem;font-weight:700;color:var(--papel);cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.btn-start:hover{background:var(--terrac-l);transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,74,42,.4)}
+
+/* ONBOARDING */
+#s-onboard{min-height:100vh;background:var(--papel);display:flex;align-items:center;justify-content:center;padding:2rem}
+.onboard-wrap{max-width:640px;width:100%;animation:fadeUp .5s ease}
+.ok{font-family:Courier,'Courier New',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--terrac);margin-bottom:.9rem}
+.onboard-title{font-family:Georgia,serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;line-height:1.1;margin-bottom:1.2rem;border-bottom:3px solid var(--tinta);padding-bottom:.9rem}
+.onboard-body{font-size:.95rem;line-height:1.8;color:var(--tinta2);margin-bottom:1.2rem}
+.onboard-callout{background:var(--papel2);border-left:4px solid var(--terrac);padding:.85rem 1rem;font-size:.85rem;font-style:italic;line-height:1.65;color:var(--tinta2);margin-bottom:1.8rem}
+.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:2rem}
+.ind-card{background:var(--papel2);border:1px solid var(--borde);border-radius:4px;padding:.9rem .7rem;text-align:center}
+.ind-icon{font-size:1.4rem;margin-bottom:.3rem;display:block}
+.ind-name{font-family:Courier,'Courier New',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tinta2);display:block;margin-bottom:.25rem}
+.ind-desc{font-size:.74rem;color:rgba(28,23,18,.58);line-height:1.4}
+.warn-box{background:rgba(139,26,26,.06);border:1px solid rgba(139,26,26,.18);border-left:3px solid var(--rojo);padding:.7rem .9rem;font-size:.82rem;color:var(--rojo);line-height:1.5;margin-bottom:2rem}
+.btn-go{display:inline-flex;align-items:center;gap:.5rem;background:var(--tinta);border:none;border-radius:3px;padding:.85rem 2rem;font-family:Georgia,serif;font-size:.95rem;font-weight:700;color:var(--papel);cursor:pointer;transition:all .2s}
+.btn-go:hover{background:var(--tinta2);transform:translateY(-1px)}
+
+/* JUEGO */
+#s-game{min-height:100vh;display:grid;grid-template-rows:auto auto auto 1fr}
+.topbar{position:sticky;top:0;z-index:60;background:var(--tinta);border-bottom:3px solid var(--terrac);padding:.55rem 1.4rem;display:flex;align-items:center;gap:1rem}
+.tb-logo{font-family:Georgia,serif;font-size:1.05rem;font-weight:700;color:var(--papel);flex:1}
+.tb-logo em{font-style:italic;color:var(--terrac-l)}
+.tb-fase{font-family:Courier,'Courier New',monospace;font-size:.65rem;letter-spacing:.06em;color:rgba(245,240,232,.45)}
+.tb-timer{font-family:Courier,'Courier New',monospace;font-size:.78rem;color:var(--dorado-l);min-width:40px;text-align:right}
+.ind-bar{background:var(--papel2);border-bottom:1px solid var(--borde);padding:.5rem 1.4rem;display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap}
+.ind-row{display:flex;align-items:center;gap:.45rem;flex:1;min-width:110px}
+.ind-lbl{font-family:Courier,'Courier New',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tinta2);flex-shrink:0}
+.ind-track{flex:1;height:7px;background:rgba(28,23,18,.1);border-radius:4px;overflow:hidden}
+.ind-fill{height:100%;border-radius:4px;transition:width .85s cubic-bezier(.4,0,.2,1)}
+.fill-v{background:var(--azul)}.fill-c{background:var(--verde)}.fill-p{background:var(--terrac)}
+.ind-num{font-family:Georgia,serif;font-size:.95rem;font-weight:700;min-width:28px;text-align:right;flex-shrink:0}
+.num-v{color:var(--azul)}.num-c{color:var(--verde)}.num-p{color:var(--terrac)}
+.prog-strip{background:var(--papel3);border-bottom:1px solid var(--borde);padding:.32rem 1.4rem;display:flex;align-items:center;gap:.7rem}
+.prog-lbl{font-family:Courier,'Courier New',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(28,23,18,.45);flex-shrink:0}
+.prog-track{flex:1;height:3px;background:rgba(28,23,18,.1);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--terrac);border-radius:2px;transition:width .5s ease}
+.prog-num{font-family:Courier,'Courier New',monospace;font-size:.62rem;color:rgba(28,23,18,.45)}
+.game-layout{display:grid;grid-template-columns:1fr 268px;min-height:calc(100vh - 130px)}
+.col-main{padding:1.4rem;display:flex;flex-direction:column;gap:1.1rem;overflow-y:auto}
+.col-side{border-left:1px solid var(--borde);background:var(--papel2);padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.9rem}
+.sit-card{background:var(--papel);border:1px solid var(--borde);border-top:4px solid var(--tinta);padding:1.4rem;animation:inkIn .4s ease}
+.sit-kicker{font-family:Courier,'Courier New',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--terrac);margin-bottom:.55rem;display:flex;align-items:center;gap:.45rem}
+.kicker-dot{width:6px;height:6px;border-radius:50%;background:var(--terrac);animation:pulse 2s infinite}
+.sit-title{font-family:Georgia,serif;font-size:clamp(1.25rem,2.8vw,1.7rem);font-weight:700;line-height:1.15;margin-bottom:.85rem}
+.sit-ctx{font-size:.91rem;line-height:1.8;color:var(--tinta2);border-left:3px solid var(--borde2);padding-left:.85rem;margin-bottom:.95rem}
+.sit-dato{background:var(--papel2);border-left:3px solid var(--dorado);padding:.65rem .85rem;font-size:.8rem;font-style:italic;color:rgba(28,23,18,.68);line-height:1.62;margin-bottom:1.2rem}
+.sit-q{font-family:Georgia,serif;font-size:1rem;font-weight:700;font-style:italic;margin-bottom:.9rem}
+.opts{display:grid;gap:.65rem}
+.opt{background:var(--papel);border:1px solid var(--borde2);border-left:3px solid transparent;padding:.9rem 1rem;cursor:pointer;text-align:left;transition:all .18s;font-family:Georgia,serif;color:var(--tinta);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.opt:hover{border-color:var(--tinta);border-left-color:var(--terrac);background:var(--papel2);transform:translateX(3px)}
+.opt:active{transform:translateX(1px)}
+.opt-ltr{font-family:Courier,'Courier New',monospace;font-size:.62rem;font-weight:700;color:var(--terrac);letter-spacing:.08em;display:block;margin-bottom:.28rem}
+.opt-txt{font-size:.89rem;font-weight:700;line-height:1.38;margin-bottom:.22rem}
+.opt-hint{font-size:.74rem;color:rgba(28,23,18,.52);font-style:italic;line-height:1.32}
+.side-sec{border-bottom:1px solid var(--borde);padding-bottom:.85rem}
+.side-sec:last-child{border-bottom:none}
+.side-h{font-family:Courier,'Courier New',monospace;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(28,23,18,.45);margin-bottom:.65rem}
+.alert-item{background:rgba(139,26,26,.07);border:1px solid rgba(139,26,26,.2);border-left:2px solid var(--rojo);padding:.5rem .65rem;font-size:.74rem;color:var(--rojo);line-height:1.45;margin-bottom:.35rem;animation:fadeUp .3s ease}
+.log-item{padding:.4rem 0;border-bottom:1px solid var(--borde);font-size:.73rem;color:var(--tinta2);line-height:1.45;animation:fadeUp .3s ease}
+.log-item:last-child{border-bottom:none}
+.log-fase{font-family:Courier,'Courier New',monospace;font-size:.57rem;color:var(--terrac);margin-bottom:.1rem}
+.side-empty{font-size:.76rem;color:rgba(28,23,18,.38);font-style:italic}
+
+/* OVERLAY */
+#o-result{position:fixed;inset:0;z-index:300;background:rgba(28,23,18,.72);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:1.2rem}
+#o-result.on{display:flex}
+.res-card{background:var(--papel);border:1px solid var(--borde2);border-top:5px solid var(--terrac);max-width:540px;width:100%;padding:1.7rem;max-height:88vh;overflow-y:auto;animation:fadeUp .32s cubic-bezier(.34,1.3,.64,1);-webkit-overflow-scrolling:touch}
+.rc-kicker{font-family:Courier,'Courier New',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--terrac);margin-bottom:.55rem}
+.rc-title{font-family:Georgia,serif;font-size:1.35rem;font-weight:700;line-height:1.2;margin-bottom:.75rem}
+.rc-body{font-size:.88rem;line-height:1.78;color:var(--tinta2);margin-bottom:1rem}
+.rc-eff-h{font-family:Courier,'Courier New',monospace;font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:rgba(28,23,18,.45);margin-bottom:.45rem}
+.rc-effs{margin-bottom:1.1rem}
+.rc-eff{display:flex;align-items:flex-start;gap:.45rem;padding:.32rem 0;border-bottom:1px solid var(--borde);font-size:.8rem;color:var(--tinta2);line-height:1.42}
+.rc-eff:last-child{border-bottom:none}
+.arrow-up{color:var(--verde)}.arrow-dn{color:var(--rojo-l)}.arrow-n{color:var(--dorado)}
+.rc-nota{background:var(--papel2);border-left:3px solid var(--dorado);padding:.65rem .82rem;font-size:.8rem;font-style:italic;color:rgba(28,23,18,.68);line-height:1.6;margin-bottom:1.1rem}
+.rc-crisis{background:rgba(139,26,26,.07);border:1px solid rgba(139,26,26,.2);border-left:3px solid var(--rojo);padding:.65rem .82rem;font-size:.8rem;color:var(--rojo);line-height:1.55;margin-bottom:1.1rem}
+.btn-cont{width:100%;padding:.82rem;background:var(--tinta);border:none;border-radius:3px;font-family:Georgia,serif;font-size:.93rem;font-weight:700;color:var(--papel);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-cont:hover{background:var(--tinta2)}
+
+/* MÓVIL */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:70;background:var(--tinta);border-top:2px solid var(--terrac);padding:.4rem 0 env(safe-area-inset-bottom,.35rem)}
+.mob-tabs{display:flex}
+.mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.45rem .3rem;border:none;background:none;cursor:pointer;font-family:Courier,'Courier New',monospace;color:rgba(245,240,232,.38);font-size:.53rem;text-transform:uppercase;letter-spacing:.06em;-webkit-tap-highlight-color:transparent;transition:color .18s}
+.mob-tab.on{color:var(--terrac-l)}
+.mob-icon{font-size:1.15rem;line-height:1}
+.mob-overlay{display:none;position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.48)}
+.mob-overlay.on{display:block}
+.mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:68;background:var(--papel2);border-top:2px solid var(--borde2);border-radius:14px 14px 0 0;max-height:72vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.24,.98);padding-bottom:env(safe-area-inset-bottom,0)}
+.mob-sheet.on{transform:translateY(0)}
+.sheet-handle{width:30px;height:3px;border-radius:2px;background:var(--borde2);margin:.65rem auto .35rem;flex-shrink:0}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:.35rem 1rem .6rem;border-bottom:1px solid var(--borde);flex-shrink:0}
+.sheet-title{font-family:Georgia,serif;font-size:.92rem;font-weight:700;color:var(--tinta)}
+.sheet-close{width:24px;height:24px;border-radius:50%;background:rgba(28,23,18,.08);border:none;cursor:pointer;font-size:.82rem;display:flex;align-items:center;justify-content:center;color:var(--tinta2)}
+.sheet-body{flex:1;overflow-y:auto;padding:.9rem 1rem;-webkit-overflow-scrolling:touch}
+
+/* FINAL */
+#s-final{display:none;min-height:100vh;background:var(--tinta);padding:3rem 1.4rem;flex-direction:column;align-items:center}
+#s-final.on{display:flex}
+.final-badge{display:inline-flex;align-items:center;gap:.5rem;border-radius:3px;padding:.4rem 1.1rem;font-family:Courier,'Courier New',monospace;font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.2rem}
+.badge-crisis{background:rgba(139,26,26,.2);border:1px solid rgba(139,26,26,.35);color:#e05a52}
+.badge-tension{background:rgba(200,146,42,.14);border:1px solid rgba(200,146,42,.32);color:var(--dorado-l)}
+.badge-logro{background:rgba(45,107,74,.18);border:1px solid rgba(45,107,74,.35);color:#5eb584}
+.final-title{font-family:Georgia,serif;font-size:clamp(1.5rem,4vw,2.7rem);font-weight:700;color:var(--papel);text-align:center;line-height:1.1;margin-bottom:.6rem}
+.final-sub{font-style:italic;font-size:.97rem;color:rgba(245,240,232,.5);text-align:center;margin-bottom:2rem;max-width:480px;line-height:1.55}
+.final-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;max-width:580px;width:100%;margin-bottom:2rem}
+.fstat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:4px;padding:.95rem .75rem;text-align:center}
+.fstat-icon{font-size:1.3rem;display:block;margin-bottom:.28rem}
+.fstat-lbl{font-family:Courier,'Courier New',monospace;font-size:.55rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(245,240,232,.38);display:block;margin-bottom:.28rem}
+.fstat-val{font-family:Georgia,serif;font-size:1.9rem;font-weight:700;line-height:1}
+.fv-v{color:var(--azul-l)}.fv-c{color:var(--verde-l)}.fv-p{color:var(--terrac-l)}
+.final-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;max-width:720px;width:100%;margin-bottom:2rem}
+.fsec{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1.2rem}
+.fsec-title{font-family:Georgia,serif;font-size:.95rem;font-weight:700;color:var(--papel);margin-bottom:.85rem;padding-bottom:.55rem;border-bottom:1px solid rgba(255,255,255,.1)}
+.lesson{display:flex;gap:.55rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.77rem;color:rgba(245,240,232,.62);line-height:1.48}
+.lesson:last-child{border-bottom:none}
+.lesson-n{font-family:Georgia,serif;font-size:.9rem;color:var(--dorado-l);font-weight:700;flex-shrink:0;min-width:16px}
+.flog{padding:.38rem 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.72rem;color:rgba(245,240,232,.52);line-height:1.42}
+.flog:last-child{border-bottom:none}
+.flog-fase{font-family:Courier,'Courier New',monospace;font-size:.55rem;color:var(--terrac-l);margin-bottom:.08rem}
+.final-btns{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center}
+.fbtn{display:inline-flex;align-items:center;gap:.45rem;padding:.75rem 1.5rem;border-radius:3px;font-family:Georgia,serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .18s}
+.fbtn-p{background:var(--terrac);border:none;color:var(--papel)}.fbtn-p:hover{background:var(--terrac-l)}
+.fbtn-s{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:var(--papel)}.fbtn-s:hover{background:rgba(255,255,255,.13)}
+
+@media(max-width:680px){
+  .game-layout{grid-template-columns:1fr}.col-side{display:none}
+  .col-main{padding:1rem;padding-bottom:calc(65px + env(safe-area-inset-bottom,8px))}
+  .mob-nav{display:block}.final-grid{grid-template-columns:1fr}
+  .sit-card{padding:1rem}.opt{padding:.78rem .9rem}
+  .ind-bar{gap:.55rem;padding:.42rem .9rem}.ind-lbl{font-size:.52rem}
+  .topbar{padding:.45rem .9rem}.tb-logo{font-size:.92rem}
+}
+.h{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div id="s-intro">
+  <div class="intro-grid-bg"></div>
+  <div class="intro-wrap">
+    <div class="intro-eyebrow">Univalle · Escuela de Comunicación Social · 2026</div>
+    <div class="intro-logo">Ciudad<br><em>Vaga</em></div>
+    <p class="intro-tagline">Laboratorio de Eventos y Públicos Fuertes</p>
+    <div class="intro-rule"></div>
+    <p class="intro-desc">Eres responsable de diseñar y gestionar los eventos de <strong style="color:var(--papel)">Ciudad Vaga</strong>. Cada decisión puede fortalecer o erosionar la relación con las audiencias universitarias que quieres convertir en <em>públicos fuertes</em>. Las opciones correctas no son evidentes. Los fracasos, frecuentes.</p>
+    <div class="intro-chips">
+      <span class="intro-chip">9 situaciones</span>
+      <span class="intro-chip">~50 minutos</span>
+      <span class="intro-chip">Sin respuestas obvias</span>
+    </div>
+    <button class="btn-start" onclick="showOnboard()">Iniciar el laboratorio →</button>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="s-onboard" class="h">
+  <div class="onboard-wrap">
+    <div class="ok">Contexto del laboratorio</div>
+    <h2 class="onboard-title">Tu rol: creadora/or de eventos de Ciudad Vaga</h2>
+    <p class="onboard-body">Ciudad Vaga aspira a construir <strong>públicos fuertes</strong>: audiencias que debaten, producen, cuestionan y actúan. Tu trabajo es diseñar los eventos que hagan posible esa transformación. Parece claro. No lo es.</p>
+    <p class="onboard-body">Las audiencias universitarias son heterogéneas, tienen ritmos distintos, se mueven por lógicas que no controlas y responden de formas inesperadas. Las decisiones que parecen evidentemente correctas suelen tener consecuencias que no viste. Las que parecen equivocadas, también.</p>
+    <div class="onboard-callout">"Las métricas digitales son la punta del iceberg. Tras cada cifra hay una intrincada red de acciones sociales que, al condensarse en números, desaparece. Un evento con 200 asistentes puede destruir más vínculo que uno con 20, dependiendo de cómo se diseñó." — Laboratorio de Audiencias, Univalle 2026</div>
+    <div class="ind-grid">
+      <div class="ind-card"><span class="ind-icon">🔵</span><span class="ind-name">Vínculo</span><span class="ind-desc">Profundidad de la relación entre el medio y su comunidad</span></div>
+      <div class="ind-card"><span class="ind-icon">🟢</span><span class="ind-name">Capacidad</span><span class="ind-desc">Qué tanto puede la audiencia comunicar, debatir y actuar</span></div>
+      <div class="ind-card"><span class="ind-icon">🔴</span><span class="ind-name">Presencia</span><span class="ind-desc">Tamaño y diversidad de la comunidad activa</span></div>
+    </div>
+    <div class="warn-box">⚠ Ninguna opción es claramente la correcta. Todas tienen costos. Algunas de las que parecen más progresistas o participativas tienen consecuencias negativas que no anticiparás. Ese es el punto.</div>
+    <button class="btn-go" onclick="startGame()">Asumir el rol →</button>
+  </div>
+</div>
+
+<!-- JUEGO -->
+<div id="s-game" class="h">
+  <div class="topbar">
+    <div class="tb-logo">Ciudad <em>Vaga</em></div>
+    <div class="tb-fase" id="tb-fase">Situación 1 / 9</div>
+    <div class="tb-timer" id="tb-timer">0:00</div>
+  </div>
+  <div class="ind-bar">
+    <div class="ind-row"><span class="ind-lbl">Vínculo</span><div class="ind-track"><div class="ind-fill fill-v" id="bar-v" style="width:60%"></div></div><span class="ind-num num-v" id="val-v">60</span></div>
+    <div class="ind-row"><span class="ind-lbl">Capacidad</span><div class="ind-track"><div class="ind-fill fill-c" id="bar-c" style="width:45%"></div></div><span class="ind-num num-c" id="val-c">45</span></div>
+    <div class="ind-row"><span class="ind-lbl">Presencia</span><div class="ind-track"><div class="ind-fill fill-p" id="bar-p" style="width:50%"></div></div><span class="ind-num num-p" id="val-p">50</span></div>
+  </div>
+  <div class="prog-strip">
+    <span class="prog-lbl">Avance</span>
+    <div class="prog-track"><div class="prog-fill" id="prog-f" style="width:0%"></div></div>
+    <span class="prog-num" id="prog-n">0 / 9</span>
+  </div>
+  <div class="game-layout">
+    <div class="col-main" id="col-main"><div class="sit-card" id="sit-card"></div></div>
+    <div class="col-side">
+      <div class="side-sec"><div class="side-h">⚡ Alertas</div><div id="side-alerts"><span class="side-empty">Sin alertas activas.</span></div></div>
+      <div class="side-sec"><div class="side-h">📋 Decisiones</div><div id="side-log"><span class="side-empty">Las decisiones aparecerán aquí.</span></div></div>
+    </div>
+  </div>
+</div>
+
+<nav class="mob-nav h" id="mob-nav">
+  <div class="mob-tabs">
+    <button class="mob-tab on" id="mn-sit" onclick="closeSh()"><span class="mob-icon">📰</span><span>Situación</span></button>
+    <button class="mob-tab" id="mn-alert" onclick="openSh('alertas')"><span class="mob-icon">⚡</span><span>Alertas</span></button>
+    <button class="mob-tab" id="mn-log" onclick="openSh('log')"><span class="mob-icon">📋</span><span>Registro</span></button>
+  </div>
+</nav>
+<div class="mob-overlay" id="mob-ov" onclick="closeSh()"></div>
+<div class="mob-sheet" id="mob-sh">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><span class="sheet-title" id="sh-title">Alertas</span><button class="sheet-close" onclick="closeSh()">✕</button></div>
+  <div class="sheet-body" id="sh-body"></div>
+</div>
+
+<!-- OVERLAY RESULTADO -->
+<div id="o-result">
+  <div class="res-card">
+    <div class="rc-kicker" id="rc-kicker">Consecuencias</div>
+    <div class="rc-title" id="rc-title"></div>
+    <div class="rc-body" id="rc-body"></div>
+    <div class="rc-eff-h">Impacto en los indicadores</div>
+    <div class="rc-effs" id="rc-effs"></div>
+    <div class="rc-nota" id="rc-nota"></div>
+    <div class="rc-crisis" id="rc-crisis"></div>
+    <button class="btn-cont" onclick="next()">Continuar →</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="s-final">
+  <div style="text-align:center;max-width:580px;width:100%;margin-bottom:1.8rem">
+    <div class="final-badge" id="f-badge"></div>
+    <h1 class="final-title" id="f-title"></h1>
+    <p class="final-sub" id="f-sub"></p>
+  </div>
+  <div class="final-stats" id="f-stats"></div>
+  <div class="final-grid" style="max-width:720px;width:100%">
+    <div class="fsec"><div class="fsec-title">💡 Tensiones que encontraste</div><div id="f-lessons"></div></div>
+    <div class="fsec"><div class="fsec-title">📋 Tus decisiones</div><div id="f-log"></div></div>
+  </div>
+  <div class="final-btns">
+    <button class="fbtn fbtn-p" onclick="restart()">Volver a intentarlo</button>
+    <button class="fbtn fbtn-s" onclick="window.open('https://ciudadvaga.univalle.edu.co/','_blank')">Visitar Ciudad Vaga</button>
+  </div>
+</div>
+
+<script>
+const ST={phase:0,sc:{v:60,c:45,p:50},history:[],alerts:[],elapsed:0,timer:null};
+const TOTAL=15;
+
+/* ═══════════════════════════════════════════════════════════
+   SITUACIONES — opciones sin respuesta obvia, todas costosas
+═══════════════════════════════════════════════════════════ */
+const PHASES=[
+
+/* ── 1 ── CONVOCATORIA */
+{
+  kicker:'Situación 1 — Primer evento del semestre',
+  title:'La trampa de la convocatoria',
+  ctx:'Ciudad Vaga organizará su primer evento del año: una sesión de análisis sobre cómo los estudiantes universitarios consumen medios, basada en el Laboratorio de Audiencias. Tienes tres semanas. El equipo discute cómo convocar. Hay cuatro posiciones fuertes dentro del grupo y cada quien tiene razones de peso.',
+  dato:'Dato del laboratorio: El 100% de los estudiantes usa redes sociales en la hora del almuerzo, pero solo el 10.3% consume prensa deliberadamente. La audiencia universitaria es diversa en programas, estratos y condiciones de vida, pero los eventos tienden a convocar siempre al mismo perfil.',
+  q:'¿Cómo defines la convocatoria?',
+  opts:[
+    {
+      l:'A',
+      t:'Publicar la convocatoria solo en los canales propios de Ciudad Vaga (Instagram, WhatsApp del medio, lista de correo) sin ninguna segmentación ni alianza externa.',
+      h:'Alcanzar primero a quienes ya nos conocen.',
+      fx:{v:-6,c:+4,p:-14},
+      res:{
+        kicker:'Consecuencia',
+        title:'Llegaron 31 personas. Todas ya leían Ciudad Vaga.',
+        body:'El evento ocurrió, fue bien, pero el análisis posterior reveló algo incómodo: los 31 asistentes eran casi todos estudiantes de Comunicación Social que ya seguían el medio. La conversación fue fluida pero predecible. Nadie cuestionó los supuestos básicos del equipo. Cuando alguien propuso que "las audiencias universitarias son pasivas", no hubo nadie presente que pudiera contradecirlo con su propia experiencia distinta. El evento habló de diversidad con un grupo homogéneo.',
+        nota:'Convocar a través de canales propios es eficiente y rápido, pero reproduce el sesgo de quien ya está convencido. Un evento sobre audiencias diversas que convoca audiencias homogéneas produce conocimiento sesgado desde el inicio.',
+        crisis:null,
+        effs:['⬇ Vínculo: −6 (el evento no construyó relación con ninguna comunidad nueva)','⬆ Capacidad: +4 (la conversación, aunque homogénea, fue analíticamente sólida entre pares)','⬇ Presencia: −14 (el evento no amplió la base de participantes de Ciudad Vaga)']
+      }
+    },
+    {
+      l:'B',
+      t:'Aliarse con los centros de estudiantes de cinco facultades distintas para que cada uno convoque a sus comunidades. A cambio, darles visibilidad en el evento y en la publicación posterior.',
+      h:'Delegar la convocatoria para ganar diversidad.',
+      fx:{v:-10,c:+8,p:+18},
+      res:{
+        kicker:'Consecuencia',
+        title:'80 personas de doce programas. Y el evento dejó de ser de Ciudad Vaga.',
+        body:'Los centros de estudiantes convocaron bien. La sala estuvo llena y diversa. Pero en el camino, cada centro negoció cómo se presentaría su rol: algunos querían crédito de co-organización, uno pidió que el evento abriera con un discurso de su presidente, otro insistió en incluir un tema que le interesaba pero que no era parte del diseño original. Para el día del evento, Ciudad Vaga era uno de cinco organizadores, no el anfitrión. La marca quedó diluida y el foco temático, descentrado.',
+        nota:'La alianza para la diversidad tiene costos de control y foco. Delegar la convocatoria puede traer audiencias que el medio nunca habría alcanzado, pero también puede transformar el evento en algo distinto a lo que se diseñó.',
+        crisis:'⚠ TENSIÓN DE IDENTIDAD: Ciudad Vaga perdió el control del mensaje y del formato en su propio evento inaugural.',
+        effs:['⬇ Vínculo: −10 (la dilución de la identidad confundió a quienes venían específicamente por Ciudad Vaga)','⬆ Capacidad: +8 (la diversidad de voces generó conversaciones más ricas y complejas)','⬆ Presencia: +18 (el evento llegó a comunidades que el medio nunca hubiera alcanzado solo)']
+      }
+    },
+    {
+      l:'C',
+      t:'Hacer el evento pequeño y cerrado: invitar directamente a 20 personas con perfiles muy distintos (programa, origen, semestre), seleccionadas una por una por el equipo editorial.',
+      h:'Control total sobre quién entra y por qué.',
+      fx:{v:+16,c:+14,p:-18},
+      res:{
+        kicker:'Consecuencia',
+        title:'La mejor conversación del año. Para 20 personas.',
+        body:'Las 20 personas seleccionadas producen una discusión de una calidad que el equipo no había visto. Una estudiante de Ingeniería de sistemas del último semestre, de Buenaventura, describe su relación con los medios de una manera que nadie en el equipo había anticipado. Un estudiante venezolano de Medicina narra cómo TikTok es su único canal de información sobre lo que pasa en Venezuela. El conocimiento producido es extraordinario. Pero tres semanas después, nadie más sabe que eso ocurrió. El evento no existe para quienes no estuvieron.',
+        nota:'El evento cerrado y seleccionado puede producir conocimiento más profundo, pero no construye comunidad visible. La exclusividad crea calidad pero también crea invisibilidad. ¿Para quién es el evento si nadie más lo vive?',
+        crisis:null,
+        effs:['⬆ Vínculo: +16 (las 20 personas seleccionadas construyeron un vínculo profundo con Ciudad Vaga y entre sí)','⬆ Capacidad: +14 (la conversación densa y diversa amplió significativamente la comprensión del equipo sobre las audiencias)','⬇ Presencia: −18 (la comunidad de Ciudad Vaga no creció; el evento fue invisible para el resto de la universidad)']
+      }
+    },
+    {
+      l:'D',
+      t:'Hacer una convocatoria abierta masiva con un afiche llamativo que diga "¿Sabes qué hacen con tu atención?" — apelando al FOMO y al interés en las redes, no al tema académico.',
+      h:'Usar las lógicas del consumo digital para convocar a quienes normalmente no vendrían.',
+      fx:{v:-12,c:-8,p:+22},
+      res:{
+        kicker:'Consecuencia',
+        title:'Vinieron 95 personas. Muchas querían algo distinto a lo que encontraron.',
+        body:'El afiche funcionó: fue compartido 340 veces. La sala se llenó. Pero al comenzar el evento, quedó claro que una parte significativa de los asistentes esperaba algo parecido a una charla de "consejos para crecer en Instagram" o un debate sobre privacidad digital en tono de escándalo. Cuando el evento tomó el giro analítico sobre el concepto de audiencia, una quinta parte de los asistentes empezó a salir. Los que se quedaron tuvieron una experiencia valiosa, pero la expectativa rota generó incomodidad y algunos comentarios negativos en redes.',
+        nota:'Usar las lógicas del consumo incidental para atraer audiencias produce asistencia pero puede generar una brecha entre expectativa y experiencia. Convocar con un anzuelo distinto al contenido real es una apuesta de alto riesgo sobre la capacidad de retención.',
+        crisis:'⚠ BRECHA DE EXPECTATIVA: Parte de la audiencia llegó por una promesa que el evento no cumplió.',
+        effs:['⬇ Vínculo: −12 (quienes llegaron por el afiche y no encontraron lo prometido no regresarán)','⬇ Capacidad: −8 (la energía del evento se consumió en gestionar la incomodidad de los asistentes decepcionados)','⬆ Presencia: +22 (el alcance fue extraordinario: Ciudad Vaga llegó a personas que nunca hubieran venido con una convocatoria temática)']
+      }
+    }
+  ]
+},
+
+/* ── 2 ── FORMATO */
+{
+  kicker:'Situación 2 — Formato y participación',
+  title:'La experta que llena la sala vacía de voces',
+  ctx:'Una reconocida investigadora de audiencias digitales de la Universidad Nacional ofrece dar una charla en Ciudad Vaga. Es una académica con trabajo serio, publicaciones relevantes y una perspectiva crítica que el equipo admira. La propuesta es una conferencia de 75 minutos con preguntas al final. El evento llenaría la sala: su nombre arrastra gente. El dilema interno es si ese formato sirve para lo que Ciudad Vaga quiere construir.',
+  dato:'Dato del laboratorio: La curación y la conversación — no el consumo — son las prácticas que forman públicos fuertes. Sin embargo, algunas conferencias magistrales han generado conversaciones que duran semanas. El formato no determina mecánicamente el resultado.',
+  q:'¿Qué haces con la propuesta de la investigadora?',
+  opts:[
+    {
+      l:'A',
+      t:'Aceptar la charla tal como fue propuesta, sin modificar el formato. La investigadora es valiosa y el equipo no tiene autoridad para rediseñar lo que ella quiere hacer.',
+      h:'Respetar la autonomía de la invitada y aprovechar su nombre.',
+      fx:{v:-8,c:-10,p:+20},
+      res:{
+        kicker:'Consecuencia',
+        title:'120 personas en la sala. La investigadora habló muy bien. Nadie habló con nadie.',
+        body:'La conferencia fue intelectualmente brillante. La investigadora desarrolló un argumento sobre "datificación de la vida cotidiana" que varios estudiantes describieron después como "la mejor clase que han recibido en la universidad". Pero al terminar, la gente se dispersó rápidamente. En la evaluación anónima, el 71% dijo que hubiera querido discutir con otros lo que escuchó. El evento produjo ideas en cabezas individuales que no circularon. Una semana después, nadie recordaba con quién había hablado de eso.',
+        nota:'Una conferencia magistral puede ser una experiencia de alta calidad intelectual sin ser una experiencia de construcción de comunidad. El problema no es el formato: es la confusión entre aprender individualmente y construir colectivamente.',
+        crisis:null,
+        effs:['⬇ Vínculo: −8 (el evento no creó lazos entre los asistentes ni entre ellos y el medio)','⬇ Capacidad: −10 (los asistentes salieron con ideas nuevas pero sin práctica de elaboración colectiva)','⬆ Presencia: +20 (el nombre de la investigadora convocó a la mayor audiencia del año)']
+      }
+    },
+    {
+      l:'B',
+      t:'Proponer a la investigadora un formato distinto: 30 minutos de presentación suya y 45 minutos de conversación estructurada en grupos pequeños que ella facilita.',
+      h:'Renegociar el formato con la invitada antes de confirmar.',
+      fx:{v:+8,c:+16,p:-10},
+      res:{
+        kicker:'Consecuencia',
+        title:'La investigadora aceptó. Y fue más difícil de lo esperado.',
+        body:'La investigadora aceptó con entusiasmo inicial. Pero el día del evento, los grupos pequeños tuvieron dinámicas muy distintas: algunos producían conversaciones ricas, otros se quedaban en silencio esperando que alguien liderara. La investigadora circuló entre grupos pero no alcanzó a facilitar todos. En tres grupos, la conversación la monopolizó quien más hablaba y los demás no encontraron cómo entrar. El formato participativo requiere más preparación de la que el equipo había calculado. El resultado fue desigual: extraordinario en algunos grupos, frustrante en otros.',
+        nota:'Los formatos participativos no son automáticamente mejores: requieren diseño cuidadoso de la dinámica grupal, roles claros y preparación de facilitación. La buena intención participativa sin diseño produce experiencias desiguales que pueden generar más frustración que la conferencia que se quería evitar.',
+        crisis:null,
+        effs:['⬆ Vínculo: +8 (en los grupos que funcionaron se construyeron lazos reales; los que fallaron generaron frustración)','⬆ Capacidad: +16 (quienes lograron articular sus ideas en grupo salieron con una capacidad de análisis notablemente mayor)','⬇ Presencia: −10 (el formato inusual desconcertó a algunos que esperaban la conferencia prometida y no volvieron)']
+      }
+    },
+    {
+      l:'C',
+      t:'Aceptar la conferencia, pero agregar un evento satélite una semana después: un club de lectura de 15 personas que discute el texto de la investigadora a partir de lo que dijeron en la charla.',
+      h:'La charla como detonador; la conversación posterior como el evento real.',
+      fx:{v:+14,c:+12,p:+6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La conferencia fue el anzuelo. El club de lectura fue el evento.',
+        body:'La conferencia se hizo como la investigadora quería. De los 95 asistentes, 28 se inscribieron al club de lectura posterior. De esos 28, llegaron 15. Pero esas 15 personas tuvieron una conversación de tres horas sobre el texto de la investigadora que ninguno de los 95 de la conferencia tuvo. Siete de esos 15 pidieron que el club se repitiera mensualmente. Ciudad Vaga encontró accidentalmente un formato de vínculo profundo que no había diseñado como el centro del proceso.',
+        nota:'Los formatos más poderosos para construir públicos fuertes a veces emergen como consecuencia de eventos masivos, no como su alternativa. La conferencia no fue el fracaso: fue la puerta de entrada a algo mejor.',
+        crisis:null,
+        effs:['⬆ Vínculo: +14 (el club generó un núcleo de participantes con vínculo profundo entre sí y con Ciudad Vaga)','⬆ Capacidad: +12 (la discusión sostenida del texto desarrolló capacidades analíticas que una charla no puede producir)','⬆ Presencia: +6 (la conferencia masiva + el club generaron dos tipos distintos de audiencia que se complementan)']
+      }
+    },
+    {
+      l:'D',
+      t:'Rechazar amablemente la propuesta y en cambio organizar un evento en el que estudiantes de distintos programas presenten sus propias investigaciones informales sobre sus hábitos de consumo mediático.',
+      h:'Apostar por las voces internas antes que la figura externa.',
+      fx:{v:+10,c:+18,p:-20},
+      res:{
+        kicker:'Consecuencia',
+        title:'Un evento que el equipo consideró brillante. Al que llegaron 14 personas.',
+        body:'Los cuatro estudiantes que presentaron sus análisis hicieron un trabajo serio y original. Una estudiante de Sociología presentó un análisis de sus propios patrones de consumo con datos reales de Screen Time de su teléfono. Un estudiante de Economía modeló el "costo de oportunidad" de sus horas de TikTok. Las presentaciones fueron genuinamente interesantes. El problema: sin el nombre de la investigadora, la convocatoria no funcionó. Llegaron 14 personas, en su mayoría amigos de los presentadores. El evento fue un éxito de calidad y un fracaso de alcance.',
+        nota:'Apostar por las voces internas tiene un costo de visibilidad real. La ausencia de figuras reconocidas en la convocatoria puede ser una postura ética válida con consecuencias de alcance muy concretas. La pregunta es qué es prioritario en este momento de la plataforma.',
+        crisis:'⚠ FRACASO DE ALCANCE: El evento de mejor calidad del semestre fue visto por el menor número de personas.',
+        effs:['⬆ Vínculo: +10 (los 14 asistentes construyeron un vínculo muy sólido con Ciudad Vaga y entre sí)','⬆ Capacidad: +18 (los presentadores desarrollaron habilidades de investigación y comunicación pública que ningún otro formato hubiera generado)','⬇ Presencia: −20 (sin el nombre de la investigadora, la convocatoria fue casi invisible en la comunidad universitaria)']
+      }
+    }
+  ]
+},
+
+/* ── 3 ── REPRESENTACIÓN */
+{
+  kicker:'Situación 3 — Representación y daño no intencional',
+  title:'El afiche que nadie revisó a tiempo',
+  ctx:'El equipo diseñó el afiche del tercer evento sobre bienestar y salud mental universitaria. Usó imágenes de stock de personas diversas. El afiche quedó bonito, fue aprobado internamente y se publicó. Dos días después, una estudiante de Trabajo Social señala en Twitter que una de las imágenes representa a una persona con rasgos indígenas en una postura de sufrimiento que reproduce un estereotipo muy concreto. El hilo tiene 180 impresiones. La estudiante no tiene mucha audiencia, pero el argumento es sólido.',
+  dato:'Dato del laboratorio: Las audiencias que se sienten mal representadas no solo dejan de consumir el medio: pueden denunciarlo activamente. Pero la velocidad y el tono de la respuesta importan tanto como su contenido.',
+  q:'¿Cómo responde Ciudad Vaga?',
+  opts:[
+    {
+      l:'A',
+      t:'Retirar el afiche de inmediato, diseñar uno nuevo sin imágenes de personas, y publicar una disculpa breve y directa sin entrar en debate sobre la interpretación.',
+      h:'Actuar rápido y sin polémica.',
+      fx:{v:-6,c:-4,p:-2},
+      res:{
+        kicker:'Consecuencia',
+        title:'La crisis pasó. Y no aprendieron nada.',
+        body:'La disculpa fue aceptada sin mayor controversia. El nuevo afiche salió. El evento ocurrió normalmente. Pero tres meses después, en otro evento, el equipo volvió a usar imágenes de stock sin cuestionarlas. Nadie había documentado qué pasó ni establecido un protocolo para evitarlo. La disculpa rápida fue útil para cerrar la situación, pero la rapidez del cierre también impidió que la organización procesara qué estaba fallando en su proceso de diseño. El problema estructural siguió intacto.',
+        nota:'Resolver una crisis rápido no es lo mismo que aprender de ella. La velocidad de la disculpa puede ser una forma de no enfrentar la pregunta más difícil: ¿por qué nadie lo vio antes de publicar?',
+        crisis:null,
+        effs:['⬇ Vínculo: −6 (la disculpa genérica no genera el tipo de confianza que produce un proceso reflexivo genuino)','⬇ Capacidad: −4 (el equipo no desarrolló capacidad de análisis crítico de representación; solo aprendió a disculparse rápido)','⬇ Presencia: −2 (hubo algo de ruido negativo que afectó marginalmente la convocatoria del evento)']
+      }
+    },
+    {
+      l:'B',
+      t:'Contactar directamente a la estudiante que publicó el hilo, escucharla en privado antes de tomar cualquier decisión pública, y dejar que ella proponga qué tipo de respuesta tiene sentido.',
+      h:'Escuchar antes de actuar.',
+      fx:{v:+10,c:+6,p:-8},
+      res:{
+        kicker:'Consecuencia',
+        title:'La conversación tomó cuatro días. Y generó un protocolo que nadie esperaba.',
+        body:'La estudiante aceptó la conversación. En la reunión, fue directa: no quería una disculpa pública sino una revisión del proceso. Pasó una hora explicando el contexto específico de la imagen: por qué esa postura, en ese contexto histórico, con esos rasgos, tiene una carga simbólica que el equipo desconocía completamente. El proceso tomó cuatro días. El afiche se cambió sin disculpa pública (la estudiante prefirió eso). Y el equipo redactó un protocolo de revisión de imágenes que desde entonces aplican antes de publicar.',
+        nota:'Preguntar a quien señaló el problema qué tipo de reparación tiene sentido para ella es muy distinto a asumir qué reparación es la correcta. La persona afectada tiene información que el equipo no tiene.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (el proceso cuidadoso generó confianza con la estudiante y con quienes siguieron la situación)','⬆ Capacidad: +6 (el equipo aprendió algo que no hubiera aprendido solo: historia y carga simbólica de representaciones específicas)','⬇ Presencia: −8 (los cuatro días de proceso lento generaron algo de incertidumbre en la convocatoria del evento)']
+      }
+    },
+    {
+      l:'C',
+      t:'Publicar una respuesta pública larga y reflexiva explicando el proceso de diseño, reconociendo el error y detallando los cambios que implementarán en el futuro.',
+      h:'Transparencia total sobre el proceso editorial.',
+      fx:{v:+4,c:+8,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'El comunicado fue elogiado. Y también criticado por ser demasiado largo.',
+        body:'El comunicado de 600 palabras fue compartido por varios usuarios que lo consideraron un "modelo de cómo responder bien". Pero generó dos efectos secundarios: primero, amplificó la situación más allá del hilo original de 180 impresiones — ahora la polémica era visible para 3.000 personas más. Segundo, varios estudiantes de Comunicación Social señalaron que el comunicado parecía "demasiado ensayado" y que la reflexión sobre el proceso de diseño era genérica. La estudiante original no respondió al comunicado.',
+        nota:'La transparencia pública puede tener el efecto paradójico de amplificar la crisis al tiempo que la resuelve. Un comunicado bien redactado puede ser percibido como un ejercicio de relaciones públicas más que como una reflexión genuina si no conecta con la persona específicamente afectada.',
+        crisis:null,
+        effs:['⬆ Vínculo: +4 (algunos lectores valoraron la reflexión pública; otros la leyeron con escepticismo)','⬆ Capacidad: +8 (el proceso de redactar el comunicado obligó al equipo a analizar en profundidad su propio proceso)','⬇ Presencia: −6 (la amplificación de la situación generó algo de distancia en quienes no conocían el contexto completo)']
+      }
+    },
+    {
+      l:'D',
+      t:'No modificar el afiche pero sí publicar una nota aclaratoria breve señalando que la imagen fue elegida sin esa intención y que están abiertos a feedback.',
+      h:'Mantener la decisión original y gestionar la percepción sin cambiar el diseño.',
+      fx:{v:-18,c:-6,p:+4},
+      res:{
+        kicker:'Consecuencia inesperada',
+        title:'La "nota aclaratoria" fue leída como una defensa del error.',
+        body:'La nota aclaratoria tenía buena intención pero produjo el efecto contrario al esperado. La frase "fue elegida sin esa intención" fue interpretada por varios lectores como una negación implícita del daño. La estudiante original respondió al hilo: "La intención no determina el impacto. Que no lo hayan visto no significa que no está." El hilo creció a 600 impresiones. Tres cuentas con más audiencia lo compartieron. Lo que era un señalamiento de baja visibilidad se convirtió en una discusión de mayor alcance en la que Ciudad Vaga aparecía defendiendo su error.',
+        nota:'La intención no determina el impacto. Aclarar la intención como respuesta a una crítica sobre el efecto desplaza el problema sin resolverlo. En comunicación de crisis, explicar por qué no querías hacer daño no es equivalente a reconocer que lo hiciste.',
+        crisis:'⚠ ESCALADA: La nota aclaratoria fue leída como negación y amplificó la crisis.',
+        effs:['⬇ Vínculo: −18 (la respuesta que parecía defender el error destruyó la confianza que se había construido con audiencias críticas)','⬇ Capacidad: −6 (el equipo no procesó el aprendizaje porque estaba en modo defensivo)','⬆ Presencia: +4 (paradójicamente, la controversia amplió la visibilidad de Ciudad Vaga, aunque de forma negativa)']
+      }
+    }
+  ]
+},
+
+/* ── 4 ── HORARIOS Y CUERPOS */
+{
+  kicker:'Situación 4 — Tiempo, cuerpos y acceso',
+  title:'¿A qué hora existe tu audiencia?',
+  ctx:'El cuarto evento es un foro sobre precarización laboral de los docentes universitarios. Es el tema más político que Ciudad Vaga ha abordado. El equipo ha identificado que para que el evento funcione necesita tres tipos de participantes: estudiantes, docentes de planta y docentes por horas-cátedra (los más precarizados y el centro de la discusión). El problema: cada grupo tiene disponibilidades completamente distintas y en conflicto. Los docentes de planta tienen reuniones de facultad los martes. Los docentes hora-cátedra trabajan hasta las 6pm todos los días. Los estudiantes concentran su atención disponible entre 12 y 2pm.',
+  dato:'Dato del laboratorio: Las "horas vivas" del mediodía concentran el 100% de la actividad mediática estudiantil. Pero la disponibilidad del cuerpo depende de condiciones laborales, de cuidado y de transporte que varían enormemente dentro de la misma comunidad universitaria.',
+  q:'¿Cuándo haces el evento?',
+  opts:[
+    {
+      l:'A',
+      t:'Miércoles al mediodía: maximizar la asistencia estudiantil porque son la audiencia principal del medio y el foro necesita masa crítica de oyentes para que los docentes tengan con quién hablar.',
+      h:'Priorizar la audiencia más grande aunque excluya a algunos protagonistas del tema.',
+      fx:{v:-8,c:-12,p:+16},
+      res:{
+        kicker:'Consecuencia',
+        title:'80 estudiantes. Cero docentes hora-cátedra.',
+        body:'La asistencia estudiantil fue excelente. Pero los docentes hora-cátedra — los directamente precarizados — no pudieron asistir porque trabajaban en ese horario. El foro sobre su situación ocurrió sin ellos, con dos docentes de planta que hablaron "en nombre de" sus colegas más vulnerables. Uno de los docentes hora-cátedra que se enteró del evento después publicó en redes: "Hicieron un foro sobre nosotros en el único horario en que nosotros trabajamos." La observación circuló entre el gremio docente.',
+        nota:'Un evento sobre una comunidad vulnerable diseñado en el horario que excluye a esa comunidad reproduce exactamente la lógica que dice combatir: hablar de los ausentes sin hacerlos presentes.',
+        crisis:'⚠ EXCLUSIÓN INVOLUNTARIA: El foro sobre docentes precarizados los excluyó por su horario laboral.',
+        effs:['⬇ Vínculo: −8 (los docentes hora-cátedra y sus redes sintieron que Ciudad Vaga los usó como tema sin incluirlos)','⬇ Capacidad: −12 (el conocimiento producido sobre la precarización fue incompleto al carecer de las voces directamente afectadas)','⬆ Presencia: +16 (la alta asistencia estudiantil amplió el alcance del evento en la comunidad universitaria general)']
+      }
+    },
+    {
+      l:'B',
+      t:'Sábado a las 10am: el único horario en que la mayoría de los tres grupos tiene disponibilidad teórica, aunque sea fin de semana.',
+      h:'El único horario sin conflicto estructural.',
+      fx:{v:+6,c:+10,p:-16},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los tres grupos pudieron venir. Muy pocos quisieron.',
+        body:'El sábado eliminó los conflictos de horario laboral. Pero la asistencia fue de 22 personas. Los estudiantes, habituados a que sus actividades académicas y culturales ocurren entre semana, no encontraron la motivación para el fin de semana. Varios docentes hora-cátedra que no trabajaban el sábado sí asistieron. Pero la dinámica del evento con 22 personas fue muy distinta a la que se había imaginado. El foro fue profundo pero pequeño. El impacto institucional fue mínimo porque nadie que tomara decisiones lo vio.',
+        nota:'El horario sin conflicto puede ser el horario sin audiencia. La disponibilidad teórica no garantiza la asistencia real. Los hábitos de participación son más rígidos de lo que parece en el papel.',
+        crisis:null,
+        effs:['⬆ Vínculo: +6 (los 22 que llegaron tuvieron una experiencia de alta calidad con los protagonistas del tema presentes)','⬆ Capacidad: +10 (la conversación fue densa y produjo comprensiones complejas sobre la precarización)','⬇ Presencia: −16 (el fin de semana redujo drásticamente la asistencia; el impacto del evento fue muy limitado)']
+      }
+    },
+    {
+      l:'C',
+      t:'Jueves a las 5:30pm: después de las clases, antes de que los docentes hora-cátedra terminen su jornada extendida. Un compromiso entre todos los grupos.',
+      h:'Un horario de compromiso que no es el óptimo para nadie.',
+      fx:{v:+4,c:+6,p:+4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Cada grupo llegó a medias. La conversación quedó a medias.',
+        body:'Llegaron 45 personas. Los estudiantes vinieron cansados después de un día completo de clases. Cuatro docentes hora-cátedra llegaron directamente de dar clase, sin tiempo para prepararse. Dos docentes de planta salieron a las 6:30 porque tenían compromisos familiares. El horario de "compromiso" produjo un evento en el que cada grupo participó de manera parcial y con menor energía de la que hubiera traído en su horario óptimo. El foro funcionó pero sin la intensidad que el tema merecía.',
+        nota:'El horario de compromiso satisface a todos parcialmente y no satisface plenamente a ninguno. En diseño de eventos, el promedio no es lo mismo que el óptimo: puede ser el peor de todos los mundos posibles.',
+        crisis:null,
+        effs:['⬆ Vínculo: +4 (los tres grupos estuvieron presentes, lo que generó un mínimo de reconocimiento mutuo)','⬆ Capacidad: +6 (la conversación ocurrió, aunque con menor profundidad de la que era posible)','⬆ Presencia: +4 (la asistencia fue moderada; ningún grupo fue completamente excluido)']
+      }
+    },
+    {
+      l:'D',
+      t:'Hacer el foro en dos sesiones separadas: una al mediodía para estudiantes, una a las 6pm para docentes. Grabar ambas y publicar el cruce de perspectivas como contenido editorial.',
+      h:'Diseñar para los ritmos reales de cada grupo.',
+      fx:{v:+12,c:+14,p:-4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Dos conversaciones distintas que el contenido editorial tuvo que unir.',
+        body:'Las dos sesiones funcionaron bien por separado. La de los estudiantes fue más emotiva y política. La de los docentes fue más técnica y propositiva. Pero cuando el equipo intentó editar el "cruce de perspectivas", encontró que los dos grupos habían hablado sobre temas diferentes sin darse cuenta. Los estudiantes hablaron de dignidad y reconocimiento; los docentes, de condiciones contractuales. La articulación editorial tomó dos semanas y el resultado fue rico pero artificial: el cruce no ocurrió en vivo, ocurrió en el montaje.',
+        nota:'Diseñar para los ritmos distintos de cada grupo resuelve el problema de acceso pero crea un nuevo problema: la conversación entre los grupos no ocurre naturalmente. El encuentro tiene que ser fabricado editorialmente, con todos los sesgos que eso implica.',
+        crisis:null,
+        effs:['⬆ Vínculo: +12 (cada grupo sintió que el evento fue diseñado para su realidad específica)','⬆ Capacidad: +14 (la articulación editorial del cruce fue un ejercicio de análisis profundo para el equipo)','⬇ Presencia: −4 (hacer dos eventos en lugar de uno diluyó la convocatoria y generó confusión sobre a cuál asistir)']
+      }
+    }
+  ]
+},
+
+/* ── 5 ── POST-EVENTO */
+{
+  kicker:'Situación 5 — Continuidad y comunidad',
+  title:'Lo que queda cuando el evento termina',
+  ctx:'El quinto evento fue el mejor del semestre por cualquier métrica: 70 asistentes, participación sostenida, varios testimonios potentes, y al final una ovación espontánea. El equipo está eufórico. Pero en los días que siguen, no hay claridad sobre qué hacer con la energía generada. Hay varias propuestas en conflicto.',
+  dato:'Dato del laboratorio: Los públicos fuertes se sostienen con vínculos continuos, no con experiencias puntuales. Pero la continuidad tiene costos de gestión que un equipo pequeño y voluntario no siempre puede sostener. La pregunta no es si mantener el vínculo sino cómo hacerlo sin agotar al equipo.',
+  q:'¿Qué haces con la energía del evento?',
+  opts:[
+    {
+      l:'A',
+      t:'Crear un grupo de WhatsApp con todos los asistentes y nombrarlo "Comunidad Ciudad Vaga" con la idea de que sirva para todo: anuncios, conversaciones, feedback.',
+      h:'Canal inmediato de continuidad.',
+      fx:{v:-4,c:-6,p:+8},
+      res:{
+        kicker:'Consecuencia',
+        title:'El grupo tiene 68 miembros. Y un silencio de semanas.',
+        body:'El grupo arrancó con energía: los primeros dos días hubo 40 mensajes. Al cuarto día, solo hablaban tres personas. Al décimo, silencio total. El problema no era la falta de interés sino la falta de propósito: sin un tema específico, sin una pregunta que responder, sin una tarea que hacer juntos, el grupo se convirtió en otro canal de anuncios. Varias personas lo silenciaron. Cuando dos semanas después el equipo publicó un anuncio en el grupo sobre el siguiente evento, solo 8 de 68 lo vieron activamente.',
+        nota:'Un grupo de WhatsApp sin propósito específico reproduce la lógica del consumo pasivo que el evento quería transformar. La herramienta técnica de continuidad no crea comunidad: la comunidad necesita algo que hacer junta.',
+        crisis:null,
+        effs:['⬇ Vínculo: −4 (el grupo silencioso genera sensación de fracaso en quienes participaron con entusiasmo inicial)','⬇ Capacidad: −6 (la falta de propósito claro no activa ninguna capacidad productiva)','⬆ Presencia: +8 (el grupo existe y mantiene a Ciudad Vaga visible en 68 teléfonos aunque sea en silencio)']
+      }
+    },
+    {
+      l:'B',
+      t:'Identificar a las 8 personas que participaron más activamente en el evento y escribirles individualmente proponiéndoles ser un "consejo editorial de audiencias" que asesora los siguientes eventos.',
+      h:'Convertir a los más activos en parte del equipo.',
+      fx:{v:+18,c:+16,p:-14},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los 8 aceptaron. Y los otros 62 no supieron que eso existía.',
+        body:'El consejo editorial fue extraordinariamente productivo. En la primera reunión, una de las ocho señaló que Ciudad Vaga nunca había hecho un evento en la sede de Meléndez, donde estudian estudiantes de ciencias exactas que tienen una cultura y unos horarios completamente distintos. Eso derivó en un evento diseñado específicamente para esa comunidad que fue el más exitoso del siguiente semestre. Pero los 62 que no fueron convocados al consejo sintieron, algunos con razón, que el medio había elegido a una élite de participantes.',
+        nota:'La selección de "los más activos" puede parecer natural pero reproduce una jerarquía: quienes ya tenían capital simbólico para participar activamente en el evento obtienen más acceso al medio. Los más silenciosos en el evento no son necesariamente los menos comprometidos.',
+        crisis:'⚠ TENSIÓN DE ÉLITE: La selección de los "más activos" excluyó formas de participación que no son visibles en un evento público.',
+        effs:['⬆ Vínculo: +18 (los 8 seleccionados construyeron un vínculo profundo y productivo con el medio)','⬆ Capacidad: +16 (el consejo desarrolló capacidades de análisis y diseño que ningún otro formato hubiera producido)','⬇ Presencia: −14 (los no seleccionados experimentaron una forma de exclusión que redujo su disposición a seguir participando)']
+      }
+    },
+    {
+      l:'C',
+      t:'No hacer nada estructural por ahora. Publicar la memoria del evento (fotos, síntesis, frases clave) y dejar que la comunidad que quiera seguir en contacto lo haga por sus propios canales.',
+      h:'No forzar la continuidad; dejar que emerja sola.',
+      fx:{v:-12,c:+4,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La memoria fue hermosa. Y fue el final.',
+        body:'La publicación de la memoria tuvo buen alcance: 340 interacciones. Varios asistentes la compartieron. Pero sin ningún canal ni propuesta de continuidad, la energía del evento se disipó en tres semanas. Cuando llegó la convocatoria del siguiente evento, la mayoría de los 70 asistentes del anterior lo recibió como si fuera la primera vez que escuchaban de Ciudad Vaga. La comunidad que el evento había creado no existía en ningún lado: solo en el recuerdo de quienes habían estado.',
+        nota:'La comunidad que no tiene forma de reconocerse a sí misma entre eventos no acumula. Cada evento comienza desde cero. La comunidad necesita un espacio — material o digital — donde pueda continuar existiendo cuando no hay evento.',
+        crisis:null,
+        effs:['⬇ Vínculo: −12 (la ausencia de continuidad hace que cada evento sea un reinicio; el vínculo no se acumula)','⬆ Capacidad: +4 (la publicación de la memoria fue un ejercicio editorial valioso para el equipo)','⬇ Presencia: −6 (la comunidad generada en el evento no tiene donde continuar existiendo)']
+      }
+    },
+    {
+      l:'D',
+      t:'Proponer a todos los asistentes que en 15 días haya un "segundo tiempo" del evento: una sesión más pequeña donde quienes quieran seguir la conversación puedan traer algo que pensaron o leyeron desde entonces.',
+      h:'La continuidad como extensión del evento, no como nueva estructura.',
+      fx:{v:+12,c:+18,p:-8},
+      res:{
+        kicker:'Consecuencia',
+        title:'Vinieron 19. Y la conversación fue más rica que la del evento original.',
+        body:'De los 70, 19 llegaron al segundo tiempo. Pero esos 19 habían pensado durante dos semanas. Varios habían leído algo relacionado con lo que se discutió. Dos habían hablado del tema con personas que no estuvieron en el evento y traían perspectivas nuevas. La conversación fue más densa, más argumentada y más honesta que la del evento original. Al final, los 19 propusieron que el segundo tiempo se repitiera después de cada evento. Ciudad Vaga había encontrado accidentalmente su formato de comunidad más poderoso.',
+        nota:'La continuidad más efectiva puede no ser la más estructurada. Una segunda sesión sin nombre oficial, sin jerarquías, solo con quienes quisieron seguir, puede producir el tipo de conversación que ningún evento masivo puede generar.',
+        crisis:null,
+        effs:['⬆ Vínculo: +12 (los 19 construyeron entre sí y con el medio un vínculo que el evento masivo no había generado)','⬆ Capacidad: +18 (la conversación preparada y argumentada desarrolló capacidades analíticas extraordinarias)','⬇ Presencia: −8 (el "segundo tiempo" fue pequeño; la mayoría de los 70 no volvió)']
+      }
+    }
+  ]
+},
+
+/* ── 6 ── LENGUAJE Y ACCESO */
+{
+  kicker:'Situación 6 — Lenguaje, saber y poder',
+  title:'El evento que todos dicen que fue excelente pero que nadie entendió',
+  ctx:'Ciudad Vaga organizó un conversatorio sobre economía política de las plataformas digitales. Los panelistas — dos investigadores de posgrado — hablaron con precisión académica sobre "datificación", "captura de renta atencional" y "asimetría epistémica". La evaluación anónima posterior reveló algo incómodo: el 68% de los asistentes marcó "fue excelente" pero solo el 31% dijo "entendí lo suficiente para explicárselo a alguien más". El equipo ahora discute qué hacer diferente.',
+  dato:'Dato del laboratorio: El lenguaje experto funciona como barrera de entrada para quienes no comparten ese código. Pero simplificar en exceso puede vaciar el contenido. La tensión entre rigor y accesibilidad no tiene solución perfecta.',
+  q:'¿Cómo cambias el diseño del próximo evento sobre un tema complejo?',
+  opts:[
+    {
+      l:'A',
+      t:'Pedirle a los investigadores que en el próximo evento comiencen con una definición de cada término técnico antes de usarlo, y que el moderador interrumpa cuando el lenguaje se vuelva inaccesible.',
+      h:'Mediar el lenguaje experto en tiempo real.',
+      fx:{v:+6,c:+10,p:-4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los investigadores accedieron. El evento fue más lento y más claro, pero también más frustrante para los más avanzados.',
+        body:'El nuevo formato funcionó para el 60% de los asistentes que en el evento anterior no habían podido seguir. Pero generó tensión con quienes sí manejaban el lenguaje técnico: varias personas con formación en economía política o comunicación dijeron después que el evento fue "demasiado básico" y que la constante interrupción para definir términos rompía el hilo del argumento. Un investigador invitado comentó en privado que le pareció condescendiente tener que "traducir" su propio trabajo.',
+        nota:'Hacer accesible el lenguaje experto puede ser percibido simultáneamente como liberador para algunos y como condescendiente para otros. No existe un registro neutro: cualquier decisión de lenguaje incluye a algunos y excluye a otros.',
+        crisis:null,
+        effs:['⬆ Vínculo: +6 (quienes antes no podían seguir sintieron que el evento era para ellos también)','⬆ Capacidad: +10 (la mediación del lenguaje amplió genuinamente la comprensión de más asistentes)','⬇ Presencia: −4 (algunos asistentes avanzados decidieron no volver porque el nivel les pareció insuficiente)']
+      }
+    },
+    {
+      l:'B',
+      t:'Diseñar el evento en dos momentos separados: un "pre-evento" de 20 minutos con vocabulario básico para quienes llegan sin formación, y luego el conversatorio principal sin interrupciones.',
+      h:'Separar las audiencias por nivel de entrada.',
+      fx:{v:-8,c:+8,p:+4},
+      res:{
+        kicker:'Consecuencia',
+        title:'El pre-evento funcionó. Y creó una jerarquía visible que nadie quería.',
+        body:'Los 22 asistentes del pre-evento aprendieron los conceptos básicos y pudieron seguir el conversatorio principal mejor que antes. Pero durante el conversatorio, fue fácil identificar quiénes habían llegado "al pre-evento" — se sentaban juntos, hacían preguntas más básicas — y quiénes habían llegado "directamente". La separación que se diseñó para democratizar el acceso produjo una distinción visible entre "los que ya sabían" y "los que necesitaban refuerzo". Varios estudiantes del pre-evento dijeron sentirse marcados.',
+        nota:'Separar audiencias por nivel de acceso puede reproducir la jerarquía que se quería desafiar. La clasificación visible entre quienes "ya saben" y quienes "necesitan introducción" puede ser más excluyente que el lenguaje técnico original.',
+        crisis:'⚠ JERARQUÍA NO INTENCIONAL: El pre-evento creó una distinción visible entre participantes que reprodujo la exclusión que quería eliminar.',
+        effs:['⬇ Vínculo: −8 (los asistentes del pre-evento sintieron que el formato los marcaba como "los que no saben")','⬆ Capacidad: +8 (la comprensión del conversatorio mejoró significativamente para quienes participaron en el pre-evento)','⬆ Presencia: +4 (el formato no disuadió la asistencia; quienes llegaron pudieron participar de alguna forma)']
+      }
+    },
+    {
+      l:'C',
+      t:'Reemplazar a los investigadores académicos por personas que viven directamente el tema: trabajadores de plataformas, estudiantes que generan contenido, personas que rastrean su propio consumo.',
+      h:'El saber de la experiencia como alternativa al saber académico.',
+      fx:{v:+14,c:+12,p:+8},
+      res:{
+        kicker:'Consecuencia',
+        title:'La conversación fue entendible. Y también fue menos precisa.',
+        body:'El evento fue el más accesible del año. Una estudiante que documentó sus propios patrones de consumo en TikTok presentó hallazgos que todos podían reconocer en su propia vida. Un trabajador de delivery que usa aplicaciones para gestionar sus rutas habló de cómo el algoritmo moldea su día. Pero varios asistentes con formación en economía política señalaron después que los análisis, aunque ricos en experiencia, no tenían las herramientas conceptuales para articular lo que describían. El evento fue inclusivo y empobrecido simultáneamente.',
+        nota:'El saber de la experiencia es legítimo y valioso, pero no es idéntico al saber analítico. Reemplazar uno por otro en lugar de ponerlos en diálogo puede producir accesibilidad a costa de profundidad.',
+        crisis:null,
+        effs:['⬆ Vínculo: +14 (la identificación con los hablantes generó un vínculo emocional más profundo que la charla académica)','⬆ Capacidad: +12 (los asistentes pudieron nombrar sus propias experiencias con mayor claridad)','⬆ Presencia: +8 (el formato accesible atrajo asistentes que no habrían ido a un conversatorio académico)']
+      }
+    },
+    {
+      l:'D',
+      t:'Mantener a los investigadores pero agregar un "comentarista provocador" — alguien sin formación académica pero con experiencia directa — que después de cada intervención pregunta lo que no entendió o cuestiona lo que no le convence.',
+      h:'El no-experto como representante de la audiencia dentro del panel.',
+      fx:{v:+10,c:+16,p:-2},
+      res:{
+        kicker:'Consecuencia',
+        title:'El comentarista fue el momento más potente del evento. Y también el más incómodo.',
+        body:'Invitaste a una estudiante de tercer semestre de Ingeniería sin formación en ciencias sociales. Sus preguntas fueron devastadoramente precisas: "¿Qué significa exactamente que el algoritmo nos manipula? ¿No lo elegimos nosotros cuando aceptamos los términos?" Uno de los investigadores tuvo dificultades para responder sin recurrir a más jerga. El otro respondió con una claridad que nunca había usado antes. El evento fue tenso, intelectualmente honesto y revelador para todos. Pero el investigador más afectado por las preguntas no aceptó la segunda invitación.',
+        nota:'Poner el saber experto en diálogo con el no-saber articulado puede producir los momentos más reveladores de un evento. También puede generar incomodidad institucional con los expertos que se sienten cuestionados públicamente.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (la tensión visible entre saberes generó un vínculo fuerte entre quienes valoraron la honestidad del intercambio)','⬆ Capacidad: +16 (la necesidad de los expertos de responder sin jerga desarrolló una capacidad de comunicación que todos pudieron aprovechar)','⬇ Presencia: −2 (el investigador que no aceptó volver redujo marginalmente la capacidad de convocatoria futura)']
+      }
+    }
+  ]
+},
+
+/* ── 7 ── PRESIÓN INSTITUCIONAL */
+{
+  kicker:'Situación 7 — Autonomía y supervivencia',
+  title:'La mano que te alimenta y la boca que te pide silencio',
+  ctx:'Ciudad Vaga opera con presupuesto de la universidad y espacios físicos que la institución presta. El Decano de la Facultad llama al director del programa para comunicar que el foro planeado sobre el alza de matrículas "genera un ambiente de tensión innecesario justo antes del proceso de matrícula". No pide formalmente que se cancele. Dice que "sería conveniente postergarlo". El director del programa no le da una respuesta en ese momento. La conversación llegó al equipo de Ciudad Vaga.',
+  dato:'Dato del laboratorio: La independencia editorial de un medio universitario con financiamiento institucional es una tensión estructural permanente, no un problema que se resuelve de una vez. Las audiencias universitarias críticas detectan la autocensura y la penalizan, pero también entienden las condiciones de supervivencia de los medios que dependen de la institución.',
+  q:'¿Qué decide Ciudad Vaga?',
+  opts:[
+    {
+      l:'A',
+      t:'Hacer el foro exactamente como estaba planeado, sin mencionar la llamada del Decano. La independencia editorial no se negocia.',
+      h:'Ignorar la presión y seguir.',
+      fx:{v:+8,c:+6,p:+10},
+      res:{
+        kicker:'Consecuencia',
+        title:'El foro fue bien. Dos semanas después, el espacio físico dejó de estar disponible.',
+        body:'El foro ocurrió sin problemas visibles. Fue uno de los mejores eventos del semestre. Pero cuando el equipo intentó reservar el mismo salón para el evento de noviembre, el sistema mostraba que estaba "en mantenimiento" indefinido. Otros salones tampoco estaban disponibles para Ciudad Vaga. Nadie lo dijo explícitamente, pero la relación con la infraestructura institucional cambió. El equipo pudo continuar operando con espacios alternativos, pero más pequeños y menos accesibles. La independencia tuvo un costo material concreto.',
+        nota:'La independencia editorial no es gratuita cuando se depende de la infraestructura institucional. Ignorar la presión sin estrategia puede parecer valiente pero puede tener consecuencias graduales y silenciosas que erosionan la capacidad operativa del medio.',
+        crisis:'⚠ CONSECUENCIA SILENCIOSA: El acceso a espacios físicos se redujo sin que nadie lo dijera explícitamente.',
+        effs:['⬆ Vínculo: +8 (la audiencia que valoraba la independencia editorial la reconoció y fortaleció su adhesión)','⬆ Capacidad: +6 (el equipo demostró capacidad de operar bajo presión sin ceder)','⬆ Presencia: +10 (el foro fue muy visible y amplió la audiencia de Ciudad Vaga)']
+      }
+    },
+    {
+      l:'B',
+      t:'Posponer el foro tres semanas después del proceso de matrícula, como sugirió el Decano, pero hacerlo público: anunciar la postergación explicando que fue por "sugerencia institucional".',
+      h:'Ceder pero con transparencia sobre el porqué.',
+      fx:{v:-14,c:-8,p:-4},
+      res:{
+        kicker:'Consecuencia',
+        title:'El anuncio de la postergación fue más viral que cualquier evento.',
+        body:'El anuncio generó 1.200 interacciones en 24 horas, muchas más que cualquier evento de Ciudad Vaga ese semestre. Pero los comentarios estaban divididos: algunos celebraban la transparencia, otros acusaban al medio de haberse "doblegado" y luego de hacer "marketing de la rendición". La postergación con transparencia producía simultáneamente credibilidad por la honestidad y daño por la percepción de ceder. El foro tres semanas después tuvo 90 asistentes — el doble de lo habitual — pero muchos llegaron más por la polémica que por el tema.',
+        nota:'La transparencia sobre la presión institucional puede producir más atención que el evento en sí. Pero esa atención viene cargada de expectativas y lecturas contradictorias que el medio no puede controlar.',
+        crisis:'⚠ LECTURA DIVIDIDA: La transparencia sobre la postergación fue leída simultáneamente como valentía y como rendición.',
+        effs:['⬇ Vínculo: −14 (quienes interpretaron la postergación como rendición rompieron su confianza en el medio)','⬇ Capacidad: −8 (el equipo dedicó gran energía a gestionar la controversia en lugar de producir contenido)','⬇ Presencia: −4 (algunos se alejaron por la percepción de debilidad editorial)']
+      }
+    },
+    {
+      l:'C',
+      t:'Solicitar una reunión con el Decano para entender sus preocupaciones específicas, y negociar: mantener el foro pero invitar a un vocero de la administración como uno de los panelistas.',
+      h:'Incluir a la institución en el debate en lugar de confrontarla.',
+      fx:{v:+4,c:+10,p:+6},
+      res:{
+        kicker:'Consecuencia',
+        title:'El Decano no aceptó participar. Pero tampoco obstaculizó el evento.',
+        body:'La reunión fue tensa pero profesional. El Decano declinó participar como panelista pero no insistió en la postergación. El foro ocurrió con una silla vacía que tenía un cartel: "Esta silla fue ofrecida a la administración de la facultad." La imagen de la silla vacía fue la más compartida del evento. Algunos la leyeron como un gesto elegante de apertura. Otros, como una provocación calculada. La relación con la institución quedó en un punto de equilibrio frágil.',
+        nota:'Invitar a la institución al debate es una postura que puede ser leída simultáneamente como apertura democrática y como provocación estratégica. La interpretación depende de quién mira y desde dónde.',
+        crisis:null,
+        effs:['⬆ Vínculo: +4 (el gesto fue leído positivamente por quienes valoran el diálogo institucional)','⬆ Capacidad: +10 (el equipo desarrolló capacidades de negociación institucional sin ceder el fondo)','⬆ Presencia: +6 (la imagen de la silla vacía amplió la visibilidad del evento más allá de lo esperado)']
+      }
+    },
+    {
+      l:'D',
+      t:'Cancelar el foro y transformarlo en una serie de entrevistas publicadas en el medio con las voces que iban a participar, evitando el evento físico que genera "tensión".',
+      h:'El contenido sin el evento como forma de resistencia blanda.',
+      fx:{v:-6,c:+8,p:-8},
+      res:{
+        kicker:'Consecuencia',
+        title:'Las entrevistas fueron buenas. Y completamente invisibles.',
+        body:'Las cuatro entrevistas publicadas durante dos semanas fueron piezas de alta calidad periodística. El análisis sobre el alza de matrículas fue más profundo y documentado que lo que hubiera producido el foro. Pero el alcance fue mínimo: entre 80 y 120 lecturas por entrevista, en un momento en que el foro hubiera tenido 60-80 personas en la sala y circulación en redes. El formato de contenido publicado no genera el mismo evento de atención que el evento presencial. La resistencia blanda fue también la resistencia invisible.',
+        nota:'El contenido de calidad sin el evento no produce el mismo efecto de comunidad. Un foro crea un momento compartido que las entrevistas publicadas no pueden replicar, por más que el contenido sea superior.',
+        crisis:null,
+        effs:['⬇ Vínculo: −6 (la cancelación del evento fue percibida como una capitulación aunque el contenido siguiera)','⬆ Capacidad: +8 (las entrevistas desarrollaron habilidades periodísticas del equipo)','⬇ Presencia: −8 (el formato de entrevistas publicadas no generó la movilización de audiencia que el evento hubiera producido)']
+      }
+    }
+  ]
+},
+
+/* ── 8 ── EVALUACIÓN */
+{
+  kicker:'Situación 8 — Saber qué pasó realmente',
+  title:'Los números dicen que fue un éxito. Los cuerpos dicen otra cosa.',
+  ctx:'El equipo evalúa el semestre. Las métricas son buenas: promedio de 55 asistentes por evento, 8.400 personas alcanzadas en redes, cobertura en dos medios externos. Sin embargo, en una conversación informal después del último evento, tres participantes habituales dijeron algo que nadie esperaba: "Vengo a todos los eventos pero siento que nada cambia." El equipo no sabe cómo procesar esa información junto con las métricas positivas.',
+  dato:'Dato del laboratorio: Las métricas digitales capturan comportamiento, no experiencia. El tiempo de permanencia en una pantalla no mide comprensión. El número de asistentes no mide transformación. Pero sin métricas no hay forma de hablar institucionalmente del impacto.',
+  q:'¿Cómo evalúas lo que hizo Ciudad Vaga este semestre?',
+  opts:[
+    {
+      l:'A',
+      t:'Hacer una encuesta de 5 preguntas cerradas a todos los asistentes del semestre, sistematizar los resultados y presentar el porcentaje de satisfacción como indicador principal.',
+      h:'Datos limpios y comparables.',
+      fx:{v:-8,c:-6,p:+6},
+      res:{
+        kicker:'Consecuencia',
+        title:'El 84% dijo que "recomendaría Ciudad Vaga a un amigo". La frase "nada cambia" no apareció en ninguna respuesta.',
+        body:'La encuesta fue respondida por 120 personas. El 84% la recomendaría, el 78% dijo que el evento "amplió su comprensión del tema". Pero ninguna pregunta cerrada capturaba la experiencia de sentir que "nada cambia". Las preguntas cerradas producen respuestas dentro del rango que el diseñador imaginó: si no preguntas por la transformación, no obtienes respuesta sobre ella. La evaluación fue tranquilizadora y ciega simultáneamente.',
+        nota:'Las preguntas cerradas miden lo que ya sabes que quieres medir. Los hallazgos más importantes de una evaluación suelen venir de preguntas abiertas o de la observación de lo que nadie preguntó.',
+        crisis:null,
+        effs:['⬇ Vínculo: −8 (el equipo no aprendió lo que la audiencia habitual estaba tratando de decirle)','⬇ Capacidad: −6 (la evaluación no desarrolló la capacidad del equipo de escuchar feedback complejo)','⬆ Presencia: +6 (los datos de satisfacción respaldan institucionalmente la continuidad del programa)']
+      }
+    },
+    {
+      l:'B',
+      t:'Organizar una sesión de evaluación abierta con quienes asistieron a más de dos eventos y preguntarles directamente "¿qué no está funcionando?"',
+      h:'Escuchar lo incómodo.',
+      fx:{v:+14,c:+18,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La sesión de evaluación fue el evento más difícil del año. Y el más útil.',
+        body:'Llegaron 18 personas. La primera media hora fue incómoda: nadie quería ser el primero en criticar. Luego alguien dijo: "Los eventos son buenos pero siempre son sobre lo mismo: nosotros, los estudiantes de comunicación, hablando entre nosotros." Otro señaló: "Nunca he visto que algo dicho en un evento de Ciudad Vaga cambie algo dentro de la universidad." Una tercera dijo algo más perturbador: "Ciudad Vaga hace eventos sobre audiencias pero nunca le pregunta a su audiencia qué quiere." Tres horas de conversación que el equipo no esperaba.',
+        nota:'La evaluación que busca activamente el feedback negativo es la más costosa emocionalmente y la más útil cognitivamente. La audiencia habitual sabe cosas sobre el medio que el equipo no puede ver desde adentro.',
+        crisis:null,
+        effs:['⬆ Vínculo: +14 (ser escuchados críticamente generó en los participantes un vínculo más maduro con el medio)','⬆ Capacidad: +18 (el equipo desarrolló capacidad de escucha crítica y de procesar feedback que contradice su autoimage)','⬇ Presencia: −6 (la sesión de evaluación no es un evento de convocatoria masiva; participaron solo los más comprometidos)']
+      }
+    },
+    {
+      l:'C',
+      t:'Comparar los indicadores del semestre con los del semestre anterior y presentar el informe de crecimiento como evaluación.',
+      h:'El progreso como medida de éxito.',
+      fx:{v:-4,c:-10,p:+10},
+      res:{
+        kicker:'Consecuencia',
+        title:'Ciudad Vaga creció en todo. Y no sabe si eso significa algo.',
+        body:'El informe comparativo es impresionante: +40% de asistentes, +120% de alcance en redes, +200% de cobertura externa. Pero al presentarlo, alguien del equipo preguntó: "¿Crecimos en qué exactamente?" La pregunta se quedó sin respuesta porque las métricas no incluían nada sobre la calidad de la participación, el nivel de vínculo construido o la capacidad de acción de la audiencia. El informe demostraba que Ciudad Vaga era más grande. No demostraba que era más útil o que la audiencia era más fuerte.',
+        nota:'El crecimiento como categoría evaluativa asume que más grande es mejor. Pero una audiencia más grande puede ser una audiencia más pasiva. El crecimiento en métricas de alcance es compatible con el retroceso en indicadores de profundidad.',
+        crisis:null,
+        effs:['⬇ Vínculo: −4 (el enfoque en el crecimiento desplazó la pregunta sobre la calidad del vínculo)','⬇ Capacidad: −10 (el equipo no desarrolló capacidad de evaluar lo que más importa porque no tenía instrumentos para ello)','⬆ Presencia: +10 (el crecimiento medido es real y respalda institucionalmente el programa)']
+      }
+    },
+    {
+      l:'D',
+      t:'Rastrear a cinco participantes que asistieron al primer evento del semestre y entrevistarlos ahora, al final: ¿qué sigue siendo igual en su relación con los medios y qué cambió?',
+      h:'El cambio en personas concretas como indicador de impacto.',
+      fx:{v:+10,c:+14,p:-4},
+      res:{
+        kicker:'Consecuencia',
+        title:'De los cinco, tres cambiaron algo. Los otros dos no sabían que Ciudad Vaga seguía existiendo.',
+        body:'Las cinco entrevistas revelaron un rango extraordinario. Una estudiante había cambiado completamente su relación con TikTok después de la primera sesión; ahora analizaba los videos que consumía antes de compartirlos. Un estudiante había empezado a llevar registro de sus patrones de consumo. Pero dos de los cinco no recordaban con claridad a qué evento habían asistido y no sabían que Ciudad Vaga había seguido haciendo eventos. El impacto existía, era real, pero era radical en algunos y completamente ausente en otros.',
+        nota:'El impacto en personas concretas revela algo que ninguna métrica agrupada puede mostrar: la distribución del efecto. Un promedio de "transformación moderada" puede esconder que algunos cambiaron profundamente y otros nada.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (el seguimiento personalizado generó vínculo con los cinco entrevistados que se sintieron recordados e importantes para el medio)','⬆ Capacidad: +14 (el equipo desarrolló instrumentos de evaluación del impacto que no dependían de métricas de alcance)','⬇ Presencia: −4 (el método de rastreo individual no es escalable; el equipo invirtió tiempo en cinco personas en lugar de en la comunidad más amplia)']
+      }
+    }
+  ]
+},
+
+/* ── 9 ── CIERRE */
+{
+  kicker:'Situación 9 — El final que define lo que empieza',
+  title:'Cerrar el año sin saber qué construiste',
+  ctx:'El evento de cierre del año se acerca. El equipo está dividido sobre qué tipo de cierre tiene sentido. Han hecho nueve eventos, construido algo, y también cometido errores. La comunidad de Ciudad Vaga es ahora más grande y más difícil de leer: hay quienes llevan ocho meses participando y quienes llegaron al último evento. Hay quienes critican el medio internamente y quienes lo defienden públicamente. Hay quienes sienten que el vínculo es profundo y quienes sienten que Ciudad Vaga sigue siendo un medio que habla sobre audiencias sin ser realmente de ellas.',
+  dato:'Dato del laboratorio: Los públicos fuertes no son una meta que se alcanza: son una práctica que se sostiene o se abandona con cada decisión. El cierre de un ciclo define el punto de partida del siguiente.',
+  q:'¿Cómo cierras el año?',
+  opts:[
+    {
+      l:'A',
+      t:'Un evento de celebración: reconocer públicamente a quienes participaron, mostrar lo construido, agradecer. La comunidad necesita verse a sí misma.',
+      h:'El reconocimiento como acto de comunidad.',
+      fx:{v:+6,c:-4,p:+14},
+      res:{
+        kicker:'Consecuencia',
+        title:'La celebración fue genuina. Y los que llegaron eran los mismos de siempre.',
+        body:'El evento de cierre convocó a 65 personas. Hubo reconocimientos, hubo aplausos, hubo fotografías. Varias personas dijeron que fue "el evento más emotivo del año". Pero al revisar la lista de asistentes, el equipo encontró que el 80% había estado en al menos cuatro eventos anteriores. La celebración convocó al núcleo ya convencido. Quienes tenían una relación más distante con el medio, o quienes habían tenido experiencias mixtas, no vinieron. El cierre fue una celebración de quienes ya estaban adentro.',
+        nota:'La celebración como cierre tiene la paradoja de profundizar el vínculo con quienes ya tienen vínculo profundo, mientras resulta invisible o irrelevante para quienes tienen una relación más periférica. El evento más emotivo puede ser el más endogámico.',
+        crisis:null,
+        effs:['⬆ Vínculo: +6 (el núcleo comprometido fortaleció su vínculo con el medio y entre sí)','⬇ Capacidad: −4 (la celebración no generó ningún proceso de análisis o aprendizaje)','⬆ Presencia: +14 (el evento fue visible y generó documentación pública del año de trabajo)']
+      }
+    },
+    {
+      l:'B',
+      t:'Un foro de rendición de cuentas: Ciudad Vaga presenta a su comunidad qué hizo, qué prometió y no cumplió, y qué cambiaría. Dejar que la audiencia responda.',
+      h:'Transparencia sobre el proceso como cierre.',
+      fx:{v:+16,c:+12,p:-10},
+      res:{
+        kicker:'Consecuencia',
+        title:'La rendición de cuentas incomodó a todo el equipo. Y fue la mejor publicidad que Ciudad Vaga tuvo en el año.',
+        body:'El foro abrió con el equipo presentando cuatro errores concretos del año y cómo los procesaron. La sala quedó en silencio. Nadie esperaba eso. Luego vino la parte más tensa: el espacio abierto de preguntas. Alguien preguntó por qué el evento sobre representación había demorado tanto en resolverse. Alguien más señaló que Ciudad Vaga nunca había hecho un evento en las sedes más alejadas del campus. El foro fue incómodo, honesto y generó más confianza que cualquier evento anterior. Pero asistieron solo 28 personas.',
+        nota:'La rendición de cuentas genera el tipo de confianza más durable pero convoca a menos gente. Es una práctica para audiencias que ya tienen un nivel de vínculo suficiente para valorar la honestidad sobre los fracasos. Para audiencias periféricas, puede parecer irrelevante o incluso alarmante.',
+        crisis:null,
+        effs:['⬆ Vínculo: +16 (la honestidad sobre los errores construyó un tipo de confianza que la celebración nunca puede producir)','⬆ Capacidad: +12 (el análisis colectivo de lo que no funcionó desarrolló capacidades críticas en el equipo y en los asistentes)','⬇ Presencia: −10 (la rendición de cuentas es un formato que convoca a pocos pero profundamente)']
+      }
+    },
+    {
+      l:'C',
+      t:'Un evento diseñado completamente por la comunidad: Ciudad Vaga anuncia que el cierre lo organizan quienes han participado en el año, sin intervención del equipo editorial.',
+      h:'El cierre como prueba de autonomía de la comunidad.',
+      fx:{v:+12,c:+16,p:+2},
+      res:{
+        kicker:'Consecuencia',
+        title:'La comunidad organizó algo que el equipo no hubiera imaginado. Y también algo que el equipo no hubiera elegido.',
+        body:'Ocho personas tomaron la propuesta en serio y organizaron el evento. Eligieron un formato de "feria de proyectos" donde cada quien presentaba algo que había hecho desde Ciudad Vaga. El evento fue extraordinario en algunos momentos y caótico en otros. Hubo un momento en que un participante usó el micrófono para criticar duramente a Ciudad Vaga por haber cedido ante la presión del Decano — algo que el equipo no había resuelto internamente y que quedó expuesto públicamente. La autonomía de la comunidad produjo honestidad que el equipo no había previsto.',
+        nota:'Una comunidad autónoma no reproduce los valores del equipo que la formó: reproduce sus propios valores, incluidos los que cuestionan al medio. La autonomía real implica perder control sobre el relato.',
+        crisis:'⚠ EXPOSICIÓN NO PLANIFICADA: La autonomía de la comunidad expuso públicamente un conflicto interno que el equipo no había resuelto.',
+        effs:['⬆ Vínculo: +12 (quienes organizaron el evento construyeron un vínculo de corresponsabilidad que va más allá del consumo)','⬆ Capacidad: +16 (el ejercicio de organizar un evento desarrolló capacidades que ningún evento dirigido puede producir)','⬆ Presencia: +2 (el evento ocurrió aunque con menos asistencia de la esperada)']
+      }
+    },
+    {
+      l:'D',
+      t:'No hacer evento de cierre. Publicar en cambio un largo texto colectivo escrito por el equipo y por participantes del año, reflexionando sobre qué es Ciudad Vaga y qué debería ser. Dejarlo abierto a comentarios.',
+      h:'El cierre como texto, no como evento.',
+      fx:{v:+8,c:+10,p:-16},
+      res:{
+        kicker:'Consecuencia',
+        title:'El texto fue el más leído del año. Y los comentarios revelaron que la comunidad tenía una imagen de Ciudad Vaga completamente distinta a la del equipo.',
+        body:'El texto fue leído 1.800 veces — más que cualquier otro contenido del semestre. Los comentarios llegaron durante tres semanas. Muchos fueron elogiosos. Pero varios revelaron una brecha: la imagen que el equipo tenía de sí mismo como "espacio de diálogo horizontal" no coincidía con la imagen que varios lectores tenían del medio como "un grupo de estudiantes de Comunicación hablando entre ellos". El texto abrió una conversación que el equipo necesitaba tener pero no había tenido.',
+        nota:'A veces el cierre más honesto es el que revela la distancia entre cómo el medio se ve a sí mismo y cómo lo ve su audiencia. Esa distancia es incómoda y necesaria.',
+        crisis:null,
+        effs:['⬆ Vínculo: +8 (el texto reflexivo generó un tipo de vínculo intelectual con lectores que los eventos no siempre producen)','⬆ Capacidad: +10 (el proceso de escritura colectiva desarrolló capacidades de reflexión editorial)','⬇ Presencia: −16 (la ausencia de evento físico redujo drásticamente la experiencia de comunidad y la documentación visual del año)']
+      }
+    }
+  ]
+}
+
+,
+
+/* ── 10 ── COLABORACIÓN EXTERNA */
+{
+  kicker:'Situación 10 — Alianzas y contaminación de identidad',
+  title:'El medio que te ofrece sus 12.000 seguidores',
+  ctx:'Un medio estudiantil de otra universidad —bien establecido, con 12.000 seguidores en Instagram y una estética más viral— propone a Ciudad Vaga co-producir un evento conjunto sobre salud mental universitaria. La propuesta es atractiva en alcance, pero el equipo nota diferencias sustanciales de enfoque: el otro medio trabaja con formatos rápidos, contenido de alto impacto emocional y sin mucha profundidad analítica. Su audiencia espera algo distinto a lo que Ciudad Vaga hace.',
+  dato:'Dato del laboratorio: Las alianzas entre medios pueden ampliar audiencias o disolver identidades. La diferencia entre una alianza que enriquece y una que homogeneiza depende de si las lógicas editoriales son compatibles o simplemente adyacentes.',
+  q:'¿Qué decides sobre la colaboración?',
+  opts:[
+    {
+      l:'A',
+      t:'Aceptar la co-producción con total igualdad de crédito y de toma de decisiones sobre formato, contenido y convocatoria.',
+      h:'Alianza horizontal sin jerarquías.',
+      fx:{v:-10,c:-8,p:+20},
+      res:{
+        kicker:'Consecuencia',
+        title:'El evento llegó a 3.000 personas. Y no fue el evento de ninguno de los dos.',
+        body:'La negociación del formato duró tres semanas y terminó en un compromiso que no satisfizo plenamente a ninguno. Ciudad Vaga cedió profundidad analítica; el otro medio cedió viralidad. El resultado fue un panel de 90 minutos que ni profundizaba lo suficiente para la audiencia de Ciudad Vaga ni era lo suficientemente ágil para la del otro medio. La transmisión en vivo tuvo 3.200 visualizaciones. Los comentarios en tiempo real eran de dos tipos que casi no se mezclaban: "¿cuándo hablan de algo concreto?" y "esto está muy denso, no entiendo nada".',
+        nota:'Una alianza editorial igualitaria entre lógicas distintas puede producir un objeto que no pertenece a ninguna de las dos audiencias originales. La horizontalidad no garantiza la coherencia.',
+        crisis:'⚠ DILUCIÓN DE IDENTIDAD: El evento co-producido no fue reconocido como propio por ninguna de las dos audiencias.',
+        effs:['⬇ Vínculo: −10 (la audiencia habitual de Ciudad Vaga sintió que el medio había comprometido su identidad)','⬇ Capacidad: −8 (el formato de compromiso no desarrolló las capacidades analíticas que Ciudad Vaga había cultivado)','⬆ Presencia: +20 (la alianza multiplicó el alcance de Ciudad Vaga de forma que no hubiera logrado sola)']
+      }
+    },
+    {
+      l:'B',
+      t:'Aceptar pero con roles diferenciados: el otro medio produce la convocatoria y la difusión; Ciudad Vaga diseña el formato del evento y modera la conversación.',
+      h:'División del trabajo según fortalezas distintas.',
+      fx:{v:+8,c:+12,p:+10},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los roles diferenciados funcionaron. Y generaron una tensión de crédito que nadie anticipó.',
+        body:'El formato fue el de Ciudad Vaga: conversación estructurada con fuentes no habituales y espacio para el análisis. La convocatoria fue del otro medio: viral, emotiva, masiva. Llegaron 180 personas a un evento diseñado para 60. Ciudad Vaga tuvo que improvisar en tiempo real. El formato se sostuvo, pero con dificultades. Al publicar la memoria, el otro medio apareció primero en todos los materiales porque su equipo de diseño era más rápido. Varias personas en la audiencia nueva creyeron que el evento era del otro medio, no de Ciudad Vaga.',
+        nota:'Dividir roles según fortalezas puede ser más eficiente que negociar todo, pero la visibilidad pública del trabajo no sigue necesariamente la lógica de la división real de tareas.',
+        crisis:null,
+        effs:['⬆ Vínculo: +8 (las nuevas audiencias que llegaron por el otro medio y encontraron el formato de Ciudad Vaga construyeron un vínculo genuino)','⬆ Capacidad: +12 (el formato de Ciudad Vaga se mantuvo intacto y fue experimentado por una audiencia mucho más amplia)','⬆ Presencia: +10 (la alianza de difusión amplió el alcance sin comprometer el diseño del evento)']
+      }
+    },
+    {
+      l:'C',
+      t:'Proponer no un evento conjunto sino un intercambio: Ciudad Vaga hace un evento para la audiencia del otro medio, y el otro medio hace un evento para la audiencia de Ciudad Vaga, cada uno con su propio formato.',
+      h:'Aprender del otro sin fusionarse con él.',
+      fx:{v:+14,c:+16,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'Dos eventos distintos que revelaron que las audiencias no son tan distintas.',
+        body:'El evento de Ciudad Vaga para la audiencia del otro medio fue un ejercicio extenuante: el equipo tuvo que diseñar algo analíticamente sólido pero accesible para personas sin entrenamiento previo en pensar críticamente sobre medios. El resultado fue el formato más cuidadosamente diseñado del año. El evento del otro medio para la audiencia de Ciudad Vaga fue incómodo: el formato emocional y rápido generó conversaciones que la audiencia habitual de Ciudad Vaga no sabía cómo sostener. Ambos equipos aprendieron algo que no esperaban: sus audiencias eran más parecidas de lo que creían.',
+        nota:'Diseñar para una audiencia distinta a la propia obliga a cuestionar supuestos sobre la propia audiencia que de otro modo permanecen invisibles.',
+        crisis:null,
+        effs:['⬆ Vínculo: +14 (el proceso de diseñar para audiencias distintas generó aprendizaje mutuo entre los dos equipos editoriales)','⬆ Capacidad: +16 (la necesidad de traducir el formato analítico de Ciudad Vaga desarrolló habilidades de accesibilidad que no tenían)','⬇ Presencia: −6 (el intercambio fue más pequeño y menos visible que un gran evento conjunto)']
+      }
+    },
+    {
+      l:'D',
+      t:'Declinar la propuesta. Ciudad Vaga no está en condiciones de absorber la lógica de otro medio sin comprometer lo que ha construido.',
+      h:'La identidad editorial como prioridad sobre el alcance.',
+      fx:{v:+6,c:+4,p:-12},
+      res:{
+        kicker:'Consecuencia',
+        title:'La negativa fue respetada. Y el otro medio hizo el evento solo, con más alcance.',
+        body:'Ciudad Vaga declinó con una carta editorial que explicaba las razones. El otro medio respondió con respeto y organizó el evento de salud mental solo. Llegaron 400 personas. El evento fue emocional, generó mucha visibilidad en redes y cubrió el tema de forma que Ciudad Vaga nunca hubiera elegido. Varias personas de la audiencia habitual de Ciudad Vaga asistieron al evento del otro medio y preguntaron después por qué Ciudad Vaga no había participado. La identidad preservada fue también una oportunidad perdida de estar donde estaba la conversación.',
+        nota:'La coherencia editorial puede ser una fortaleza y también un aislamiento. Negarse a la alianza puede proteger la identidad y también puede dejar al medio fuera de conversaciones que ocurren sin él.',
+        crisis:null,
+        effs:['⬆ Vínculo: +6 (la decisión editorial coherente fue valorada por quienes comparten el enfoque de Ciudad Vaga)','⬆ Capacidad: +4 (el equipo articuló explícitamente su identidad editorial al escribir la carta de declinación)','⬇ Presencia: −12 (Ciudad Vaga estuvo ausente de la conversación más amplia sobre salud mental universitaria de ese semestre)']
+      }
+    }
+  ]
+},
+
+/* ── 11 ── VOCES EN CONFLICTO */
+{
+  kicker:'Situación 11 — Cuando la comunidad no está de acuerdo consigo misma',
+  title:'Dos grupos de tu propia audiencia quieren eventos incompatibles',
+  ctx:'Ciudad Vaga recibe dos propuestas simultáneas de grupos que forman parte de su comunidad habitual. El colectivo feminista de la facultad quiere un evento sobre acoso sexual en la universidad: testimonios anónimos de víctimas y análisis de la respuesta institucional. El grupo de estudiantes de derecho quiere un foro sobre "garantías del debido proceso en casos de acoso": cómo proteger a los acusados de denuncias falsas. Ambos grupos consideran que sus eventos son urgentes y necesarios. Ciudad Vaga solo tiene presupuesto y capacidad para organizar uno en el mes siguiente.',
+  dato:'Dato del laboratorio: Los públicos fuertes incluyen voces en conflicto. Pero no todos los conflictos tienen la misma asimetría de poder. El diseño editorial siempre toma partido, incluso cuando cree que no lo hace.',
+  q:'¿Qué hace Ciudad Vaga?',
+  opts:[
+    {
+      l:'A',
+      t:'Organizar el evento del colectivo feminista. La situación de las víctimas de acoso tiene mayor urgencia y menor visibilidad institucional que las garantías procesales.',
+      h:'Priorizar explícitamente la voz más vulnerable.',
+      fx:{v:+8,c:+10,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'El evento fue poderoso. El grupo de derecho acusó a Ciudad Vaga de parcialidad.',
+        body:'El evento de testimonios fue uno de los más impactantes del año. Varias personas se acercaron después a contar experiencias que no habían contado en ningún otro espacio. La investigación periodística que surgió del evento generó cuatro artículos. Pero el grupo de derecho publicó una declaración señalando que Ciudad Vaga había elegido una posición en un debate que requería equilibrio. Varios estudiantes que antes participaban habitualmente dejaron de venir. El equipo no estaba seguro de si la decisión fue editorial o política —y si esa distinción importaba.',
+        nota:'Elegir qué voz amplificar es siempre una decisión política, incluso cuando se justifica editorialmente. La neutralidad es también una posición: decidir no tomar partido es, en sí misma, un tipo de toma de partido.',
+        crisis:'⚠ ACUSACIÓN DE PARCIALIDAD: Un sector de la audiencia habitual percibió la decisión editorial como militancia política.',
+        effs:['⬆ Vínculo: +8 (el colectivo feminista y las personas que compartían ese marco construyeron un vínculo fuerte con Ciudad Vaga)','⬆ Capacidad: +10 (el evento generó periodismo de investigación y desarrollo de herramientas analíticas significativo)','⬇ Presencia: −6 (un sector de la audiencia se alejó al percibir al medio como parcial)']
+      }
+    },
+    {
+      l:'B',
+      t:'Organizar un único evento que integre las dos perspectivas: víctimas y perspectiva de garantías procesales en el mismo espacio, con moderación cuidadosa.',
+      h:'El encuentro de posiciones como formato.',
+      fx:{v:-14,c:-6,p:+4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Las dos comunidades aceptaron. Y el evento fue una experiencia traumática para varias personas.',
+        body:'A los 20 minutos del evento, cuando una estudiante estaba dando testimonio de su experiencia de acoso, un panelista del grupo de derecho la interrumpió para señalar que "sin pruebas documentadas, ese testimonio no puede tomarse como evidencia". La moderadora no supo cómo intervenir. Varias personas en la sala lloraron. Dos se fueron. El colectivo feminista publicó al día siguiente que Ciudad Vaga había expuesto a víctimas a un interrogatorio público. El grupo de derecho publicó que el evento había sido "manipulado emocionalmente". Ninguno volvió.',
+        nota:'No todos los conflictos son debates simétricos donde "escuchar las dos partes" es la postura correcta. Algunos conflictos tienen asimetrías de poder y de vulnerabilidad que el diseño del evento debe reconocer, o producirá daño.',
+        crisis:'⚠ DAÑO EN EL EVENTO: El formato de "encuentro de posiciones" expuso a participantes vulnerables a interrogatorio público sin protección suficiente.',
+        effs:['⬇ Vínculo: −14 (ambas comunidades consideraron que Ciudad Vaga había fallado en proteger el espacio y en comprender la asimetría del conflicto)','⬇ Capacidad: −6 (el evento no produjo análisis sino daño)','⬆ Presencia: +4 (la convocatoria fue amplia aunque el resultado fue negativo)']
+      }
+    },
+    {
+      l:'C',
+      t:'Ayudar a ambos grupos a organizar sus propios eventos de forma independiente, con asesoría de Ciudad Vaga pero sin que el medio aparezca como organizador de ninguno.',
+      h:'Ciudad Vaga como facilitadora, no como productora.',
+      fx:{v:+10,c:+8,p:-8},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los dos eventos ocurrieron. Ciudad Vaga no existió en ninguno.',
+        body:'Ciudad Vaga asesoró los formatos, consiguió los espacios y conectó a ambos grupos con personas que podían apoyarlos. Los dos eventos funcionaron bien por separado. Pero Ciudad Vaga no apareció en ninguno: ni en los materiales ni en los agradecimientos. Cuando el equipo publicó después un artículo sobre los dos eventos, varios lectores preguntaron cuál había sido el rol real del medio. La respuesta honesta —"los asesoramos pero quisimos no aparecer para no tomar partido"— generó lecturas contradictorias: algunos la valoraron como madurez, otros como cobardía.',
+        nota:'Facilitar sin aparecer puede ser una postura de respeto a la autonomía de las comunidades o una forma de evitar la responsabilidad de tomar decisiones editoriales difíciles. La diferencia la determina la honestidad con la que el medio lo reconoce.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (ambos grupos valoraron el apoyo concreto sin imposición de agenda)','⬆ Capacidad: +8 (el rol de facilitadora desarrolló habilidades del equipo en diseño de eventos para otros)','⬇ Presencia: −8 (Ciudad Vaga fue invisible en dos conversaciones relevantes que ella misma había ayudado a producir)']
+      }
+    },
+    {
+      l:'D',
+      t:'Proponer a ambos grupos que Ciudad Vaga mediará un proceso de tres semanas donde los dos colectivos diseñan conjuntamente el evento que ambos consideran necesario.',
+      h:'El proceso de negociación como el evento.',
+      fx:{v:+4,c:+14,p:-14},
+      res:{
+        kicker:'Consecuencia',
+        title:'El proceso duró seis semanas. El evento nunca ocurrió.',
+        body:'Las tres reuniones de mediación fueron tensas. En la primera, el colectivo feminista salió a los 40 minutos. En la segunda, acordaron un marco mínimo. En la tercera, volvieron a estar en desacuerdo sobre quién moderaría. Seis semanas después, no había evento. Pero el proceso de mediación había generado algo inesperado: dos integrantes del colectivo feminista y una del grupo de derecho habían construido una relación de trabajo que no existía antes. Juntas propusieron un evento distinto al que cualquiera de los dos grupos había imaginado originalmente. El evento ocurrió tres meses después.',
+        nota:'Los procesos de mediación entre comunidades en conflicto son lentos, inciertos y frecuentemente frustrantes. También son, a veces, el único camino hacia algo genuinamente nuevo. La pregunta es si el medio tiene capacidad de sostener ese tiempo sin resultado visible.',
+        crisis:null,
+        effs:['⬆ Vínculo: +4 (las personas que persistieron en el proceso construyeron relaciones que ningún evento hubiera generado)','⬆ Capacidad: +14 (el proceso desarrolló habilidades de mediación y escucha entre personas con marcos incompatibles)','⬇ Presencia: −14 (seis semanas sin evento visible erosionaron la percepción de actividad de Ciudad Vaga)']
+      }
+    }
+  ]
+},
+
+/* ── 12 ── REDES SOCIALES VS PRESENCIA */
+{
+  kicker:'Situación 12 — La trampa del contenido para redes',
+  title:'El reel que triplicó los seguidores. ¿Y ahora qué?',
+  ctx:'Un clip de 45 segundos de un evento de Ciudad Vaga —una frase especialmente potente de una participante— se volvió viral: 180.000 reproducciones en tres días, 2.300 seguidores nuevos, decenas de menciones. El equipo está eufórico. Pero en la reunión semanal alguien señala lo que nadie quería decir: los 2.300 nuevos seguidores llegaron por esa frase, no por lo que Ciudad Vaga hace. No saben que hay eventos. No saben qué es el Laboratorio de Audiencias. Solo vieron 45 segundos. ¿Qué se hace con esa atención?',
+  dato:'Dato del laboratorio: La atención conseguida de forma incidental no es lo mismo que el vínculo construido de forma intencional. Convertir audiencia incidental en audiencia activa requiere un proceso que la mayoría de los medios no diseña explícitamente.',
+  q:'¿Cómo gestionas la atención que llegó de manera inesperada?',
+  opts:[
+    {
+      l:'A',
+      t:'Producir más contenido del mismo tipo: clips cortos con frases potentes de los eventos, diseñados para viralizar. Capitalizar el momentum mientras existe.',
+      h:'Escalar lo que funcionó.',
+      fx:{v:-14,c:-12,p:+24},
+      res:{
+        kicker:'Consecuencia',
+        title:'Ciudad Vaga creció a 18.000 seguidores. Y dejó de organizar eventos.',
+        body:'Los clips funcionaron. Cada semana, uno o dos videos alcanzaban entre 5.000 y 40.000 reproducciones. Los seguidores crecieron. Pero producir contenido de alta frecuencia para redes consumió el tiempo y la energía del equipo: en el segundo mes de la estrategia, Ciudad Vaga no había organizado ningún evento. La lógica de la producción de contenido viral había reemplazado a la lógica de la construcción de comunidad. Cuando el equipo intentó convocar al siguiente evento, el 90% de los seguidores no sabía que Ciudad Vaga hacía eventos.',
+        nota:'Escalar lo que genera alcance puede desplazar lo que genera vínculo. La atención en redes y la comunidad activa son recursos que se alimentan de lógicas distintas y a veces incompatibles.',
+        crisis:'⚠ DERIVA DE IDENTIDAD: Ciudad Vaga se convirtió en una cuenta de contenido viral sin comunidad presencial.',
+        effs:['⬇ Vínculo: −14 (la audiencia nueva no construyó ningún vínculo con el medio más allá del consumo del clip)','⬇ Capacidad: −12 (la producción de clips no desarrolla la capacidad comunicativa de ninguna audiencia)','⬆ Presencia: +24 (el crecimiento de seguidores fue real, aunque la naturaleza de esa audiencia cambió completamente)']
+      }
+    },
+    {
+      l:'B',
+      t:'No cambiar nada. Los seguidores nuevos llegaron por algo que Ciudad Vaga hizo sin intentar viralizarlo; si el trabajo es bueno, la atención llegará sola.',
+      h:'La coherencia editorial como estrategia implícita.',
+      fx:{v:+6,c:+8,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'El trabajo siguió siendo bueno. La mayoría de los 2.300 dejó de seguir en tres semanas.',
+        body:'Ciudad Vaga continuó su ritmo habitual: eventos cada tres semanas, contenido de análisis, conversaciones de profundidad. De los 2.300 nuevos, permanecieron unos 340 después de un mes. Varios de esos 340 sí llegaron a los eventos presenciales y se integraron a la comunidad activa. Pero el 85% que llegó por el clip y no encontró más clips similares simplemente dejó de seguir. La oportunidad de vincular a 2.300 personas pasó sin que el equipo hubiera diseñado nada para aprovecharla.',
+        nota:'La coherencia sin diseño de conversión puede ser una postura de integridad o una falta de reflexión sobre cómo funciona la atención. Los dos son posibles simultáneamente.',
+        crisis:null,
+        effs:['⬆ Vínculo: +6 (los 340 que se quedaron lo hicieron por razones sólidas y construyeron un vínculo real)','⬆ Capacidad: +8 (el equipo mantuvo su foco en lo que desarrolla capacidades reales)','⬇ Presencia: −6 (la oportunidad de conversión de los 2.300 se perdió casi en su totalidad)']
+      }
+    },
+    {
+      l:'C',
+      t:'Diseñar explícitamente una "puerta de entrada" para los nuevos seguidores: una pieza de contenido que explica qué es Ciudad Vaga, qué hace, y cómo participar, dirigida específicamente a quienes llegaron por el clip.',
+      h:'Diseñar la conversión de atención incidental a participación intencional.',
+      fx:{v:+10,c:+6,p:+6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La "puerta de entrada" convirtió al 12%. Y generó una discusión interna sobre si Ciudad Vaga debía tener "estrategia de audiencia".',
+        body:'El video de presentación tuvo 28.000 reproducciones entre los seguidores nuevos. De los 2.300, unos 280 interactuaron con el contenido explicativo y 95 se inscribieron al siguiente evento. La tasa de conversión fue baja pero real. Pero el proceso de diseñar la "puerta de entrada" generó una discusión incómoda: ¿Ciudad Vaga debería tener una estrategia explícita de crecimiento de audiencia? ¿Eso cambiaba algo sobre qué tipo de medio era? Parte del equipo lo veía como madurez organizacional; otra parte lo veía como una deriva hacia la lógica del marketing.',
+        nota:'Diseñar explícitamente la conversión de atención incidental en participación activa es una práctica que muchos medios con vocación comunitaria evitan porque la asocian a la lógica del marketing. La pregunta es si la alternativa —dejar pasar la oportunidad— es más coherente o simplemente más pasiva.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (los 95 que llegaron a través del proceso de conversión construyeron un vínculo más informado que los que llegan sin contexto)','⬆ Capacidad: +6 (el equipo desarrolló habilidades de diseño de contenido explicativo para audiencias nuevas)','⬆ Presencia: +6 (el proceso de conversión añadió un número pequeño pero real de participantes activos)']
+      }
+    },
+    {
+      l:'D',
+      t:'Contactar directamente a 20 de los nuevos seguidores que comentaron de forma más reflexiva en el clip y preguntarles si quieren participar en una conversación sobre el tema.',
+      h:'La atención masiva como señal para encontrar las 20 personas que importan.',
+      fx:{v:+16,c:+14,p:-10},
+      res:{
+        kicker:'Consecuencia',
+        title:'De los 20 contactados, 14 respondieron. De esos 14, 9 llegaron al evento. De esos 9, 4 se convirtieron en parte del núcleo.',
+        body:'El proceso fue lento y artesanal: revisar comentarios, leer perfiles, escribir mensajes personalizados. Pero funcionó de una manera que ningún otro método de conversión hubiera producido. Los 9 que llegaron al evento no llegaron como seguidores: llegaron como personas que habían sido vistas y convocadas individualmente. Su nivel de participación en el evento fue significativamente mayor que el de quienes llegaban por convocatoria abierta. Los 2.286 restantes nunca supieron que existía Ciudad Vaga más allá del clip.',
+        nota:'La atención masiva puede ser más útil como señal de dónde están las personas relevantes que como audiencia en sí misma. Seleccionar 20 de 2.300 para un proceso artesanal es una apuesta de prioridad: la profundidad de 20 sobre el alcance de 2.300.',
+        crisis:null,
+        effs:['⬆ Vínculo: +16 (el contacto individual generó el tipo de vínculo más sólido posible con los 14 que respondieron)','⬆ Capacidad: +14 (las personas convocadas individualmente llegaron con una disposición a la participación profunda que el evento aprovechó)','⬇ Presencia: −10 (la apuesta por la profundidad dejó pasar completamente el alcance de los 2.286 restantes)']
+      }
+    }
+  ]
+},
+
+/* ── 13 ── ARCHIVO Y MEMORIA */
+{
+  kicker:'Situación 13 — Lo que se guarda y lo que se pierde',
+  title:'El evento que no existe porque nadie lo documentó',
+  ctx:'El equipo descubrió que los tres mejores eventos del año —los que más conversaciones produjeron, los que más vínculo generaron— no tienen casi registro: fotos borrosas, ninguna grabación, notas fragmentadas. Los tres que sí están bien documentados son los más vistosos en redes pero los más superficiales en contenido. El equipo debe decidir cómo documenta los eventos del año siguiente. Hay una tensión real: la documentación de alta calidad requiere que alguien del equipo esté enfocado en eso durante el evento, y eso lo saca de participar.',
+  dato:'Dato del laboratorio: La memoria colectiva de una comunidad depende parcialmente de cómo se documentan sus experiencias compartidas. Pero la presencia de cámaras y grabadores puede modificar lo que ocurre en el evento. El observador cambia lo observado.',
+  q:'¿Cómo documentas los eventos del próximo año?',
+  opts:[
+    {
+      l:'A',
+      t:'Asignar a una persona del equipo como "documentalista" de cada evento: no participa en la conversación, solo registra. Vídeo, fotos, notas.',
+      h:'La documentación como rol especializado.',
+      fx:{v:-6,c:-8,p:+10},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los eventos están perfectamente documentados. Y algo cambió en ellos.',
+        body:'La persona con cámara modificó la dinámica de manera sutil pero real. En el tercer evento, una participante dijo algo muy personal sobre su experiencia de depresión y luego miró la cámara y pidió que esa parte no se grabara. La documentalista apagó la cámara. Pero el momento de pedir que no se grabara también modificó el flujo de la conversación. Varias personas que antes habrían hablado con libertad empezaron a pensarlo dos veces. Los eventos quedaron documentados, pero los momentos más vulnerables —los más valiosos— o no aparecían en el registro o habían dejado de ocurrir.',
+        nota:'La documentación sistemática resuelve el problema del archivo pero puede crear un problema de autenticidad. Las conversaciones más honestas suelen ocurrir fuera del registro. El documentalista siempre documenta lo que la gente está dispuesta a decir frente a una cámara.',
+        crisis:null,
+        effs:['⬇ Vínculo: −6 (la presencia de la cámara creó una distancia entre los participantes y la profundidad de lo que eran capaces de compartir)','⬇ Capacidad: −8 (los momentos más ricos de análisis y vulnerabilidad dejaron de ocurrir o de registrarse)','⬆ Presencia: +10 (la documentación de calidad amplió significativamente el alcance post-evento del contenido en redes)']
+      }
+    },
+    {
+      l:'B',
+      t:'Documentar solo lo que ocurre antes y después del evento: el proceso de diseño, las conversaciones preparatorias, y las reflexiones posteriores de quienes participaron. El evento en sí, sin cámaras.',
+      h:'Registrar el proceso, no el momento.',
+      fx:{v:+12,c:+10,p:-8},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los procesos quedaron documentados de forma extraordinaria. Los eventos son invisibles en redes.',
+        body:'La serie de documentales breves sobre el diseño de cada evento —las decisiones, los conflictos internos, los cambios de última hora— fue el contenido más valorado del año por quienes lo vieron. Pero lo vieron muy pocos: sin imágenes del evento en sí, la capacidad de circulación en redes fue mínima. Una investigadora de otra universidad citó uno de esos documentales de proceso en un artículo académico. Pero la comunidad universitaria local casi no los conocía.',
+        nota:'Documentar el proceso en lugar del resultado produce un tipo de conocimiento que los eventos en sí no generan: visibilidad del pensamiento editorial, de los errores, de las decisiones. Pero ese conocimiento circula de forma muy distinta al contenido de impacto visual inmediato.',
+        crisis:null,
+        effs:['⬆ Vínculo: +12 (quienes vieron los documentales de proceso construyeron un vínculo con el medio de una profundidad inusual)','⬆ Capacidad: +10 (el equipo desarrolló capacidades reflexivas sobre su propia práctica al documentarla)','⬇ Presencia: −8 (la ausencia de contenido visual del evento redujo drásticamente el alcance en redes)']
+      }
+    },
+    {
+      l:'C',
+      t:'Pedirle a los participantes que sean ellos quienes documenten, desde sus propios teléfonos y perspectivas, y compartir sus materiales colectivamente después.',
+      h:'La memoria colectiva como producción colectiva.',
+      fx:{v:+8,c:+12,p:+4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Llegaron 140 fotos y videos de 28 dispositivos distintos. Y ninguno se puede publicar sin revisar.',
+        body:'La documentación distribuida funcionó: la cantidad de material fue extraordinaria y diversa — el mismo momento visto desde 12 ángulos distintos. Pero surgió un problema que nadie había previsto: ¿qué se hace con el material que incluye a personas que no habían consentido ser grabadas? ¿Con el video donde alguien dice algo y luego pide que no se difunda? ¿Con las fotos de las notas del pizarrón que contienen información que los participantes consideraban interna? El equipo pasó tres semanas revisando el material antes de publicar cualquier cosa.',
+        nota:'La documentación distribuida y colectiva produce memoria desde múltiples perspectivas pero también crea complejidades de consentimiento y privacidad que la documentación centralizada no tiene. La horizontalidad tiene costos de gestión que no son menores.',
+        crisis:null,
+        effs:['⬆ Vínculo: +8 (la participación en la documentación generó sentido de coautoría de la memoria colectiva)','⬆ Capacidad: +12 (los participantes desarrollaron conciencia sobre cómo se construye el archivo y el relato de un evento)','⬆ Presencia: +4 (el material diverso, una vez curado, generó más alcance que el de un solo documentalista)']
+      }
+    },
+    {
+      l:'D',
+      t:'No documentar los eventos durante el año. Al final del semestre, hacer una sesión de memoria colectiva donde los participantes reconstruyen juntos lo que ocurrió.',
+      h:'La memoria como práctica, no como archivo.',
+      fx:{v:+14,c:+16,p:-14},
+      res:{
+        kicker:'Consecuencia',
+        title:'La sesión de memoria fue el evento más rico del semestre. Y el pasado se volvió irrecuperable.',
+        body:'La sesión de memoria al final del semestre convocó a 22 personas. Cada quien recordaba algo distinto. Las contradicciones entre memorias fueron el material más interesante: dos personas recordaban el mismo evento de maneras completamente opuestas, y discutir por qué reveló algo sobre ambas que ninguna grabación hubiera capturado. Pero cuando el equipo necesitó citar o usar el material de los eventos en una solicitud de financiamiento, no había nada: ni fechas exactas, ni citas textuales, ni evidencia de lo que había ocurrido. La memoria viva es rica; la memoria sin registro no puede probarse.',
+        nota:'La memoria como práctica colectiva produce un tipo de conocimiento que el archivo no puede replicar. Pero el conocimiento que no puede documentarse no puede citarse, presentarse a convocatorias ni persistir más allá de quienes lo vivieron.',
+        crisis:'⚠ FRAGILIDAD INSTITUCIONAL: Sin registro, los logros del semestre no pueden demostrarse externamente.',
+        effs:['⬆ Vínculo: +14 (la sesión de memoria colectiva generó un sentido de historia compartida de alta densidad)','⬆ Capacidad: +16 (el ejercicio de reconstruir el pasado desarrolló capacidades de análisis reflexivo sobre la propia práctica)','⬇ Presencia: −14 (la ausencia de documentación hizo invisible externamente un semestre de trabajo)']
+      }
+    }
+  ]
+},
+
+/* ── 14 ── DINERO Y AUTONOMÍA */
+{
+  kicker:'Situación 14 — Lo que el dinero compra y lo que cobra',
+  title:'La financiación que te resuelve el semestre y te complica el resto',
+  ctx:'Una empresa de medios digitales con operación en Colombia ofrece patrocinar los próximos cuatro eventos de Ciudad Vaga con un monto que cubriría el 80% del presupuesto del semestre. A cambio pide: que su logo aparezca en todos los materiales, que uno de los cuatro eventos sea sobre "el futuro del periodismo digital" —un tema que coincide con sus intereses comerciales— y que el medio no organice eventos sobre prácticas laborales en empresas de medios durante el período de patrocinio.',
+  dato:'Dato del laboratorio: El financiamiento externo con condiciones editoriales es una de las tensiones estructurales más frecuentes en los medios universitarios. La dependencia económica y la independencia editorial rara vez coexisten sin fricción.',
+  q:'¿Qué decides sobre el patrocinio?',
+  opts:[
+    {
+      l:'A',
+      t:'Aceptar el patrocinio con todas las condiciones tal como están. El dinero permite hacer eventos que de otro modo serían imposibles, y el tema propuesto no es necesariamente malo.',
+      h:'La pragmática de los recursos como prioridad.',
+      fx:{v:-16,c:-6,p:+14},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los cuatro eventos ocurrieron. Y Ciudad Vaga dejó de ser el medio que era.',
+        body:'El patrocinio funcionó logísticamente: los eventos fueron más grandes, mejor producidos, con invitados que Ciudad Vaga no hubiera podido convocar sola. El evento sobre "futuro del periodismo digital" fue interesante aunque tangencialmente relacionado con los intereses de la empresa. Pero la clausula de no hacer eventos sobre prácticas laborales en medios fue el problema: en el mes tres, una investigación de una docente sobre precariedad laboral en medios digitales colombianos —exactamente el tipo de contenido que Ciudad Vaga hubiera amplificado— fue rechazada internamente sin que nadie lo dijera en voz alta. La autocensura no se negoció: emergió sola.',
+        nota:'La autocensura que produce una cláusula de patrocinio no siempre es explícita. Frecuentemente opera como una predisposición aprendida a no buscar ciertos temas porque el contexto los hace incómodos.',
+        crisis:'⚠ AUTOCENSURA EMERGENTE: La cláusula del patrocinio comenzó a operar antes de que el equipo lo reconociera explícitamente.',
+        effs:['⬇ Vínculo: −16 (varios colaboradores cercanos y participantes habituales detectaron el cambio de agenda y se distanciaron)','⬇ Capacidad: −6 (el equipo redujo su capacidad de análisis crítico en las áreas que podían afectar al patrocinador)','⬆ Presencia: +14 (los recursos permitieron eventos más grandes y mejor producidos con mayor alcance)']
+      }
+    },
+    {
+      l:'B',
+      t:'Rechazar el patrocinio y publicar una nota editorial explicando por qué: las condiciones son incompatibles con la independencia de Ciudad Vaga.',
+      h:'La transparencia del rechazo como acto editorial.',
+      fx:{v:+10,c:+8,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La nota editorial tuvo más alcance que cualquier evento del semestre. Y los eventos del semestre fueron más pequeños.',
+        body:'La nota fue compartida 890 veces y citada en dos discusiones sobre ética periodística en otras universidades. Ciudad Vaga ganó reputación en círculos de periodismo crítico que no conocían el medio. Pero el semestre sin el patrocinio fue operativamente difícil: dos eventos se cancelaron por falta de presupuesto, uno fue significativamente reducido. La reputación ganada y la capacidad operativa perdida no se compensan directamente. El equipo cumplió el semestre pero con más esfuerzo y menos alcance.',
+        nota:'La integridad editorial tiene costos operativos reales y a veces inasequibles. La pregunta no es si la independencia vale la pena en abstracto: es si el equipo puede sostener el costo concreto de mantenerla.',
+        crisis:null,
+        effs:['⬆ Vínculo: +10 (la decisión reforzó la confianza de la audiencia más crítica en la independencia del medio)','⬆ Capacidad: +8 (el equipo articuló explícitamente sus principios editoriales al escribir la nota de rechazo)','⬇ Presencia: −6 (la reducción de recursos impactó directamente el alcance y la frecuencia de los eventos)']
+      }
+    },
+    {
+      l:'C',
+      t:'Negociar: aceptar el logo y el tema propuesto, pero rechazar la cláusula de restricción temática. Sin esa condición, el patrocinio es aceptable.',
+      h:'La línea roja como el punto de negociación.',
+      fx:{v:+4,c:+4,p:+10},
+      res:{
+        kicker:'Consecuencia',
+        title:'La empresa aceptó. Y seis semanas después volvió con otra solicitud.',
+        body:'La negociación funcionó: la empresa cedió en la cláusula de restricción. Los primeros dos eventos ocurrieron sin problemas. Pero en el tercer mes, un representante de la empresa envió un mensaje al director preguntando si "sería posible incluir una mención breve" de un nuevo producto de la empresa en el evento de cierre. La solicitud era informal, no contractual. El equipo sabía que decir que no era legítimo. También sabía que la relación económica hacía incómodo decirlo. La cláusula formal había sido rechazada; la presión informal era más difícil de manejar.',
+        nota:'Negociar las condiciones formales de un patrocinio no elimina la presión informal que acompaña cualquier relación económica. La claridad contractual y la claridad de la relación son dos cosas distintas.',
+        crisis:'⚠ PRESIÓN INFORMAL: Sin cláusula contractual, la empresa intentó influir editorialmente a través de la relación personal.',
+        effs:['⬆ Vínculo: +4 (la negociación fue vista como una postura de autonomía razonable por parte de la audiencia)','⬆ Capacidad: +4 (el equipo desarrolló habilidades de negociación con patrocinadores)','⬆ Presencia: +10 (los recursos del patrocinio parcial permitieron eventos más amplios que los que Ciudad Vaga hubiera podido hacer sola)']
+      }
+    },
+    {
+      l:'D',
+      t:'Proponer a la empresa un modelo distinto: una donación sin condiciones editoriales a cambio de aparecer en el informe de impacto anual como "apoyo institucional". Sin logo en eventos, sin tema, sin cláusula.',
+      h:'Rediseñar la relación económica desde el inicio.',
+      fx:{v:+12,c:+6,p:-4},
+      res:{
+        kicker:'Consecuencia',
+        title:'La empresa rechazó la contrapropuesta. Y Ciudad Vaga buscó financiamiento en otro lado.',
+        body:'La empresa no aceptó: su interés en el patrocinio era precisamente la visibilidad en eventos, no una línea en un informe. La contrapropuesta fue rechazada en 48 horas. Ciudad Vaga buscó otras fuentes: una convocatoria de fondos para medios comunitarios a la que no habían postulado antes, y una colecta entre participantes habituales que generó el 30% del presupuesto necesario. El proceso de diversificar el financiamiento fue más lento y menos cuantioso, pero reveló que la comunidad estaba dispuesta a sostener económicamente lo que consideraba suyo.',
+        nota:'Rediseñar la relación económica con el patrocinador puede cerrar esa puerta y abrir otras que el equipo no había explorado. La diversificación del financiamiento es más trabajosa y menos predecible, pero puede ser más compatible con la identidad del medio.',
+        crisis:null,
+        effs:['⬆ Vínculo: +12 (la colecta entre participantes generó un vínculo de corresponsabilidad económica que ningún patrocinio externo puede producir)','⬆ Capacidad: +6 (el equipo desarrolló capacidades de gestión de financiamiento diversificado)','⬇ Presencia: −4 (el presupuesto reducido limitó marginalmente el alcance de los eventos del semestre)']
+      }
+    }
+  ]
+}
+
+,
+
+/* ── 15 ── CRISIS INTERNA DEL EQUIPO */
+{
+  kicker:'Situación 15 — Cuando el equipo es el problema',
+  title:'La persona más capaz del equipo hace daño dentro del equipo',
+  ctx:'Uno de los miembros más talentosos de Ciudad Vaga —quien diseñó los tres mejores eventos del semestre, tiene las mejores relaciones con las comunidades externas y es la cara visible del medio en la universidad— tiene un patrón de comportamiento dentro del equipo que varias personas han señalado en privado: interrumpe sistemáticamente a sus compañeras en las reuniones, toma decisiones unilateralmente sin consultar, y cuando alguien lo cuestiona responde con ironía que desanima a seguir hablando. Tres personas del equipo han dicho en conversaciones separadas que están pensando en irse.',
+  dato:'Dato del laboratorio: Los medios con vocación comunitaria frecuentemente tienen una tensión no resuelta entre los resultados externos —la calidad del producto, el impacto en la audiencia— y las condiciones internas de trabajo. Un equipo dañado produce, tarde o temprano, un medio dañado.',
+  q:'¿Cómo aborda Ciudad Vaga esta situación?',
+  opts:[
+    {
+      l:'A',
+      t:'Hablar directamente con esa persona: presentarle los patrones concretos que han sido señalados y pedirle que cambie. Sin mediación, sin protocolo, una conversación directa entre el equipo.',
+      h:'La claridad directa como primer recurso.',
+      fx:{v:+8,c:+6,p:-2},
+      res:{
+        kicker:'Consecuencia',
+        title:'La conversación ocurrió. Y fue más complicada de lo que el equipo esperaba.',
+        body:'La persona escuchó. Reconoció algunos patrones, cuestionó otros. Dijo que no había sido consciente de la magnitud del impacto. Durante tres semanas, el comportamiento mejoró notablemente. Luego, gradualmente, volvieron los patrones anteriores — menos intensos, pero presentes. El equipo no sabía si la conversación había producido un cambio real o un ajuste temporal. Dos de las tres personas que pensaban irse decidieron quedarse. La tercera se fue de todas formas, diciendo que la conversación había llegado demasiado tarde.',
+        nota:'La conversación directa puede producir cambios reales, cambios temporales o ningún cambio. La dificultad es que desde adentro es imposible distinguir entre los tres mientras ocurren. El costo de esperar a saberlo lo pagan quienes están siendo afectados.',
+        crisis:null,
+        effs:['⬆ Vínculo: +8 (las personas que se quedaron valoraron que el equipo hubiera nombrado el problema en lugar de ignorarlo)','⬆ Capacidad: +6 (el proceso de preparar la conversación desarrolló habilidades de comunicación de conflictos que el equipo no tenía)','⬇ Presencia: −2 (la persona que se fue era parte de la red de contactos del medio)']
+      }
+    },
+    {
+      l:'B',
+      t:'No confrontar directamente. En cambio, rediseñar los procesos del equipo para que ninguna persona pueda tomar decisiones unilaterales: decisiones colectivas documentadas, turnos de habla en reuniones, protocolos escritos.',
+      h:'Cambiar las estructuras para que el comportamiento individual no pueda dañar.',
+      fx:{v:-8,c:+10,p:+4},
+      res:{
+        kicker:'Consecuencia',
+        title:'Los protocolos funcionaron. Y la persona más talentosa se fue.',
+        body:'Los nuevos protocolos estructuraron bien las reuniones. El turno de habla evitó las interrupciones. Las decisiones documentadas hicieron imposible la unilateralidad. Pero la persona en cuestión sintió los protocolos como una restricción dirigida a ella —lo cual era parcialmente cierto— y después de un mes renunció, diciendo que Ciudad Vaga se había vuelto "burocrática e incómoda para trabajar". El equipo perdió a quien más había contribuido al impacto externo del medio. Los eventos del semestre siguiente fueron más equitativos internamente y notablemente menos potentes externamente.',
+        nota:'Diseñar estructuras para contener comportamientos problemáticos puede ser más sostenible que confrontar directamente, pero también puede ser leído como una confrontación indirecta. Y puede funcionar expulsando a la persona que causaba el problema junto con las capacidades que aportaba.',
+        crisis:'⚠ PÉRDIDA DE CAPACIDAD CLAVE: La persona más talentosa del equipo se fue como consecuencia del rediseño estructural.',
+        effs:['⬇ Vínculo: −8 (la salida de la persona con mejores relaciones externas debilitó varios vínculos comunitarios que dependían de ella)','⬆ Capacidad: +10 (los protocolos igualaron la participación interna y desarrollaron capacidades distribuidas en lugar de concentradas)','⬆ Presencia: +4 (sin la persona que concentraba las relaciones, el equipo tuvo que construir nuevas redes más diversas)']
+      }
+    },
+    {
+      l:'C',
+      t:'Convocar una sesión de equipo donde todas las personas puedan nombrar lo que están viviendo, sin señalar a nadie directamente. Un espacio de escucha colectiva facilitado externamente.',
+      h:'El conflicto como conversación grupal antes que como confrontación individual.',
+      fx:{v:+12,c:+8,p:-6},
+      res:{
+        kicker:'Consecuencia',
+        title:'La sesión fue la más difícil del año. Y también la más honesta.',
+        body:'La persona facilitadora externa fue clave: sin ella, el equipo no hubiera podido sostener la conversación. Varias personas nombraron patrones concretos sin señalar a nadie directamente. La persona en cuestión escuchó y, por primera vez, preguntó en voz alta qué necesitaba el equipo de ella. No fue una transformación inmediata, pero fue el inicio de algo que las conversaciones bilaterales no habían producido. La facilitación costó dinero que Ciudad Vaga no tenía: usaron parte del presupuesto del siguiente evento. Ese evento fue más pequeño.',
+        nota:'Los conflictos internos que se sostienen mucho tiempo sin nombrarse producen un daño silencioso que es más costoso que el proceso de resolverlos. El costo de la facilitación externa fue real; el costo de no haberla tenido antes también.',
+        crisis:null,
+        effs:['⬆ Vínculo: +12 (el proceso de nombrar el conflicto colectivamente fortaleció la confianza interna del equipo)','⬆ Capacidad: +8 (el equipo desarrolló habilidades de gestión del conflicto que no tenía)','⬇ Presencia: −6 (el presupuesto de facilitación salió del presupuesto de un evento que se redujo)']
+      }
+    },
+    {
+      l:'D',
+      t:'No hacer nada todavía. El semestre está en su momento más crítico y perder a esa persona ahora podría hundir los eventos planeados. Esperar a que termine el semestre para abordarlo.',
+      h:'La estabilidad operativa como prioridad a corto plazo.',
+      fx:{v:-16,c:-4,p:+8},
+      res:{
+        kicker:'Consecuencia',
+        title:'El semestre terminó bien. Y las tres personas que querían irse se fueron.',
+        body:'Los eventos del semestre fueron los mejores del año: bien diseñados, bien ejecutados, con alto impacto. Al final del semestre, cuando el equipo intentó abordar el conflicto, las tres personas que habían señalado el problema dijeron que ya era tarde. Una de ellas dijo: "Esperamos que lo resolvieras y vimos que no. Eso también nos dijo algo." Se fueron juntas y formaron su propio colectivo de medios, llevándose las relaciones comunitarias que habían construido dentro de Ciudad Vaga. El semestre siguiente, Ciudad Vaga empezó con un equipo reducido a la mitad y sin las redes externas que esas tres personas habían cultivado.',
+        nota:'Postergar el conflicto interno para preservar la producción externa puede parecer racional a corto plazo y producir una fractura irreparable a mediano plazo. Los equipos que no resuelven sus conflictos no acumulan: se fracturan.',
+        crisis:'⚠ FRACTURA DEL EQUIPO: La postergación del conflicto produjo la salida colectiva de tres personas clave y sus redes.',
+        effs:['⬇ Vínculo: −16 (las tres personas que se fueron llevaron consigo relaciones comunitarias que Ciudad Vaga tardará años en reconstruir)','⬇ Capacidad: −4 (el equipo perdió tres de sus integrantes más capaces)','⬆ Presencia: +8 (el semestre fue externamente exitoso gracias a la estabilidad operativa mantenida)']
+      }
+    }
+  ]
+}
+
+]; // fin PHASES
+
+/* ═══ MOTOR DEL JUEGO ═══════════════════════════════════ */
+function showOnboard(){
+  document.getElementById('s-intro').classList.add('h');
+  document.getElementById('s-onboard').classList.remove('h');
+}
+function startGame(){
+  document.getElementById('s-onboard').classList.add('h');
+  document.getElementById('s-game').classList.remove('h');
+  document.getElementById('mob-nav').classList.remove('h');
+  renderPhase();
+  ST.timer=setInterval(()=>{
+    ST.elapsed++;
+    const m=Math.floor(ST.elapsed/60),s=ST.elapsed%60;
+    document.getElementById('tb-timer').textContent=m+':'+(s<10?'0':'')+s;
+  },1000);
+}
+function renderPhase(){
+  const ph=PHASES[ST.phase];
+  document.getElementById('tb-fase').textContent='Situación '+(ST.phase+1)+' / '+TOTAL;
+  document.getElementById('prog-f').style.width=(ST.phase/TOTAL*100)+'%';
+  document.getElementById('prog-n').textContent=ST.phase+' / '+TOTAL;
+  const opts=ph.opts.map((o,i)=>`
+    <button class="opt" onclick="choose(${i})">
+      <span class="opt-ltr">Opción ${o.l}</span>
+      <div class="opt-txt">${o.t}</div>
+      <div class="opt-hint">${o.h}</div>
+    </button>`).join('');
+  document.getElementById('sit-card').innerHTML=`
+    <div class="sit-kicker"><span class="kicker-dot"></span>${ph.kicker}</div>
+    <h2 class="sit-title">${ph.title}</h2>
+    <div class="sit-ctx">${ph.ctx}</div>
+    <div class="sit-dato">📊 ${ph.dato}</div>
+    <p class="sit-q">${ph.q}</p>
+    <div class="opts">${opts}</div>`;
+  document.getElementById('col-main').scrollTop=0;
+}
+function choose(idx){
+  const ph=PHASES[ST.phase];
+  const opt=ph.opts[idx];
+  const r=opt.res;
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  ST.sc.v=cl(ST.sc.v+opt.fx.v,0,100);
+  ST.sc.c=cl(ST.sc.c+opt.fx.c,0,100);
+  ST.sc.p=cl(ST.sc.p+opt.fx.p,0,100);
+  document.getElementById('bar-v').style.width=ST.sc.v+'%';
+  document.getElementById('val-v').textContent=ST.sc.v;
+  document.getElementById('bar-c').style.width=ST.sc.c+'%';
+  document.getElementById('val-c').textContent=ST.sc.c;
+  document.getElementById('bar-p').style.width=ST.sc.p+'%';
+  document.getElementById('val-p').textContent=ST.sc.p;
+  ST.history.push({fase:'Sit. '+(ST.phase+1)+': '+ph.title,dec:opt.t.substring(0,65)+(opt.t.length>65?'…':'')});
+  if(r.crisis){ST.alerts.push(r.crisis);updateAlerts();}
+  updateLog();
+  document.getElementById('rc-kicker').textContent=r.kicker;
+  document.getElementById('rc-title').textContent=r.title;
+  document.getElementById('rc-body').textContent=r.body;
+  const effs=(r.effs||[]).map(e=>{
+    const up=e.startsWith('⬆'),dn=e.startsWith('⬇');
+    return`<div class="rc-eff"><span class="${up?'arrow-up':dn?'arrow-dn':'arrow-n'}" style="font-size:.9rem;flex-shrink:0">${up?'⬆':dn?'⬇':'→'}</span><span>${e.replace(/^[⬆⬇→]\s*/,'')}</span></div>`;
+  }).join('');
+  document.getElementById('rc-effs').innerHTML=effs;
+  const n=document.getElementById('rc-nota');
+  n.textContent=r.nota||'';n.style.display=r.nota?'block':'none';
+  const c=document.getElementById('rc-crisis');
+  c.textContent=r.crisis||'';c.style.display=r.crisis?'block':'none';
+  document.getElementById('o-result').classList.add('on');
+}
+function next(){
+  document.getElementById('o-result').classList.remove('on');
+  ST.phase++;
+  if(ST.phase>=TOTAL)showFinal();else renderPhase();
+}
+function updateAlerts(){
+  const el=document.getElementById('side-alerts');
+  el.innerHTML=ST.alerts.length?ST.alerts.slice(-4).map(a=>`<div class="alert-item">${a}</div>`).join(''):'<span class="side-empty">Sin alertas activas.</span>';
+}
+function updateLog(){
+  const el=document.getElementById('side-log');
+  el.innerHTML=ST.history.length?ST.history.slice(-6).reverse().map(h=>`<div class="log-item"><div class="log-fase">${h.fase}</div><div>${h.dec}</div></div>`).join(''):'<span class="side-empty">Las decisiones aparecerán aquí.</span>';
+}
+function openSh(type){
+  const sh=document.getElementById('mob-sh');
+  const ov=document.getElementById('mob-ov');
+  document.getElementById('sh-title').textContent=type==='alertas'?'⚡ Alertas':'📋 Decisiones';
+  document.getElementById('sh-body').innerHTML=type==='alertas'
+    ?(ST.alerts.length?ST.alerts.map(a=>`<div class="alert-item">${a}</div>`).join(''):'<span class="side-empty">Sin alertas activas.</span>')
+    :(ST.history.length?ST.history.slice().reverse().map(h=>`<div class="log-item"><div class="log-fase">${h.fase}</div><div>${h.dec}</div></div>`).join(''):'<span class="side-empty">Las decisiones aparecerán aquí.</span>');
+  sh.classList.add('on');ov.classList.add('on');
+  document.getElementById('mn-'+( type==='alertas'?'alert':'log')).classList.add('on');
+  document.getElementById('mn-sit').classList.remove('on');
+  document.getElementById('mn-'+(type==='alertas'?'log':'alert')).classList.remove('on');
+}
+function closeSh(){
+  document.getElementById('mob-sh').classList.remove('on');
+  document.getElementById('mob-ov').classList.remove('on');
+  document.getElementById('mn-sit').classList.add('on');
+  document.getElementById('mn-alert').classList.remove('on');
+  document.getElementById('mn-log').classList.remove('on');
+}
+function showFinal(){
+  clearInterval(ST.timer);
+  document.getElementById('s-game').classList.add('h');
+  document.getElementById('mob-nav').classList.add('h');
+  const sc=ST.sc;
+  const avg=Math.round((sc.v+sc.c+sc.p)/3);
+  let badge,badgeCls,title,sub;
+  if(avg>=68){badge='✦ Práctica consolidada';badgeCls='badge-logro';title='Construiste algo que resiste las contradicciones';sub='Lograste navegar las tensiones reales del trabajo con audiencias sin buscar la solución perfecta que no existe. Eso es lo más difícil.';}
+  else if(avg>=42){badge='◈ Aprendizaje incompleto';badgeCls='badge-tension';title='Entendiste algunas tensiones. Otras te atraparon.';sub='Algunas decisiones fortalecieron el vínculo o la capacidad. Otras los erosionaron de formas que no anticipaste. Eso es normal. La pregunta es qué harías diferente.';}
+  else{badge='▲ La complejidad ganó';badgeCls='badge-crisis';title='Las audiencias son más difíciles de lo que parecía';sub='Los errores frecuentes en la construcción de públicos fuertes no son falta de intención: son falta de comprensión de la complejidad. Lo bueno es que la complejidad se puede estudiar.';}
+  document.getElementById('f-badge').innerHTML=badge;
+  document.getElementById('f-badge').className='final-badge '+badgeCls;
+  document.getElementById('f-title').textContent=title;
+  document.getElementById('f-sub').textContent=sub;
+  document.getElementById('f-stats').innerHTML=`
+    <div class="fstat"><span class="fstat-icon">🔵</span><span class="fstat-lbl">Vínculo</span><span class="fstat-val fv-v">${sc.v}</span></div>
+    <div class="fstat"><span class="fstat-icon">🟢</span><span class="fstat-lbl">Capacidad</span><span class="fstat-val fv-c">${sc.c}</span></div>
+    <div class="fstat"><span class="fstat-icon">🔴</span><span class="fstat-lbl">Presencia</span><span class="fstat-val fv-p">${sc.p}</span></div>`;
+  const lessons=[
+    'Convocar por canales propios es eficiente y reproduce la burbuja. La apertura formal no garantiza diversidad real.',
+    'La charla magistral puede producir más aprendizaje individual que el taller participativo mal diseñado. El formato no determina mecánicamente el resultado.',
+    'Responder rápido a una crisis de representación puede cerrar el episodio sin aprender nada de él.',
+    'El horario que no excluye a nadie en papel puede excluir a todos en la práctica: la disponibilidad teórica no garantiza la asistencia real.',
+    'La continuidad más simple (grupo de WhatsApp sin propósito) puede ser más dañina que la ausencia de continuidad.',
+    'Hacer accesible el lenguaje experto puede ser percibido simultáneamente como liberador para algunos y condescendiente para otros.',
+    'La independencia editorial tiene costos materiales concretos cuando se depende de infraestructura institucional.',
+    'Las preguntas cerradas en una evaluación miden lo que ya sabías que querías medir. Los hallazgos más importantes no aparecen en ellas.',
+    'Una comunidad autónoma no reproduce los valores del equipo que la formó: reproduce los suyos, incluyendo los que cuestionan al medio.',
+    'Una alianza editorial igualitaria entre lógicas distintas puede producir un objeto que no pertenece a ninguna de las dos audiencias originales.',
+    'No todos los conflictos son debates simétricos. Algunos tienen asimetrías de poder que el diseño del evento debe reconocer antes de abrir el espacio.',
+    'La atención conseguida de forma incidental no es lo mismo que el vínculo construido de forma intencional. Convertir una no exige lo mismo que construir la otra.',
+    'La documentación sistemática resuelve el problema del archivo pero puede crear un problema de autenticidad. Las conversaciones más honestas ocurren fuera del registro.',
+    'La autocensura que produce un patrocinio con condiciones no siempre es explícita: frecuentemente opera como una predisposición aprendida a no buscar ciertos temas.',
+    'Postergar un conflicto interno para preservar la producción externa puede parecer racional a corto plazo y producir una fractura irreparable a mediano plazo.'
+  ];
+  document.getElementById('f-lessons').innerHTML=lessons.map((l,i)=>`<div class="lesson"><span class="lesson-n">${i+1}</span><span>${l}</span></div>`).join('');
+  document.getElementById('f-log').innerHTML=ST.history.map(h=>`<div class="flog"><div class="flog-fase">${h.fase}</div><div>${h.dec}</div></div>`).join('');
+  document.getElementById('s-final').classList.add('on');
+  window.scrollTo(0,0);
+}
+function restart(){
+  clearInterval(ST.timer);
+  ST.phase=0;ST.sc={v:60,c:45,p:50};ST.history=[];ST.alerts=[];ST.elapsed=0;
+  document.getElementById('s-final').classList.remove('on');
+  document.getElementById('s-game').classList.remove('h');
+  document.getElementById('mob-nav').classList.remove('h');
+  ['v','c','p'].forEach(k=>{const d={v:60,c:45,p:50};document.getElementById('bar-'+k).style.width=d[k]+'%';document.getElementById('val-'+k).textContent=d[k];});
+  document.getElementById('prog-f').style.width='0%';
+  document.getElementById('prog-n').textContent='0 / 15';
+  document.getElementById('tb-timer').textContent='0:00';
+  document.getElementById('side-alerts').innerHTML='<span class="side-empty">Sin alertas activas.</span>';
+  document.getElementById('side-log').innerHTML='<span class="side-empty">Las decisiones aparecerán aquí.</span>';
+  renderPhase();
+  ST.timer=setInterval(()=>{ST.elapsed++;const m=Math.floor(ST.elapsed/60),s=ST.elapsed%60;document.getElementById('tb-timer').textContent=m+':'+(s<10?'0':'')+s;},1000);
+}
+</script>
+</body>
+</html>

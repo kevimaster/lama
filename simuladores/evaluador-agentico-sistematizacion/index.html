@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluador Agéntico · Procesos de Sistematización · LAMA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #faf8f4; }
+    #root { min-height: 100vh; }
+    #api-gate {
+      position: fixed; inset: 0; background: #1a1714; z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .gate-card {
+      background: #fff; border-radius: 16px; padding: 40px 36px;
+      max-width: 460px; width: 100%; text-align: center;
+    }
+    .gate-icon { font-size: 48px; margin-bottom: 16px; }
+    .gate-card h2 {
+      font-family: 'Playfair Display', serif; font-size: 24px;
+      margin-bottom: 8px; color: #1a1714;
+    }
+    .gate-card p { font-size: 14px; color: #8c8578; line-height: 1.6; margin-bottom: 24px; }
+    .gate-input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid #eae5da;
+      border-radius: 10px; font-size: 14px; font-family: inherit;
+      margin-bottom: 12px; color: #1a1714; outline: none;
+    }
+    .gate-input:focus { border-color: #b8942e; box-shadow: 0 0 0 3px rgba(184,148,46,.1); }
+    .gate-btn {
+      width: 100%; padding: 14px; background: #b8942e; color: #fff;
+      border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: opacity .15s;
+    }
+    .gate-btn:hover { opacity: 0.9; }
+    .gate-note { font-size: 11px; color: #b0a898; margin-top: 14px; line-height: 1.5; }
+    .gate-note a { color: #b8942e; text-decoration: none; }
+    .gate-error {
+      font-size: 12px; color: #b94a3a; margin-top: 8px;
+      padding: 8px 12px; background: rgba(185,74,58,.06);
+      border-radius: 6px; display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="api-gate">
+  <div class="gate-card">
+    <div class="gate-icon">🤖</div>
+    <h2>Evaluador Agéntico</h2>
+    <p>Ingresa tu clave de API de Anthropic para activar el evaluador.<br>La clave se guarda solo en tu sesión de navegador.</p>
+    <input id="key-input" class="gate-input" type="password" placeholder="sk-ant-api03-…" autocomplete="off" />
+    <div class="gate-error" id="gate-error">Clave inválida. Debe comenzar con <code>sk-ant-</code></div>
+    <button class="gate-btn" onclick="activar()">Activar evaluador →</button>
+    <p class="gate-note">
+      Obtén tu clave en <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a><br>
+      La clave nunca se envía a ningún servidor externo, solo a la API de Anthropic.
+    </p>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script>
+  function activar() {
+    const k = document.getElementById('key-input').value.trim();
+    const err = document.getElementById('gate-error');
+    if (!k.startsWith('sk-')) { err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    window.__ANTHROPIC_KEY = k;
+    document.getElementById('api-gate').style.display = 'none';
+  }
+  document.getElementById('key-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') activar();
+  });
+</script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+const SYS = `Eres un evaluador académico experto y empático del seminario "Concepciones Teóricas del Énfasis III" de la Maestría en Educación de la Universidad del Valle, dirigido por los profesores Julián González Mina y Rocío Gómez Zúñiga.
+
+Tu rol es acompañar a los estudiantes en la Sesión 3: "De la Evidencia a la Acción — Identificando Brechas y Diseñando Mediaciones".
+
+TAREAS DE LA SESIÓN:
+TAREA A — Prácticas no realizadas: A1: brechas de práctica, A2: hipótesis, A3: mediación tecnológica, A4: triangulación IA.
+TAREA B — Evidencia pasada por alto: B1: brechas de evidencia, B2: hipótesis, B3: dispositivo de captura, B4: triangulación IA.
+
+TAREA SESIÓN 4: 1) Una brecha de práctica y una de evidencia, 2) Hipótesis, 3) Dos mediaciones, 4) Dos autores vía IA, 5) Reflexión final.
+
+EJEMPLOS CALIBRADORES:
+1. Ada Milena Gómez — Mujeres Nasa: brecha=no hay mecanismo de protección; mediación=Círculo de Cuidado. Autores: Cabnal, Paredes, Segato.
+2. Claudia — Zona rural Morales: brecha=niños sin herramientas; mediación=Juego de roles. Autores: Winnicott, Liebel.
+3. Elizabeth Amú — Contenidos afro: brecha=no hay traducción didáctica; mediación=Guía pedagógica. Autores: Walsh, Mignolo.
+4. Jorge Caicedo — Grupo Gestor: brecha=no hay reconocimiento mutuo; mediación=Mural de la huella. Autores: Jara, Torres Carrillo.
+5. Nadia Castro — Comisión de la Verdad: brecha=no sostiene acuerdos; mediación=Tablero de acuerdos vivos. Autores: Herrera, Lederach.
+6. Nicasio Bernard — Deporte: brecha=no apropian principios restaurativos; mediación=Círculo de capitanes. Autores: Zehr, Coalter.
+7. Juan Manuel Lozadas — Música: brecha=no participan en gestión; mediación=Consejo de la Banda. Autores: Small, Freire.
+
+INSTRUCCIONES:
+1. Basa SIEMPRE en el avance ESPECÍFICO. Cita frases concretas del estudiante.
+2. Sé ESPECÍFICO, no genérico.
+3. Formato: fortalezas, observaciones/sugerencias, preguntas generativas.
+4. Autores REALES pertinentes.
+5. Si falta sección, orienta con ejemplos adaptados.
+6. Tono académico pero cercano.
+7. Responde en español.
+8. Da EJEMPLOS CONCRETOS adaptados al proyecto.
+9. Señala inconsistencias constructivamente.
+10. Ayuda a ver cómo brechas y mediaciones implican posiciones teóricas.
+11. Si hay LÍNEA DE TIEMPO, analiza eventos clave y sugiere brechas derivadas.
+12. Usa **negritas** para conceptos clave.`;
+
+function extractSection(text, startRe, endRe) {
+  const m = text.match(startRe);
+  if (!m) return "";
+  const s = m.index + m[0].length;
+  const rest = text.substring(s);
+  const m2 = rest.match(endRe);
+  return rest.substring(0, m2 ? m2.index : Math.min(rest.length, 3000)).trim();
+}
+
+function parseHTMLContent(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const all = doc.body ? doc.body.innerText : "";
+  const data = {};
+  const secs = {
+    marco: [/Reflexi[oó]n inicial/i, /TAREA A|A1|Brechas de pr[aá]ctica/i],
+    a1: [/A1\s*[·•\-—]\s*Brechas/i, /A2|Hip[oó]tesis sobre/i],
+    a2: [/A2\s*[·•\-—]\s*Hip[oó]tesis/i, /A3|Dise[nñ]o de mediaci/i],
+    a3: [/A3\s*[·•\-—]\s*Dise[nñ]o/i, /A4|Triangulaci[oó]n/i],
+    a4: [/A4\s*[·•\-—]\s*Triangulaci[oó]n/i, /TAREA B|B1|Brechas de evidencia/i],
+    b1: [/B1\s*[·•\-—]\s*Brechas/i, /B2|Hip[oó]tesis/i],
+    b2: [/B2\s*[·•\-—]\s*Hip[oó]tesis/i, /B3|Dispositivo|Dise[nñ]o del/i],
+    b3: [/B3\s*[·•\-—]\s*Dise[nñ]o|Dispositivo/i, /B4|Triangulaci[oó]n/i],
+    b4: [/B4\s*[·•\-—]\s*Triangulaci[oó]n/i, /Notas|Plenaria|Reflexi[oó]n final|[IÍ]ndice/i],
+    plenaria: [/Notas de la plenaria/i, /Reflexi[oó]n final|[IÍ]ndice/i],
+    reflexion: [/Reflexi[oó]n final/i, /[IÍ]ndice de todos|Documento generado|$/i],
+  };
+  Object.entries(secs).forEach(([k, [r1, r2]]) => {
+    const v = extractSection(all, r1, r2);
+    if (v && v.length > 10) data[k] = v;
+  });
+  const cover = all.substring(0, 600);
+  const nm = cover.match(/\n([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){1,4})\n/);
+  if (nm) data.nombre = nm[1].trim();
+  if (Object.keys(data).length === 0) data.fullText = all.substring(0, 15000);
+  return data;
+}
+
+function tryStructuredParse(text) {
+  const data = {};
+  const secs = {
+    a1: [/A1|Brechas?\s+de\s+pr[aá]ctica/i, /A2|Hip[oó]tesis|B1/i],
+    a2: [/A2|Hip[oó]tesis/i, /A3|Dise[nñ]o|mediaci[oó]n/i],
+    a3: [/A3|Dise[nñ]o\s+de\s+mediaci[oó]n/i, /A4|Triangulaci[oó]n/i],
+    a4: [/A4|Triangulaci[oó]n/i, /Tarea B|B1|Brechas?\s+de\s+evidencia/i],
+    b1: [/B1|Brechas?\s+de\s+evidencia/i, /B2|Hip[oó]tesis/i],
+    b2: [/B2|Hip[oó]tesis/i, /B3|Dispositivo|captura/i],
+    b3: [/B3|Dispositivo|captura/i, /B4|Triangulaci[oó]n/i],
+    b4: [/B4|Triangulaci[oó]n/i, /Reflexi[oó]n|Plenaria|Conclusi/i],
+    reflexion: [/Reflexi[oó]n\s+final/i, /[IÍ]ndice|Bibliograf|$/i],
+  };
+  Object.entries(secs).forEach(([k, [r1, r2]]) => {
+    const v = extractSection(text, r1, r2);
+    if (v && v.length > 15) data[k] = v;
+  });
+  return data;
+}
+
+function parsePDFText(bytes) {
+  let str = "";
+  for (let i = 0; i < bytes.length; i++) {
+    const c = bytes[i];
+    str += c >= 32 && c < 127 ? String.fromCharCode(c) : c === 10 || c === 13 ? "\n" : " ";
+  }
+  const texts = [];
+  const btRe = /BT\s([\s\S]*?)ET/g;
+  let btM;
+  while ((btM = btRe.exec(str)) !== null) {
+    const tjRe = /\(([^)]*)\)/g;
+    let tjM;
+    while ((tjM = tjRe.exec(btM[1])) !== null) {
+      const t = tjM[1].replace(/\\n/g, "\n").replace(/\\\(/g, "(").replace(/\\\)/g, ")").trim();
+      if (t.length > 0) texts.push(t);
+    }
+  }
+  let full = texts.join(" ").replace(/\s{2,}/g, " ").trim();
+  if (full.length < 50) {
+    const broader = [];
+    const pRe = /\(([^)]{2,})\)/g;
+    let pM;
+    while ((pM = pRe.exec(str)) !== null) {
+      const pt = pM[1].trim();
+      if (pt.length > 1 && !/^[\d\s.]+$/.test(pt)) broader.push(pt);
+    }
+    full = broader.join(" ").replace(/\s{2,}/g, " ").trim();
+  }
+  return full || "[No se pudo extraer texto del PDF. Puede ser escaneado. Copia el contenido manualmente.]";
+}
+
+function parseDOCXText(bytes) {
+  let i = 0;
+  const files = {};
+  while (i < bytes.length - 4) {
+    if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x03 && bytes[i + 3] === 0x04) {
+      const nameLen = bytes[i + 26] | (bytes[i + 27] << 8);
+      const extraLen = bytes[i + 28] | (bytes[i + 29] << 8);
+      const compMethod = bytes[i + 8] | (bytes[i + 9] << 8);
+      const compSize = bytes[i + 18] | (bytes[i + 19] << 8) | (bytes[i + 20] << 16) | (bytes[i + 21] << 24);
+      const uncompSize = bytes[i + 22] | (bytes[i + 23] << 8) | (bytes[i + 24] << 16) | (bytes[i + 25] << 24);
+      let name = "";
+      for (let j = 0; j < nameLen; j++) name += String.fromCharCode(bytes[i + 30 + j]);
+      const dataStart = i + 30 + nameLen + extraLen;
+      const size = compSize || uncompSize;
+      if (name.includes(".xml") && compMethod === 0 && size > 0 && size < 5000000) {
+        let content = "";
+        for (let k = 0; k < size && dataStart + k < bytes.length; k++) {
+          content += String.fromCharCode(bytes[dataStart + k]);
+        }
+        files[name] = content;
+      }
+      i = dataStart + (size || 1);
+    } else { i++; }
+  }
+  const docXml = files["word/document.xml"] || Object.values(files).find(v => v.includes("<w:t")) || "";
+  if (!docXml) return "[No se encontró contenido en el DOCX.]";
+  const texts = [];
+  const re = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+  let m;
+  while ((m = re.exec(docXml)) !== null) { if (m[1]) texts.push(m[1]); }
+  return texts.join(" ") || docXml.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim() || "[No se extrajo texto del DOCX.]";
+}
+
+function formatMd(text) {
+  if (!text) return "";
+  let r = text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid #b8942e;padding-left:12px;margin:8px 0;font-style:italic;color:#5a5347">$1</blockquote>')
+    .replace(/^####?\s+(.+)$/gm, '<h4 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#b8942e;margin:12px 0 6px">$1</h4>')
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/^(\d+)\.\s+(.+)$/gm, "<li>$1. $2</li>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+  r = r.replace(/(<li>[\s\S]*?<\/li>)/g, "<ul style='margin:8px 0 8px 20px'>$1</ul>").replace(/<\/ul>\s*<ul[^>]*>/g, "");
+  return "<p>" + r + "</p>";
+}
+
+const SECTION_KEYS = [
+  { k: "marco", l: "Reflexión inicial", c: "#3a5f9a" },
+  { k: "a1", l: "A1 — Brechas de práctica", c: "#8B2252" },
+  { k: "a2", l: "A2 — Hipótesis", c: "#8B2252" },
+  { k: "a3", l: "A3 — Diseño mediación", c: "#8B2252" },
+  { k: "a4", l: "A4 — Triangulación IA", c: "#8B2252" },
+  { k: "b1", l: "B1 — Brechas evidencia", c: "#1b6b4a" },
+  { k: "b2", l: "B2 — Hipótesis evidencia", c: "#1b6b4a" },
+  { k: "b3", l: "B3 — Dispositivo captura", c: "#1b6b4a" },
+  { k: "b4", l: "B4 — Triangulación IA", c: "#1b6b4a" },
+  { k: "plenaria", l: "Notas plenaria", c: "#3a5f9a" },
+  { k: "reflexion", l: "Reflexión final", c: "#b07d10" },
+];
+
+const QUICK_ACTIONS = [
+  "¿Mis brechas de práctica están bien formuladas? ¿Son específicas y accionables?",
+  "¿Mis brechas de evidencia son pertinentes? ¿Qué dimensiones podría estar pasando por alto?",
+  "¿Mis hipótesis son coherentes con las brechas? ¿Cómo fortalecerlas?",
+  "¿Las mediaciones tecnológicas que diseñé son viables y coherentes?",
+  "Sugiere autores y referencias teóricas específicas para mi tema.",
+  "¿Qué me falta para completar la tarea de la Sesión 4?",
+  "¿Hay coherencia entre brechas, hipótesis y mediaciones?",
+  "Analiza mi línea de tiempo y sugiere brechas derivadas.",
+];
+
+const QA_LABELS = [
+  "Evaluar brechas práctica", "Evaluar brechas evidencia", "Revisar hipótesis",
+  "Evaluar mediaciones", "Sugerir autores", "¿Qué me falta?",
+  "Coherencia general", "Analizar timeline",
+];
+
+function EvaluadorAgentico() {
+  const [step, setStep] = useState(0);
+  const [parsed, setParsed] = useState({});
+  const [fileName, setFileName] = useState("");
+  const [mCtx, setMCtx] = useState("");
+  const [mTa, setMTa] = useState("");
+  const [mTb, setMTb] = useState("");
+  const [mRef, setMRef] = useState("");
+  const [tlUrl, setTlUrl] = useState("");
+  const [tlStatus, setTlStatus] = useState(null);
+  const [tlData, setTlData] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(null);
+  const [apiHistory, setApiHistory] = useState([]);
+  const [saved, setSaved] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const chatRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [messages, loading]);
+
+  const buildContext = useCallback(() => {
+    const parts = [];
+    if (mCtx) parts.push("CONTEXTO DEL PROYECTO:\n" + mCtx);
+    if (mTa) parts.push("TAREA A — BRECHAS DE PRÁCTICA:\n" + mTa);
+    if (mTb) parts.push("TAREA B — BRECHAS DE EVIDENCIA:\n" + mTb);
+    if (mRef) parts.push("REFLEXIONES:\n" + mRef);
+    if (tlData) parts.push(tlData);
+    if (!parts.length && parsed.fullText) parts.push("CONTENIDO DEL AVANCE:\n" + parsed.fullText);
+    return parts.join("\n\n");
+  }, [mCtx, mTa, mTb, mRef, tlData, parsed]);
+
+  const handleFile = (file) => {
+    if (!file) return;
+    const ext = file.name.split(".").pop().toLowerCase();
+    setFileName(file.name);
+
+    if (ext === "html" || ext === "htm") {
+      setProcessing("Extrayendo contenido HTML…");
+      const r = new FileReader();
+      r.onload = (e) => {
+        const data = parseHTMLContent(e.target.result);
+        setParsed(data);
+        populateFields(data);
+        setProcessing(null);
+      };
+      r.readAsText(file, "utf-8");
+    } else if (ext === "pdf") {
+      setProcessing("Extrayendo texto del PDF…");
+      const r = new FileReader();
+      r.onload = (e) => {
+        const bytes = new Uint8Array(e.target.result);
+        const text = parsePDFText(bytes);
+        const data = { fullText: text.substring(0, 15000), ...tryStructuredParse(text) };
+        setParsed(data);
+        populateFields(data);
+        setProcessing(null);
+      };
+      r.readAsArrayBuffer(file);
+    } else if (ext === "docx") {
+      setProcessing("Extrayendo texto del Word…");
+      const r = new FileReader();
+      r.onload = (e) => {
+        const bytes = new Uint8Array(e.target.result);
+        const text = parseDOCXText(bytes);
+        const data = { fullText: text.substring(0, 15000), ...tryStructuredParse(text) };
+        setParsed(data);
+        populateFields(data);
+        setProcessing(null);
+      };
+      r.readAsArrayBuffer(file);
+    } else if (ext === "txt") {
+      setProcessing("Leyendo archivo…");
+      const r = new FileReader();
+      r.onload = (e) => {
+        const text = e.target.result;
+        const data = { fullText: text.substring(0, 15000), ...tryStructuredParse(text) };
+        setParsed(data);
+        populateFields(data);
+        setProcessing(null);
+      };
+      r.readAsText(file, "utf-8");
+    } else {
+      alert("Formato no soportado. Usa HTML, PDF, DOCX o TXT.");
+      setFileName("");
+    }
+  };
+
+  const populateFields = (data) => {
+    const ctx = [data.nombre ? "Nombre: " + data.nombre : "", data.marco || ""].filter(Boolean).join("\n\n");
+    if (ctx) setMCtx(prev => prev || ctx);
+    const ta = ["a1", "a2", "a3", "a4"].map(k => data[k]).filter(Boolean).join("\n\n---\n\n");
+    if (ta) setMTa(prev => prev || ta);
+    const tb = ["b1", "b2", "b3", "b4"].map(k => data[k]).filter(Boolean).join("\n\n---\n\n");
+    if (tb) setMTb(prev => prev || tb);
+    const rf = [data.plenaria, data.reflexion].filter(Boolean).join("\n\n---\n\n");
+    if (rf) setMRef(prev => prev || rf);
+  };
+
+  const handleTimeline = () => {
+    if (!tlUrl.trim()) { setTlStatus({ type: "red", msg: "Ingresa un enlace." }); return; }
+    setTlData("[LÍNEA DE TIEMPO — URL: " + tlUrl + "]\nEl estudiante creó una línea de tiempo en KnightLab. Enlace: " + tlUrl);
+    setTlStatus({ type: "green", msg: "✓ Línea de tiempo registrada. Puedes preguntar al evaluador que la analice." });
+  };
+
+  const sendMessage = async (text) => {
+    if (loading || !text?.trim()) return;
+    const userText = text.trim();
+    setChatInput("");
+    setMessages(prev => [...prev, { role: "user", content: userText }]);
+    setLoading(true);
+
+    const context = buildContext();
+    let msgs;
+    if (apiHistory.length === 0 && context) {
+      msgs = [{ role: "user", content: "AVANCE COMPLETO DEL ESTUDIANTE:\n\n" + context + "\n\n════════════════\nPREGUNTA:\n" + userText }];
+    } else if (apiHistory.length === 0) {
+      msgs = [{ role: "user", content: userText }];
+    } else {
+      msgs = [...apiHistory, { role: "user", content: userText }];
+    }
+
+    const newHistory = [...apiHistory, { role: "user", content: msgs.length === 1 && apiHistory.length === 0 ? msgs[0].content : userText }];
+
+    let attempts = 0;
+    let success = false;
+    while (!success && attempts < 3) {
+      attempts++;
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": window.__ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-allow-browser": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2048,
+            system: SYS,
+            messages: msgs,
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData?.error?.message || `HTTP ${response.status}`;
+          if ((response.status === 529 || response.status >= 500) && attempts < 3) {
+            await new Promise(r => setTimeout(r, 2000 * attempts));
+            continue;
+          }
+          throw new Error(errMsg);
+        }
+
+        const data = await response.json();
+        const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+        if (!reply) throw new Error("Respuesta vacía");
+
+        setApiHistory([...newHistory, { role: "assistant", content: reply }]);
+        setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+        success = true;
+      } catch (err) {
+        if (attempts >= 3) {
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: `**Error:** ${err.message}\n\nIntenta de nuevo. Si el problema persiste, reformula con una pregunta más corta.`
+          }]);
+          success = true;
+        } else {
+          await new Promise(r => setTimeout(r, 2000 * attempts));
+        }
+      }
+    }
+    setLoading(false);
+    inputRef.current?.focus();
+  };
+
+  const hasContent = buildContext().length > 10;
+  const filledSections = SECTION_KEYS.filter(s => parsed[s.k]?.length > 10).length;
+
+  const s = {
+    page: { maxWidth: 880, margin: "0 auto", padding: "0 20px 60px", fontFamily: "'Source Sans 3', -apple-system, sans-serif", color: "#1a1714", lineHeight: 1.65 },
+    hero: { background: "#1a1714", color: "#f5f2ec", padding: "48px 24px 40px", textAlign: "center" },
+    tag: { fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "#b8942e", marginBottom: 16 },
+    h1: { fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(26px, 5vw, 38px)", marginBottom: 10, fontWeight: 700 },
+    sub: { color: "#b0a898", fontSize: 15, maxWidth: 560, margin: "0 auto" },
+    badges: { marginTop: 18, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" },
+    badge: { display: "inline-flex", padding: "5px 14px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,.06)", color: "#d4c8b0" },
+    stepper: { display: "flex", position: "sticky", top: 0, zIndex: 90, background: "#faf8f4", borderBottom: "1px solid #eae5da", padding: "12px 0", marginBottom: 28 },
+    card: { background: "#fff", border: "1px solid #eae5da", borderRadius: 14, padding: 24, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,.04)" },
+    label: { fontSize: 11, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 },
+    dot: (c) => ({ width: 8, height: 8, borderRadius: "50%", background: c, flexShrink: 0 }),
+    ta: { width: "100%", minHeight: 120, padding: "14px 16px", background: "#faf8f4", border: "1.5px solid #eae5da", borderRadius: 10, fontFamily: "inherit", fontSize: 14, lineHeight: 1.65, resize: "vertical", color: "#1a1714", outline: "none" },
+    btn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", background: "#1a1714", color: "#f5f2ec" },
+    btnGold: { background: "#b8942e", color: "#fff" },
+    btnGhost: { background: "none", border: "1.5px solid #ddd7ca", color: "#3d3830", padding: "8px 16px", fontSize: 12 },
+    info: (type) => ({ padding: "16px 20px", borderRadius: 10, marginBottom: 20, fontSize: 13, lineHeight: 1.6, display: "flex", gap: 12, alignItems: "flex-start", background: type === "red" ? "rgba(185,74,58,.06)" : type === "green" ? "rgba(27,107,74,.06)" : "rgba(184,148,46,.08)", border: `1px solid ${type === "red" ? "rgba(185,74,58,.2)" : type === "green" ? "rgba(27,107,74,.2)" : "rgba(184,148,46,.25)"}` }),
+    msg: (role) => ({ padding: "16px 20px", borderRadius: 12, fontSize: 14, lineHeight: 1.7, maxWidth: "85%", alignSelf: role === "user" ? "flex-end" : role === "system" ? "center" : "flex-start", background: role === "user" ? "#1a1714" : role === "system" ? "transparent" : "#f0ece3", color: role === "user" ? "#f0ece3" : role === "system" ? "#8c8578" : "#1a1714", border: role === "assistant" ? "1px solid #eae5da" : "none", fontStyle: role === "system" ? "italic" : "normal", textAlign: role === "system" ? "center" : "left", borderBottomRightRadius: role === "user" ? 4 : 12, borderBottomLeftRadius: role === "assistant" ? 4 : 12, wordBreak: "break-word" }),
+    qa: { padding: "8px 16px", borderRadius: 20, fontSize: 12, fontWeight: 500, background: "#fff", border: "1.5px solid #eae5da", color: "#3d3830", cursor: "pointer", fontFamily: "inherit" },
+  };
+
+  return (
+    <div style={{ background: "#faf8f4", minHeight: "100vh" }}>
+      <div style={s.hero}>
+        <div style={s.tag}>Maestría en Educación · Universidad del Valle</div>
+        <h1 style={s.h1}>Evaluador Agéntico</h1>
+        <div style={s.sub}>Consultor inteligente · Sesión 3: De la Evidencia a la Acción</div>
+        <div style={s.badges}>
+          <span style={s.badge}>📄 HTML · PDF · Word</span>
+          <span style={s.badge}>🕐 Timeline KnightLab</span>
+          <span style={s.badge}>🤖 Evaluación con IA</span>
+        </div>
+      </div>
+
+      <div style={s.page}>
+        <div style={s.stepper}>
+          {["Cargar avance", "Consultar", "Historial"].map((label, i) => (
+            <button key={i} onClick={() => setStep(i)} style={{
+              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "12px 8px", border: "none", background: "none", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 13, fontWeight: i === step ? 600 : 500,
+              color: i === step ? "#1a1714" : "#8c8578",
+              borderBottom: i === step ? "2px solid #b8942e" : "2px solid transparent",
+            }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 12, fontWeight: 700,
+                background: i < step ? "#1b6b4a" : i === step ? "#b8942e" : "transparent",
+                color: i <= step || i < step ? "#fff" : "#8c8578",
+                border: i > step ? "2px solid #ddd7ca" : "none",
+              }}>{i < step ? "✓" : i + 1}</span>
+              <span style={{ display: "inline" }}>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {processing && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(26,23,20,.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: "#fff", borderRadius: 14, padding: 40, textAlign: "center", maxWidth: 360 }}>
+              <div style={{ width: 44, height: 44, border: "4px solid #eae5da", borderTopColor: "#b8942e", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 6 }}>Procesando…</div>
+              <div style={{ fontSize: 13, color: "#8c8578" }}>{processing}</div>
+            </div>
+          </div>
+        )}
+
+        {step === 0 && (
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, marginBottom: 4 }}>Carga tu avance</h2>
+            <p style={{ color: "#8c8578", fontSize: 14, marginBottom: 24 }}>Sube tu archivo, pega un enlace a tu timeline, o escribe directamente.</p>
+
+            <div style={s.info("gold")}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
+              <div><strong>¿Cómo funciona?</strong> Sube el HTML de la Sesión 3, un PDF o Word con tu avance. Si tienes timeline en KnightLab, pega el enlace. Todo alimenta al evaluador para retroalimentación precisa.</div>
+            </div>
+
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); }}
+              style={{
+                border: `2.5px dashed ${dragOver ? "#b8942e" : "#ddd7ca"}`, borderRadius: 14,
+                padding: "44px 24px", textAlign: "center", cursor: "pointer", position: "relative",
+                background: dragOver ? "rgba(184,148,46,.08)" : "#fff", transition: "all .3s",
+              }}
+            >
+              <div style={{ fontSize: 44, marginBottom: 10 }}>📂</div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, marginBottom: 6 }}>Sube tu archivo con el avance</h3>
+              <p style={{ color: "#8c8578", fontSize: 14 }}>HTML · PDF · Word (.docx) · Texto (.txt)</p>
+              <input type="file" accept=".html,.htm,.pdf,.docx,.txt" onChange={(e) => handleFile(e.target.files[0])}
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
+            </div>
+
+            {fileName && (
+              <div style={{ marginTop: 8 }}>
+                <span style={{ ...s.badge, background: "#f0ece3", color: "#3d3830", border: "1px solid #eae5da" }}>
+                  📄 {fileName}
+                  <button onClick={() => { setParsed({}); setFileName(""); }} style={{ background: "none", border: "none", color: "#b94a3a", cursor: "pointer", fontWeight: 700, marginLeft: 8 }}>✕</button>
+                </span>
+              </div>
+            )}
+
+            {Object.keys(parsed).length > 0 && (
+              <div style={{ background: "#fff", border: "1.5px solid #1b6b4a", borderRadius: 14, padding: 24, marginTop: 20 }}>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: "#1b6b4a", marginBottom: 16 }}>
+                  ✓ {filledSections > 0 ? `${filledSections} secciones detectadas` : "Contenido extraído"}
+                </h3>
+                {filledSections === 0 && parsed.fullText && (
+                  <div style={s.info("green")}>
+                    <span>✓</span>
+                    <div>Se extrajo texto del documento (<strong>{Math.round(parsed.fullText.length / 1000)}K caracteres</strong>). El evaluador lo usará como contexto.</div>
+                  </div>
+                )}
+                {filledSections > 0 && SECTION_KEYS.map(({ k, l, c }) => {
+                  const has = parsed[k]?.length > 10;
+                  return (
+                    <div key={k} style={{ padding: "10px 16px", background: "#faf8f4", borderRadius: 10, marginBottom: 6, borderLeft: `3px solid ${has ? c : "#ddd7ca"}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: "#8c8578", marginBottom: 2 }}>{l}</div>
+                      {has ? <div style={{ fontSize: 13, color: "#3d3830", maxHeight: 50, overflow: "hidden" }}>{parsed[k].substring(0, 150)}…</div>
+                        : <div style={{ fontSize: 13, color: "#8c8578", fontStyle: "italic" }}>Sin datos</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ background: "rgba(58,95,154,.06)", border: "1.5px solid rgba(58,95,154,.2)", borderRadius: 14, padding: 20, marginTop: 20, marginBottom: 16 }}>
+              <h4 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: "#3a5f9a", marginBottom: 8 }}>🕐 Línea de tiempo (KnightLab)</h4>
+              <p style={{ fontSize: 13, color: "#5a5347", marginBottom: 12 }}>
+                Si creaste una línea de tiempo en <a href="https://timeline.knightlab.com/" target="_blank" rel="noopener" style={{ color: "#3a5f9a", fontWeight: 600 }}>timeline.knightlab.com</a>, pega el enlace.
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input type="text" value={tlUrl} onChange={(e) => setTlUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleTimeline(); }}
+                  placeholder="https://cdn.knightlab.com/libs/timeline3/..."
+                  style={{ flex: 1, minWidth: 200, padding: "10px 14px", border: "1.5px solid rgba(58,95,154,.2)", borderRadius: 8, fontFamily: "inherit", fontSize: 13, background: "#fff", color: "#1a1714", outline: "none" }} />
+                <button onClick={handleTimeline} style={{ ...s.btn, background: "#3a5f9a", padding: "10px 18px", fontSize: 13 }}>Cargar timeline</button>
+              </div>
+              {tlStatus && (
+                <div style={{ marginTop: 10, fontSize: 12, padding: "8px 12px", borderRadius: 6, borderLeft: `3px solid ${tlStatus.type === "green" ? "#1b6b4a" : "#b94a3a"}`, background: tlStatus.type === "green" ? "rgba(27,107,74,.06)" : "rgba(185,74,58,.06)", color: tlStatus.type === "green" ? "#1b6b4a" : "#b94a3a" }}>
+                  {tlStatus.msg}
+                </div>
+              )}
+              {tlData && tlUrl.includes("knightlab") && (
+                <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd7ca" }}>
+                  <iframe src={tlUrl} width="100%" height="350" frameBorder="0" style={{ display: "block" }} sandbox="allow-scripts allow-same-origin" title="Timeline" />
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "28px 0", color: "#8c8578", fontSize: 13 }}>
+              <div style={{ flex: 1, height: 1, background: "#eae5da" }} />o escribe directamente<div style={{ flex: 1, height: 1, background: "#eae5da" }} />
+            </div>
+
+            {[
+              { id: "ctx", label: "Contexto del proyecto", c: "#1a1714", val: mCtx, set: setMCtx, ph: "Describe tu proyecto de sistematización…" },
+              { id: "ta", label: "Tarea A · Brechas de práctica (A1–A4)", c: "#8B2252", val: mTa, set: setMTa, ph: "Brechas, hipótesis, mediación, triangulación…" },
+              { id: "tb", label: "Tarea B · Brechas de evidencia (B1–B4)", c: "#1b6b4a", val: mTb, set: setMTb, ph: "Brechas de evidencia, hipótesis, captura…" },
+              { id: "ref", label: "Reflexiones adicionales", c: "#3a5f9a", val: mRef, set: setMRef, ph: "Reflexión final, notas de plenaria, dudas…" },
+            ].map(({ id, label, c, val, set, ph }) => (
+              <div key={id} style={s.card}>
+                <div style={s.label}><span style={s.dot(c)} /> {label}</div>
+                <textarea value={val} onChange={(e) => set(e.target.value)} placeholder={ph}
+                  style={{ ...s.ta, minHeight: id === "ref" ? 90 : 120 }} />
+              </div>
+            ))}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
+              <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); setStep(1); }} style={s.btn}>Guardar y consultar →</button>
+              {saved && <span style={{ fontSize: 13, color: "#1b6b4a", fontWeight: 600 }}>✓ Avance guardado</span>}
+            </div>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, marginBottom: 4 }}>Consulta al evaluador</h2>
+            <p style={{ color: "#8c8578", fontSize: 14, marginBottom: 24 }}>Haz preguntas específicas sobre tu avance.</p>
+
+            {!hasContent && (
+              <div style={s.info("red")}>
+                <span style={{ fontSize: 18 }}>⚠</span>
+                <div><strong>Sin avance cargado.</strong> Regresa al paso 1 y sube tu archivo o escribe tu avance.</div>
+              </div>
+            )}
+
+            {hasContent && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {QA_LABELS.map((label, i) => (
+                  <button key={i} onClick={() => sendMessage(QUICK_ACTIONS[i])} style={s.qa}>{label}</button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ background: "#fff", border: "1.5px solid #eae5da", borderRadius: 14, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.06)" }}>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #eae5da", display: "flex", alignItems: "center", gap: 12, background: "#faf8f4" }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: loading ? "#b07d10" : "#1b6b4a" }} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Evaluador Agéntico</div>
+                  <div style={{ fontSize: 12, color: "#8c8578" }}>{loading ? "Analizando…" : "Listo"}</div>
+                </div>
+              </div>
+
+              <div ref={chatRef} style={{ maxHeight: 520, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={s.msg("system")}>Carga tu avance en el paso 1 y luego haz preguntas aquí.</div>
+                {messages.map((m, i) => (
+                  <div key={i} style={s.msg(m.role)} dangerouslySetInnerHTML={{ __html: m.role === "user" ? m.content.replace(/</g, "&lt;") : formatMd(m.content) }} />
+                ))}
+                {loading && (
+                  <div style={{ display: "flex", gap: 5, padding: "16px 20px", alignSelf: "flex-start" }}>
+                    {[0, 1, 2].map(i => (
+                      <span key={i} style={{
+                        width: 7, height: 7, borderRadius: "50%", background: "#8c8578",
+                        animation: `dotPulse 1.2s ease infinite ${i * 0.15}s`,
+                      }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, padding: "14px 16px", borderTop: "1px solid #eae5da", background: "#faf8f4" }}>
+                <textarea ref={inputRef} value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(chatInput); } }}
+                  placeholder="Escribe tu pregunta o duda…"
+                  style={{ ...s.ta, minHeight: 44, maxHeight: 140, flex: 1 }} />
+                <button onClick={() => sendMessage(chatInput)} disabled={loading || !chatInput.trim()}
+                  style={{ ...s.btn, alignSelf: "flex-end", opacity: loading || !chatInput.trim() ? 0.35 : 1 }}>
+                  Enviar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, marginBottom: 4 }}>Historial de consultas</h2>
+            <p style={{ color: "#8c8578", fontSize: 14, marginBottom: 24 }}>Registro de tus interacciones.</p>
+
+            {messages.filter(m => m.role !== "system").length === 0 ? (
+              <div style={s.info("gold")}><span>📋</span><div>Aún no hay consultas. Ve al paso 2 para comenzar.</div></div>
+            ) : (
+              <>
+                {messages.filter(m => m.role !== "system").map((m, i) => (
+                  <div key={i} style={{
+                    background: "#fff", border: "1px solid #eae5da", borderRadius: 10,
+                    padding: "18px 20px", marginBottom: 10,
+                    borderLeft: `3px solid ${m.role === "user" ? "#b8942e" : "#1b6b4a"}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: m.role === "user" ? "#b8942e" : "#1b6b4a" }}>
+                        {m.role === "user" ? "🧑 Estudiante" : "🤖 Evaluador"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.65, color: "#3d3830" }}
+                      dangerouslySetInnerHTML={{ __html: m.role === "user" ? m.content.replace(/</g, "&lt;") : formatMd(m.content) }} />
+                  </div>
+                ))}
+                <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
+                  <button onClick={() => {
+                    const text = messages.filter(m => m.role !== "system").map(m =>
+                      (m.role === "user" ? "🧑 ESTUDIANTE" : "🤖 EVALUADOR") + "\n" + m.content
+                    ).join("\n\n---\n\n");
+                    navigator.clipboard.writeText("HISTORIAL · EVALUADOR AGÉNTICO\n\n" + text);
+                  }} style={{ ...s.btn, ...s.btnGhost }}>📋 Copiar historial</button>
+                  <button onClick={() => { setMessages([]); setApiHistory([]); }} style={{ ...s.btn, ...s.btnGhost, borderColor: "rgba(185,74,58,.3)", color: "#b94a3a" }}>🗑 Limpiar</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        <div style={{ borderTop: "1px solid #eae5da", padding: "24px 0", marginTop: 48, textAlign: "center", fontSize: 12, color: "#8c8578" }}>
+          <p>Maestría en Educación · Concepciones Teóricas del Énfasis III · Sesión 3</p>
+          <p>Profesores Julián González Mina y Rocío Gómez Zúñiga · Universidad del Valle · 2026</p>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes dotPulse { 0%,80%,100% { opacity: .25; transform: scale(.8) } 40% { opacity: 1; transform: scale(1.1) } }
+        textarea:focus { border-color: #b8942e !important; box-shadow: 0 0 0 3px rgba(184,148,46,.08) !important; }
+        button:hover { opacity: 0.9; }
+      `}</style>
+    </div>
+  );
+}
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<EvaluadorAgentico />);
+</script>
+
+</body>
+</html>

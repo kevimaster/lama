@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller Ludogénesis · Diseño de juegos educativos situados</title>
+<style>
+:root {
+  --bg: #0f1320;
+  --bg-soft: #181d2f;
+  --bg-card: #1f2540;
+  --ink: #f1eee6;
+  --ink-soft: #c5c0b1;
+  --accent: #ffcc33;
+  --accent-2: #ff5c5c;
+  --accent-3: #6ee7b7;
+  --accent-4: #7aa2ff;
+  --accent-5: #c084fc;
+  --border: #2d3553;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif; line-height: 1.55; }
+header { padding: 28px 32px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #141828 0%, #0f1320 100%); }
+header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.01em; color: var(--accent); }
+header p.kicker { margin: 0; color: var(--ink-soft); font-size: 14px; font-style: italic; }
+nav.tabs { display: flex; gap: 4px; padding: 0 32px; background: var(--bg-soft); border-bottom: 1px solid var(--border); overflow-x: auto; }
+nav.tabs button { background: transparent; color: var(--ink-soft); border: none; border-bottom: 3px solid transparent; padding: 14px 18px; font-family: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+nav.tabs button:hover { color: var(--ink); }
+nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+main { padding: 28px 32px 80px; max-width: 1180px; margin: 0 auto; }
+section.panel { display: none; }
+section.panel.active { display: block; }
+h2 { color: var(--accent); font-size: 22px; margin: 0 0 8px; letter-spacing: -0.01em; }
+h3 { color: var(--accent-3); font-size: 13px; margin: 24px 0 8px; letter-spacing: 0.06em; text-transform: uppercase; font-family: -apple-system, system-ui, sans-serif; font-weight: 700; }
+p { margin: 0 0 12px; }
+.lede { color: var(--ink-soft); font-size: 15px; max-width: 780px; }
+.intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 24px; }
+@media (max-width: 760px) { .intro-grid { grid-template-columns: 1fr; } }
+.intro-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 20px; border-radius: 6px; }
+.intro-card.b { border-left-color: var(--accent-4); }
+.intro-card h3 { margin-top: 0; color: var(--ink); text-transform: none; font-family: Georgia, serif; font-size: 18px; letter-spacing: 0; }
+.scenario-tag { display: inline-block; background: var(--accent); color: #1a1408; font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.scenario-tag.b { background: var(--accent-4); color: #0a1228; }
+.principles { background: var(--bg-soft); border: 1px dashed var(--border); padding: 18px 22px; margin: 24px 0; border-radius: 6px; }
+.principles h3 { margin-top: 0; color: var(--accent-2); }
+.principles ul { margin: 8px 0 0; padding-left: 20px; color: var(--ink-soft); font-size: 14px; }
+.principles li { margin-bottom: 6px; }
+.config-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 20px; }
+@media (max-width: 900px) { .config-layout { grid-template-columns: 1fr; } }
+.config-decisions { display: flex; flex-direction: column; gap: 16px; }
+.decision { background: var(--bg-card); border: 1px solid var(--border); padding: 16px 18px; border-radius: 6px; }
+.decision-title { color: var(--accent-3); font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.decision-q { font-size: 16px; color: var(--ink); margin-bottom: 4px; font-weight: 600; }
+.decision-hint { color: var(--ink-soft); font-size: 13px; font-style: italic; margin-bottom: 12px; }
+.options { display: flex; flex-direction: column; gap: 6px; }
+.option-btn { background: var(--bg-soft); color: var(--ink-soft); border: 1px solid var(--border); padding: 10px 14px; border-radius: 4px; cursor: pointer; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; transition: all 0.12s; text-align: left; }
+.option-btn:hover { border-color: var(--accent-3); color: var(--ink); }
+.option-btn.selected { background: var(--accent-3); color: #08231b; border-color: var(--accent-3); font-weight: 600; }
+.text-input { width: 100%; background: var(--bg-soft); border: 1px solid var(--border); color: var(--ink); padding: 10px 12px; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 70px; }
+.text-input:focus { outline: none; border-color: var(--accent-3); }
+.config-preview { position: sticky; top: 20px; align-self: start; background: linear-gradient(180deg, #1a2138 0%, #15192a 100%); border: 1px solid var(--border); border-radius: 6px; padding: 22px; max-height: calc(100vh - 60px); overflow-y: auto; }
+.preview-title { color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; font-family: -apple-system, system-ui, sans-serif; font-weight: 700; margin-bottom: 14px; }
+.preview-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.preview-row:last-of-type { border-bottom: none; }
+.preview-label { color: var(--accent-3); font-family: -apple-system, system-ui, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; font-weight: 700; }
+.preview-value { color: var(--ink); font-size: 13px; }
+.preview-empty { color: var(--ink-soft); font-style: italic; opacity: 0.5; font-size: 13px; }
+.critical-alert { background: rgba(255,92,92,0.08); border: 1px solid rgba(255,92,92,0.3); border-left: 4px solid var(--accent-2); padding: 14px 16px; margin: 16px 0; border-radius: 4px; font-size: 13px; color: var(--ink-soft); }
+.critical-alert strong { color: var(--accent-2); font-family: -apple-system, system-ui, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 6px; font-weight: 700; }
+.critical-alert.hidden { display: none; }
+.gallery-intro { background: var(--bg-soft); border-left: 4px solid var(--accent-4); padding: 16px 20px; margin-bottom: 20px; border-radius: 4px; }
+.gallery-intro p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+.game-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 18px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
+.game-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-4); }
+.game-card.outdoor::before { background: var(--accent-3); }
+.game-card.hybrid::before { background: var(--accent-5); }
+.game-card:hover { border-color: var(--accent-4); transform: translateY(-2px); }
+.game-card h4 { margin: 0 0 6px; color: var(--accent); font-size: 17px; }
+.game-card .game-type { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; color: var(--accent-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; font-weight: 600; }
+.game-card p { color: var(--ink-soft); font-size: 13px; margin: 0; }
+.game-card .click-hint { margin-top: 12px; font-size: 11px; color: var(--accent-4); font-family: -apple-system, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.05em; }
+.modal-bg { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8,10,18,0.88); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-width: 760px; width: 100%; padding: 32px 36px; position: relative; }
+.modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: 1px solid var(--border); color: var(--ink-soft); width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; }
+.modal-close:hover { color: var(--ink); border-color: var(--ink-soft); }
+.modal h3 { margin-top: 0; color: var(--accent); font-size: 24px; text-transform: none; font-family: Georgia, serif; letter-spacing: -0.01em; }
+.modal-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.meta-tag { background: var(--bg-soft); color: var(--ink-soft); font-family: -apple-system, system-ui, sans-serif; font-size: 11px; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--border); }
+.modal-section { margin: 18px 0; }
+.modal-section h4 { color: var(--accent-3); font-family: -apple-system, system-ui, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px; font-weight: 700; }
+.modal-section p { color: var(--ink); font-size: 14px; margin: 0; }
+.modal-critical { background: rgba(255,92,92,0.08); border-left: 3px solid var(--accent-2); padding: 14px 16px; margin-top: 18px; border-radius: 4px; }
+.modal-critical h4 { color: var(--accent-2); font-family: -apple-system, system-ui, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 6px; font-weight: 700; }
+.modal-critical p { color: var(--ink-soft); font-size: 13px; margin: 0; font-style: italic; }
+.actions { display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.btn { background: var(--accent); color: #1a1408; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-family: -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 600; transition: all 0.15s; }
+.btn:hover { background: #ffd966; }
+.btn.secondary { background: var(--bg-soft); color: var(--ink); border: 1px solid var(--border); }
+.btn.secondary:hover { border-color: var(--accent-3); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.fieldset-group { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 6px; margin-top: 18px; }
+.fieldset-group h3 { margin-top: 0; }
+.context-input { background: var(--bg-soft); border: 1px solid var(--border); color: var(--ink); padding: 10px 12px; border-radius: 4px; font-family: inherit; font-size: 14px; width: 100%; }
+.context-input:focus { outline: none; border-color: var(--accent-3); }
+.label { color: var(--ink-soft); font-size: 13px; margin-bottom: 6px; font-family: -apple-system, system-ui, sans-serif; display: block; }
+.timer { display: inline-block; background: var(--bg-soft); border: 1px solid var(--border); color: var(--ink-soft); padding: 4px 10px; border-radius: 3px; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; }
+.divider { height: 1px; background: var(--border); margin: 28px 0; }
+.callout { background: linear-gradient(135deg, rgba(255,204,51,0.08) 0%, rgba(110,231,183,0.05) 100%); border: 1px solid rgba(255,204,51,0.2); padding: 18px 22px; border-radius: 6px; margin: 20px 0; font-size: 14px; color: var(--ink-soft); }
+.callout strong { color: var(--accent); }
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 4px; }
+.filter-btn { background: transparent; color: var(--ink-soft); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; transition: all 0.12s; }
+.filter-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+.filter-btn.active { background: var(--accent-4); color: #0a1228; border-color: var(--accent-4); font-weight: 600; }
+.bibliography { font-size: 13px; color: var(--ink-soft); }
+.bibliography ul { padding-left: 20px; }
+.bibliography li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Taller Ludogénesis · Diseñar juegos educativos situados</h1>
+  <p class="kicker">Universidad del Valle · Educación Popular · Asignatura Diseño de Juegos como dispositivo educativo · Duración estimada: 30 minutos</p>
+</header>
+
+<nav class="tabs">
+  <button data-panel="intro" class="active">Punto de partida</button>
+  <button data-panel="config">Escenario 1 · Escuela rural + celular</button>
+  <button data-panel="gallery">Escenario 2 · Convivencia juvenil</button>
+  <button data-panel="closing">Cierre crítico</button>
+</nav>
+
+<main>
+
+  <!-- ============ INTRO ============ -->
+  <section id="panel-intro" class="panel active">
+    <h2>Antes de diseñar, decidir.</h2>
+    <p class="lede">Diseñar un juego educativo no es decorar un contenido con mecánicas. Es tomar decisiones políticas y pedagógicas sobre qué cataliza el juego, qué deja afuera, quién participa y quién facilita. Este taller te acompaña a tomar esas decisiones para dos escenarios concretos del trabajo del educador popular en el Valle del Cauca.</p>
+
+    <div class="principles">
+      <h3>Cuatro provocaciones para empezar</h3>
+      <ul>
+        <li><strong>El juego no es neutral.</strong> Jugando se construye convivencia y también se erosiona. La misma mecánica puede liberar o disciplinar según quién la use, con quién y para qué.</li>
+        <li><strong>El dispositivo no precede al juego.</strong> El celular, el tablero o las fichas no son envases del aprendizaje: son agentes que hacen el juego junto a los jugadores. Su materialidad importa tanto como las reglas.</li>
+        <li><strong>El educador no es facilitador neutral.</strong> Quien facilita decide qué se nombra y qué se calla. Asumir esa responsabilidad es parte del diseño.</li>
+        <li><strong>Un juego no se diseña, se rediseña.</strong> El primer prototipo está incompleto por definición. Solo jugándolo con personas reales se sabe qué hace y qué no hace.</li>
+      </ul>
+    </div>
+
+    <h3>Los dos escenarios del taller</h3>
+    <div class="intro-grid">
+      <div class="intro-card">
+        <span class="scenario-tag">Escenario 1 · Configurador</span>
+        <h3>Institución educativa rural · usos creativos del celular</h3>
+        <p style="color:var(--ink-soft);font-size:14px;margin-top:8px;">Una escuela rural pide juegos para que niños y niñas aprendan a explorar activamente su entorno usando el celular como herramienta, no como pantalla que los aleja. Vas a construir tu propio juego paso a paso, decidiendo qué pone en juego cada elemento.</p>
+        <p style="margin-top:14px;"><button class="btn" onclick="showPanel('config')">Ir al configurador →</button></p>
+      </div>
+      <div class="intro-card b">
+        <span class="scenario-tag b">Escenario 2 · Galería</span>
+        <h3>Barrio popular de Cali · convivencia juvenil</h3>
+        <p style="color:var(--ink-soft);font-size:14px;margin-top:8px;">En un barrio popular hay fronteras invisibles, conflictos vecinales y dificultades de convivencia entre jóvenes. Vas a explorar ocho juegos imaginativos —algunos de mesa, otros al aire libre— que reescriben juegos del catálogo Ludogénesis para este contexto. Puedes descargar la ficha del que más te sirva.</p>
+        <p style="margin-top:14px;"><button class="btn" onclick="showPanel('gallery')">Ir a la galería →</button></p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Un mapa para no perderse.</strong> Este taller dura unos 30 minutos. Empieza por el escenario que más te interpele. Vuelve a esta página cuando quieras. Al final, en el cierre crítico, encontrarás preguntas para revisar lo que diseñaste.
+    </div>
+
+    <h3>Marco mínimo de referencia</h3>
+    <div class="bibliography">
+      <p>Las decisiones del taller están informadas por la tradición que sostiene Ludogénesis:</p>
+      <ul>
+        <li><strong>Huizinga y Caillois</strong> sobre la naturaleza del juego, paideia y ludus.</li>
+        <li><strong>Latour, Callon y Bijker</strong> sobre el juego como ensamblaje de agentes humanos y no humanos.</li>
+        <li><strong>Freire y Gramsci</strong> sobre la dimensión política de toda práctica educativa.</li>
+        <li><strong>Gómez y González (2024)</strong> <em>El juego de diseñar juegos emergentes y situados</em>, Programa Editorial Universidad del Valle.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CONFIGURATOR ============ -->
+  <section id="panel-config" class="panel">
+    <h2>Escenario 1 · Configurador de juego para escuela rural</h2>
+    <p class="lede">Una institución educativa rural quiere que sus niños y niñas aprendan a usar el celular para explorar activamente el entorno donde viven, no para evadirlo. Toma decisiones de diseño en el orden que prefieras. La ficha de la derecha se irá llenando sola. Cuando hayas tomado al menos cuatro decisiones, puedes descargarla.</p>
+
+    <div class="callout" style="margin-top:16px;">
+      <strong>Tiempo estimado:</strong> 12-15 minutos. <strong>Modo:</strong> ve probando combinaciones, no hay respuestas correctas. Algunas decisiones activarán alertas críticas: léelas con atención.
+    </div>
+
+    <div class="fieldset-group">
+      <label class="label" for="config-context">Contexto situado (opcional pero recomendado)</label>
+      <input type="text" id="config-context" class="context-input" placeholder="Ej.: Escuela vereda La Esperanza, Buenaventura · 4° y 5° de primaria · 22 estudiantes · 14 con celular propio o familiar">
+    </div>
+
+    <div class="config-layout">
+      <div class="config-decisions" id="config-decisions"></div>
+      <div class="config-preview">
+        <div class="preview-title">Ficha de diseño en construcción</div>
+        <div id="config-preview-content"></div>
+        <div class="actions">
+          <button class="btn" id="btn-download-config" disabled>Descargar ficha (HTML)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALLERY ============ -->
+  <section id="panel-gallery" class="panel">
+    <h2>Escenario 2 · Galería de juegos para convivencia juvenil</h2>
+    <p class="lede">Un barrio popular de Cali enfrenta conflictos entre vecinos, fronteras invisibles entre grupos de jóvenes y dificultades de convivencia. Aquí encuentras ocho juegos imaginativos, cada uno con su mecánica, su materialidad, su examen crítico antes de aplicarlo y su lectura política. Toca cualquier carta para abrirla. Puedes descargar la ficha del juego que más se adapte a tu trabajo.</p>
+
+    <div class="gallery-intro">
+      <p>Todos estos juegos son <strong>reescrituras situadas</strong> de juegos del catálogo Ludogénesis (Gómez & González y colaboradores, 2004-2025). No son juegos terminados: son provocaciones de diseño que el educador popular debe ajustar al barrio concreto donde va a trabajar.</p>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="mesa">De mesa</button>
+      <button class="filter-btn" data-filter="outdoor">Al aire libre</button>
+      <button class="filter-btn" data-filter="hybrid">Híbridos</button>
+    </div>
+
+    <div class="gallery-grid" id="gallery-grid"></div>
+
+    <div class="callout" style="margin-top:32px;">
+      <strong>Lectura cruzada:</strong> los juegos de mesa y los juegos outdoor no compiten entre sí. La línea PASEA de Ludogénesis ha mostrado que la combinación —caminar el barrio y luego sentarse a desplegar lo que se vio en un tablero— produce aprendizajes que ninguno de los dos formatos consigue por separado.
+    </div>
+  </section>
+
+  <!-- ============ CLOSING ============ -->
+  <section id="panel-closing" class="panel">
+    <h2>Cierre crítico · revisar lo diseñado</h2>
+    <p class="lede">Antes de llevar tu juego al barrio o a la escuela, vuelve sobre estas preguntas. No buscan respuesta correcta; buscan que el diseño no se vaya a campo con autoengaños.</p>
+
+    <h3>Cinco preguntas que todo juego educativo debe poder responder</h3>
+
+    <div class="fieldset-group">
+      <p style="font-size:15px;color:var(--ink);"><strong>1. ¿Qué hace este juego que la escuela tradicional no hace ya?</strong></p>
+      <p style="color:var(--ink-soft);font-size:14px;font-style:italic;">Si tu juego reproduce premio/castigo, ranking de mejor jugador, contenido a memorizar y respuesta correcta, probablemente la escuela ya lo hace mejor. El juego educativo popular existe para hacer otra cosa: catalizar lo que la institución no permite.</p>
+    </div>
+
+    <div class="fieldset-group">
+      <p style="font-size:15px;color:var(--ink);"><strong>2. ¿Quién decide cuándo se acaba el juego?</strong></p>
+      <p style="color:var(--ink-soft);font-size:14px;font-style:italic;">Si solo el facilitador decide, el juego es una clase disfrazada. Si los jugadores pueden modificar reglas, abandonar, hacer trampa creativa, o decidir cuándo cerrar, hay margen para que el juego sea suyo. Huizinga ya señalaba que el aguafiestas y el tramposo son figuras importantes del juego.</p>
+    </div>
+
+    <div class="fieldset-group">
+      <p style="font-size:15px;color:var(--ink);"><strong>3. ¿A quién deja por fuera tu juego?</strong></p>
+      <p style="color:var(--ink-soft);font-size:14px;font-style:italic;">Todo diseño excluye a alguien. ¿A quien no tiene celular? ¿A quien no lee con fluidez? ¿A quien no puede caminar el barrio por seguridad? ¿A quien no se siente cómodo hablando en grupo? No se trata de incluir mágicamente a todos: se trata de saber a quién se está dejando por fuera y por qué.</p>
+    </div>
+
+    <div class="fieldset-group">
+      <p style="font-size:15px;color:var(--ink);"><strong>4. ¿Tu juego nombra el conflicto o lo evita?</strong></p>
+      <p style="color:var(--ink-soft);font-size:14px;font-style:italic;">Hay juegos que parecen tratar la convivencia y en realidad la edulcoran. Si los jóvenes salen del juego sintiendo que el conflicto era simple y ya está resuelto, probablemente el juego les mintió. Freire: la educación que vale la pena no consuela, problematiza.</p>
+    </div>
+
+    <div class="fieldset-group">
+      <p style="font-size:15px;color:var(--ink);"><strong>5. ¿Cómo vas a saber si funcionó?</strong></p>
+      <p style="color:var(--ink-soft);font-size:14px;font-style:italic;">No por aplausos al final. Por lo que pase tres días, tres semanas y tres meses después en el lugar donde se jugó. El juego educativo popular no se evalúa en el momento del juego: se evalúa en lo que cambia (o no cambia) en la práctica social posterior.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3>Una última provocación</h3>
+    <div class="callout">
+      <strong>Ludificar no es siempre bueno.</strong> El catálogo de Ludogénesis insiste en algo incómodo: la ludificación puede catalizar la convivencia democrática y también puede catalizar la destrucción ambiental, el aconductamiento laboral o la cooptación de los intereses populares. Que un proceso esté "gamificado" no lo hace progresista. La pregunta política precede a la pregunta del diseño: <em>¿al servicio de qué transformación está este juego?</em>
+    </div>
+
+    <h3>Para seguir trabajando</h3>
+    <div class="bibliography">
+      <ul>
+        <li>Gómez, R. & González, J. (2024). <em>El juego de diseñar juegos emergentes y situados</em>. Programa Editorial Universidad del Valle.</li>
+        <li>Ludogénesis (2025). <em>Catálogo de juegos 2004-2025</em>. Universidad del Valle, Escuela de Educación, Cultura y Comunidad / Escuela de Comunicación Social.</li>
+        <li>Huizinga, J. (1938/2007). <em>Homo Ludens</em>. Madrid: Alianza.</li>
+        <li>Caillois, R. (1967/1997). <em>Los juegos y los hombres. La máscara y el vértigo</em>. México: FCE.</li>
+        <li>Latour, B. (2008). <em>Reensamblar lo social. Una introducción a la teoría del actor-red</em>. Buenos Aires: Manantial.</li>
+        <li>Freire, P. y Faundez, A. (1985). <em>Por una pedagogía de la pregunta</em>.</li>
+        <li>Gramsci, A. <em>Cuadernos de la cárcel</em>, en particular sobre hegemonía y sentido común.</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:30px;">
+      <button class="btn" onclick="showPanel('intro')">Volver al inicio</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const CONFIG_DECISIONS = [{"id": "phenomenon", "title": "Análisis de brechas de ludificación", "question": "¿Qué fenómeno del entorno rural se vuelve objeto de juego?", "hint": "Identifica una práctica, paisaje o problema concreto del contexto rural que merezca exploración activa con el celular en mano.", "options": ["Reconocer plantas, animales y ciclos del entorno cercano", "Cartografiar caminos, fuentes de agua y lugares con memoria", "Documentar saberes de mayores y oficios del territorio", "Detectar transformaciones del paisaje (deforestación, basuras, cultivos)", "Inventar microhistorias situadas en lugares del recorrido"]}, {"id": "materiality", "title": "Análisis de materialidad", "question": "¿Qué hace el celular y qué hacen los recursos no digitales?", "hint": "El celular no debe colonizar el juego. Decide qué función específica cumple, y qué materiales del entorno (palos, piedras, tarjetas, papel, cuerpos) entran como agentes no humanos a su lado.", "options": ["Cámara/grabadora + tarjetas-misión y cuaderno de campo", "Brújula/sensor + dados de pasos y mapa dibujado a mano", "Linterna/lupa digital + fichas-pista y bolsa de hallazgos", "Lector QR + códigos pegados en lugares del recorrido", "Cronómetro/contador + tablero móvil y semillas como puntos"]}, {"id": "agents", "title": "Tipo de juego según relación entre agentes", "question": "¿Cómo se relacionan jugadores, dispositivo y entorno?", "hint": "Latour y Callon: los agentes humanos y no humanos hacen el juego juntos. Decide la coreografía.", "options": ["Cooperativo entre jugadores, contra el reloj del entorno", "Equipos en competencia que comparten hallazgos al final", "Jugadores solitarios que reportan a una colmena común", "Roles asimétricos: rastreadores, narradores, cartógrafos", "Cadena: cada jugador hereda lo que el anterior dejó"]}, {"id": "temporality", "title": "Estructura temporal (polijuego)", "question": "¿Cómo se organiza el tiempo del juego?", "hint": "Un juego puede ser un solo movimiento o estar compuesto por juegos encadenados, paralelos o anidados.", "options": ["Sesión única de 30-45 min en un recorrido cerrado", "Tres fases: salida, exploración, retorno con puesta en común", "Juegos breves encadenados, uno por estación del recorrido", "Juego largo de varios días con bitácora compartida", "Juego abierto que el grupo decide cuándo cerrar"]}, {"id": "paideia", "title": "Equilibrio paideia / ludus", "question": "¿Cuánto margen de improvisación tienen los jugadores?", "hint": "Caillois: paideia es lo improvisado, ludus es lo reglado. Todo juego mezcla ambos; decide la proporción.", "options": ["Más paideia: reglas mínimas, mucho margen para inventar", "Equilibrio: reglas claras pero misiones interpretables", "Más ludus: reglas estrictas y objetivos cerrados", "Paideia inicial que se va volviendo ludus al avanzar"]}, {"id": "objective", "title": "Objetivo educativo y político", "question": "¿Qué aprendizaje y qué transformación promueve el juego?", "hint": "Freire y Gramsci: todo aprendizaje es político. Nombra el aprendizaje cognitivo y la disposición ciudadana que el juego cataliza.", "isText": true, "placeholder": "Ej.: Que niños y niñas reconozcan su territorio como un saber propio, no como un lugar atrasado que el celular viene a iluminar."}, {"id": "risk", "title": "Examen crítico antes de cerrar", "question": "¿Qué podría salir mal o reproducir lo que el juego pretende cuestionar?", "hint": "Antes de declarar el diseño terminado: ¿el juego podría reforzar la idea de que el celular es lo \"moderno\" y el entorno rural es solo escenario? ¿Excluye a quien no tiene celular? ¿Convierte el saber del territorio en simple contenido para una app?", "isText": true, "placeholder": "Ej.: Riesgo de que el celular termine siendo el protagonista y el territorio quede reducido a fondo. Mitigación: que el dispositivo se apague en momentos clave del juego."}];
+const CRITICAL_ALERTS = {"materiality": {"trigger_indices": [0, 3, 4], "text": "Cuidado: si el celular concentra demasiadas funciones, el juego se vuelve una app con escenografía rural. Revisa que los recursos no digitales tengan peso propio en la mecánica."}, "agents": {"trigger_indices": [1], "text": "La competencia entre equipos puede reproducir lógicas que ya existen en la escuela (premios, rankings). Pregúntate qué hace este juego que la escuela no haga ya."}, "paideia": {"trigger_indices": [2], "text": "Reglas muy estrictas reducen el juego a un ejercicio escolar disfrazado. Huizinga advertía que cuando el juego se sobreorganiza, deja de ser juego."}};
+const GAMES = [{"id": "fronteras_remix", "title": "Fronteras Visibles", "type": "Juego de mesa", "category": "mesa", "summary": "Reescritura de Fronteras Invisibles. Los jugadores deben hacer visibles las fronteras imaginarias del barrio antes de poder cruzarlas: nombrarlas, dibujarlas, contar quién las puso ahí.", "inspiration": "Inspirado en Fronteras Invisibles (Vanegas, 2024) del catálogo Ludogénesis.", "mechanics": "Tablero modular hecho con los propios jugadores. Tres en línea como en el original, pero cada ficha colocada exige contar una experiencia real de exclusión o encuentro en ese punto del barrio.", "materials": "Cuadrícula de cartón reutilizado, fichas de dos colores, tarjetas en blanco para escribir lugares, marcador de territorio.", "objective": "Convertir las fronteras invisibles en objeto compartido de conversación. No se trata de eliminarlas mágicamente con el juego, sino de poder nombrarlas sin violencia.", "agents": "Jugadores adolescentes en grupos mixtos del mismo barrio o de barrios vecinos en tensión.", "paideia": "Mezcla: reglas estrictas en el tablero, paideia abierta en las narraciones que cada ficha exige.", "critical": "Si el grupo aún tiene miedo real de cruzar fronteras, pedirles nombrarlas en voz alta puede reactivar conflictos. El juego requiere mediación adulta entrenada y un espacio seguro previamente construido.", "freire": "El juego no resuelve el conflicto: lo problematiza. Sigue a Freire en que la palabra que nombra el mundo es la primera condición para transformarlo."}, {"id": "cachorro_remix", "title": "Un Cachorro 2.0", "type": "Juego de mesa con narrativa", "category": "mesa", "summary": "Actualización del Juego Simulacro original Un Cachorro. Los jugadores enfrentan dilemas barriales contemporáneos (chismes, redes sociales, ruido entre vecinos) y deben construir respuestas colectivas que no escalen el conflicto.", "inspiration": "Reescritura situada de los Juegos Simulacro (Gómez & González, 2004) para conflictos vecinales actuales.", "mechanics": "Cartas-situación que describen un dilema. Cada jugador propone una respuesta. El grupo vota cuál de las respuestas evita que el conflicto crezca, sin dejar a nadie sin voz.", "materials": "Mazo de tarjetas-situación construidas por los propios jóvenes a partir de su barrio, fichas de \"voz\" que cada jugador puede gastar, tablero de escalamiento del conflicto.", "objective": "Practicar el ensayo de respuestas no violentas en situaciones reales del barrio antes de que ocurran. Construir un repertorio compartido de salidas.", "agents": "5-7 jugadores. Funciona mejor con un mediador que no juega.", "paideia": "Más paideia: las cartas-situación son provocaciones, no problemas con respuesta correcta.", "critical": "Riesgo de que el juego se convierta en moralización: \"así sí, así no\". El facilitador debe resistir la tentación de validar respuestas \"correctas\" y dejar que el grupo discuta.", "freire": "El juego como ensayo de lo no vivido todavía. Los jugadores prueban ser ciudadanos antes de tener que serlo en una situación real."}, {"id": "asedio_barrio", "title": "Asedio del Barrio", "type": "Juego de mesa estratégico", "category": "mesa", "summary": "Variante de Asedio. Dos equipos representan dinámicas que ahogan el barrio (rumor, miedo, encierro) y dinámicas que lo abren (encuentros, calle, fiesta). Cada movimiento ocupa o libera espacio.", "inspiration": "Reescritura de Asedio (Ludogénesis, 2018) como metáfora de las dinámicas que cierran o abren la convivencia barrial.", "mechanics": "Tablero cuadriculado con casillas que representan lugares reales del barrio. Las fichas de un color cierran espacio (rumor, frontera, miedo); las del otro lo abren (saludo, evento, presencia). Pierde quien queda asfixiado.", "materials": "Tablero de madera o cartón duro, fichas en dos colores con símbolos legibles, mapa real del barrio sobrepuesto.", "objective": "Visibilizar cómo pequeñas acciones cotidianas ocupan o liberan el espacio público compartido. El juego no premia ganar: premia entender cómo se asfixia un barrio.", "agents": "2 jugadores o 2 equipos pequeños. Buen detonador de conversación posterior.", "paideia": "Más ludus: reglas estrictas tipo ajedrez. La paideia ocurre después, en la conversación sobre lo jugado.", "critical": "El juego puede ser leído como denuncia abstracta sin nombrar responsables concretos del cierre del barrio (autoridades, actores armados, propietarios). El facilitador debe ayudar a aterrizar la metáfora.", "freire": "Sigue a Gramsci: hace visible cómo el sentido común del miedo ocupa el espacio sin que nadie lo decida explícitamente. Y a Freire: nombrar esa ocupación es el primer paso para resistirla."}, {"id": "drumor_juvenil", "title": "Drumor Juvenil", "type": "Juego de mesa de roles", "category": "mesa", "summary": "Versión para adolescentes urbanos del Drumor original. Los jugadores asumen roles del barrio (joven, vecino mayor, comerciante, líder, recién llegado) y deben sortear situaciones del reloj barrial sin que nadie quede destruido.", "inspiration": "Adaptación de Drumor (Moncada, Mafla & Vivas, 2016) del conflicto armado al conflicto barrial cotidiano.", "mechanics": "Tableros móviles hexagonales que representan zonas del barrio. Cada jugador tiene un personaje con recursos limitados. Eventos aleatorios obligan a negociar. El reloj avanza para todos.", "materials": "Hexágonos de madera o cartón duro, figuras de personajes, mazo de eventos barriales construido con los jóvenes, dados.", "objective": "Comprender el barrio como sistema donde nadie se salva solo. Practicar negociación entre intereses legítimos y diferentes.", "agents": "4-6 jugadores con roles asimétricos. Necesita 60-90 minutos.", "paideia": "Equilibrio: roles y reglas claras, pero las negociaciones son completamente abiertas.", "critical": "El juego puede simplificar conflictos reales en categorías de personajes. Es clave que los roles los construyan los propios jóvenes a partir de su barrio, no que vengan predefinidos desde afuera.", "freire": "Educar para la convivencia no es enseñar a estar de acuerdo, sino a sostener el desacuerdo sin destruir al otro. El juego ensaya esa competencia política básica."}, {"id": "asedio_outdoor", "title": "Caminata del Asedio", "type": "Juego al aire libre", "category": "outdoor", "summary": "Recorrido grupal por el barrio donde se identifican, en vivo, los lugares que asfixian y los que respiran. Cada parada exige una acción mínima de apertura del espacio.", "inspiration": "Versión outdoor de Asedio inspirada también en la lógica PASEA (\"aprende mientras caminas\").", "mechanics": "Recorrido de 6-8 paradas previamente acordadas. En cada una, los jugadores deciden por consenso si el lugar \"asfixia\" o \"respira\" y proponen una acción simbólica de apertura (saludar, dejar una marca, contar una historia).", "materials": "Mapa del recorrido en papel, marcadores para señalar paradas, cuaderno colectivo, tizas o materiales reutilizables para marcas en el espacio.", "objective": "Convertir el caminar el barrio en una práctica de lectura crítica del espacio. Mover el cuerpo donde se cree que no se puede.", "agents": "Grupo de 8-15 personas con uno o dos facilitadores que no dirigen las decisiones.", "paideia": "Mucha paideia: las paradas son anclas, todo lo demás se inventa en el camino.", "critical": "Caminar el barrio puede ser inseguro en ciertos contextos. La decisión de salir debe ser del grupo y debe haber rutas de cuidado claras. No es un juego para imponer.", "freire": "El cuerpo en el espacio es ya una práctica política. Caminar juntos un lugar donde no se camina solo es ya una transformación."}, {"id": "vecinos_chismosos_remix", "title": "Vecinos que se Hablan", "type": "Juego de mesa rápido", "category": "mesa", "summary": "Inversión de Vecinos Chismosos. En vez de descifrar lo oculto del otro, los jugadores deben formular preguntas que les permitan conocer algo verdadero del vecino que tienen al frente, sin caer en el interrogatorio.", "inspiration": "Reescritura de Vecinos Chismosos (Túquerres, 2024) del catálogo Ludogénesis.", "mechanics": "Dos jugadores enfrentados en tres carriles. Avanzan haciendo preguntas que el otro pueda responder honestamente sin sentirse expuesto. El grupo vota si cada pregunta abre o cierra. Solo las que abren hacen avanzar.", "materials": "Tablero pequeño de tres carriles, fichas de avance, tarjetas en blanco para escribir preguntas en vivo.", "objective": "Aprender que la pregunta es una herramienta política. Distinguir preguntas que conectan de preguntas que invaden.", "agents": "Parejas que se conocen poco o están en conflicto. Funciona con observadores que votan.", "paideia": "Más paideia: las preguntas son inventadas, las reglas son sobre cómo se valida cada movida.", "critical": "Cuidado con los desbalances de poder entre los jugadores. Si uno está en posición vulnerable frente al otro (edad, género, jerarquía barrial), la pregunta \"honesta\" puede ser violencia. El juego requiere acuerdos previos.", "freire": "La pregunta es la base del diálogo, y el diálogo es la base de la educación que no oprime. Freire dedicó un libro entero a esto: la pregunta como acto pedagógico."}, {"id": "magma_conflictos", "title": "Magma de Conflictos", "type": "Juego de mesa híbrido", "category": "hybrid", "summary": "Adaptación de Magma. Dos equipos representan no agua y lava, sino dos formas de procesar el conflicto: la confrontación abierta y la negociación silenciosa. Ambas son legítimas; el juego explora cuándo usar cada una.", "inspiration": "Reescritura de Magma (Calvo, 2024) aplicada a estilos de manejo del conflicto.", "mechanics": "Tablero tejido con lana entre los jugadores antes de jugar. Combates con dados que se resuelven con palabras: cada equipo debe argumentar por qué su forma de procesar un conflicto dado es la adecuada.", "materials": "Tejido de lana sobre tela base, fichas de dos colores, dados de letras y números, mazo de situaciones conflictivas.", "objective": "Salir del binario \"agresivo vs pasivo\". Reconocer que hay momentos para confrontar y momentos para negociar, y que ambas exigen habilidad.", "agents": "Dos equipos de 3-4 jugadores cada uno. La construcción colectiva del tablero es parte del juego.", "paideia": "Equilibrio: el tablero y los dados son ludus, las argumentaciones son paideia pura.", "critical": "El juego puede romantizar la confrontación o, al revés, la negociación. El facilitador debe ayudar a ver que ambos estilos pueden ser violentos si no se eligen con cuidado del otro.", "freire": "Gramsci: las luchas se ganan también en el terreno de las palabras y los símbolos. El juego entrena esa segunda cancha del conflicto."}, {"id": "doxoe_barrial", "title": "Dóxoe Barrial", "type": "Juego de mesa estratégico", "category": "mesa", "summary": "Versión barrial de Dóxoe. En vez del éxodo por el conflicto armado, se trata del éxodo cotidiano: jóvenes que dejan el barrio porque no caben, vecinos que se encierran, comerciantes que se van. El juego busca evitar ese vaciamiento.", "inspiration": "Adaptación de Dóxoe (Bermúdez & González, 2025) del catálogo Ludogénesis al éxodo barrial cotidiano.", "mechanics": "Cuatro personajes deben mantenerse en el barrio frente a presiones que los empujan a irse. Recursos compartidos limitados. Cada turno hay decisiones colectivas sobre qué proteger.", "materials": "Tablero de cuadrícula con zonas del barrio, figuras de personajes, fichas de recursos (vínculo, trabajo, vivienda, seguridad), mazo de presiones.", "objective": "Visibilizar el éxodo silencioso de los barrios populares. Ensayar estrategias de sostenimiento mutuo.", "agents": "4 jugadores que asumen un personaje cada uno, más posibles observadores.", "paideia": "Más ludus: el sistema de recursos es estricto. Pero las decisiones de a quién proteger primero son completamente abiertas.", "critical": "El juego puede culpabilizar a quien se va del barrio (\"te faltó aguante\"). Hay que cuidar que no lea la migración como traición sino como síntoma de las condiciones que la fuerzan.", "freire": "Gramsci nuevamente: la hegemonía no necesita expulsar a la gente, basta con hacer el barrio invivible. El juego nombra ese mecanismo silencioso."}];
+
+// ============ STATE ============
+const state = {
+  config: {
+    context: '',
+    selections: {},
+    texts: {}
+  }
+};
+
+// ============ TAB NAVIGATION ============
+function showPanel(name) {
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('section.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`nav.tabs button[data-panel="${name}"]`).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============ CONFIGURATOR (Scenario 1) ============
+function renderConfigurator() {
+  const container = document.getElementById('config-decisions');
+  container.innerHTML = '';
+  CONFIG_DECISIONS.forEach((d, idx) => {
+    const div = document.createElement('div');
+    div.className = 'decision';
+    div.dataset.decisionId = d.id;
+    let optionsHtml = '';
+    if (d.isText) {
+      optionsHtml = `<textarea class="text-input" data-decision="${d.id}" placeholder="${d.placeholder || ''}"></textarea>`;
+    } else {
+      optionsHtml = '<div class="options">' + d.options.map((opt, i) =>
+        `<button class="option-btn" data-decision="${d.id}" data-index="${i}">${opt}</button>`
+      ).join('') + '</div>';
+    }
+    const alertHtml = `<div class="critical-alert hidden" id="alert-${d.id}"></div>`;
+    div.innerHTML = `
+      <div class="decision-title">Decisión ${idx + 1} · ${d.title}</div>
+      <div class="decision-q">${d.question}</div>
+      <div class="decision-hint">${d.hint}</div>
+      ${optionsHtml}
+      ${alertHtml}
+    `;
+    container.appendChild(div);
+  });
+
+  // Bind option buttons
+  container.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.decision;
+      const idx = parseInt(btn.dataset.index, 10);
+      // Toggle: clicking again deselects
+      if (state.config.selections[id] === idx) {
+        delete state.config.selections[id];
+        btn.classList.remove('selected');
+      } else {
+        state.config.selections[id] = idx;
+        // Deselect siblings
+        container.querySelectorAll(`.option-btn[data-decision="${id}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      }
+      checkCriticalAlert(id);
+      updatePreview();
+    });
+  });
+
+  // Bind text inputs
+  container.querySelectorAll('.text-input').forEach(ta => {
+    ta.addEventListener('input', () => {
+      state.config.texts[ta.dataset.decision] = ta.value;
+      updatePreview();
+    });
+  });
+
+  // Bind context input
+  document.getElementById('config-context').addEventListener('input', e => {
+    state.config.context = e.target.value;
+    updatePreview();
+  });
+}
+
+function checkCriticalAlert(decisionId) {
+  const alert = CRITICAL_ALERTS[decisionId];
+  const el = document.getElementById('alert-' + decisionId);
+  if (!alert || !el) return;
+  const sel = state.config.selections[decisionId];
+  if (sel !== undefined && alert.trigger_indices.includes(sel)) {
+    el.innerHTML = `<strong>Alerta crítica</strong>${alert.text}`;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function updatePreview() {
+  const preview = document.getElementById('config-preview-content');
+  let html = '';
+
+  if (state.config.context && state.config.context.trim()) {
+    html += `<div class="preview-row"><div class="preview-label">Contexto situado</div><div class="preview-value">${escapeHtml(state.config.context)}</div></div>`;
+  }
+
+  CONFIG_DECISIONS.forEach((d, idx) => {
+    let value = '';
+    if (d.isText) {
+      value = state.config.texts[d.id] || '';
+    } else {
+      const sel = state.config.selections[d.id];
+      if (sel !== undefined) value = d.options[sel];
+    }
+    if (value) {
+      html += `<div class="preview-row"><div class="preview-label">${idx + 1}. ${d.title}</div><div class="preview-value">${escapeHtml(value)}</div></div>`;
+    }
+  });
+
+  if (!html) {
+    html = '<p class="preview-empty">Tu ficha de diseño se irá llenando aquí a medida que tomes decisiones.</p>';
+  }
+
+  preview.innerHTML = html;
+
+  // Enable download button only if at least 4 decisions taken
+  const filled = CONFIG_DECISIONS.filter(d => {
+    if (d.isText) return state.config.texts[d.id] && state.config.texts[d.id].trim();
+    return state.config.selections[d.id] !== undefined;
+  }).length;
+  document.getElementById('btn-download-config').disabled = filled < 4;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============ DOWNLOAD CONFIG FICHA ============
+function downloadConfigFicha() {
+  const date = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  let html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Ficha de Diseño · Juego situado para escuela rural</title>
+<style>
+body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 20px; color: #222; line-height: 1.6; }
+h1 { color: #b8860b; border-bottom: 2px solid #b8860b; padding-bottom: 10px; }
+h2 { color: #2d5a3d; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 24px; margin-bottom: 4px; }
+.meta { color: #666; font-style: italic; font-size: 13px; margin-bottom: 20px; }
+.section { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+.value { font-size: 15px; color: #111; margin-top: 4px; }
+.context { background: #faf6e8; padding: 14px 18px; border-left: 4px solid #b8860b; margin: 16px 0; font-size: 14px; }
+.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666; }
+</style></head><body>
+<h1>Ficha de Diseño · Juego situado para escuela rural</h1>
+<p class="meta">Taller Ludogénesis · Universidad del Valle · ${date}</p>
+<p class="meta">Configurador · Escenario: institución educativa rural / uso creativo del celular para explorar el entorno</p>
+`;
+
+  if (state.config.context && state.config.context.trim()) {
+    html += `<div class="context"><strong>Contexto situado:</strong><br>${escapeHtml(state.config.context)}</div>`;
+  }
+
+  CONFIG_DECISIONS.forEach((d, idx) => {
+    let value = '';
+    if (d.isText) value = state.config.texts[d.id] || '';
+    else {
+      const sel = state.config.selections[d.id];
+      if (sel !== undefined) value = d.options[sel];
+    }
+    if (value) {
+      html += `<div class="section"><h2>${idx + 1}. ${d.title}</h2><p style="font-style:italic;color:#555;font-size:13px;margin:4px 0;">${escapeHtml(d.question)}</p><div class="value">${escapeHtml(value)}</div></div>`;
+    }
+  });
+
+  html += `<div class="footer">
+<strong>Próximos pasos sugeridos:</strong><br>
+1. Pilotar el juego con un grupo pequeño en un recorrido real.<br>
+2. Documentar lo que pasa con los recursos no digitales: ¿se usan, se ignoran, los jugadores los modifican?<br>
+3. Revisar si el riesgo identificado se materializó. Si sí, ajustar materialidad o reglas.<br>
+4. Volver a jugar. Un juego no está terminado hasta que ha sido jugado al menos tres veces por personas distintas.
+</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ficha_diseno_juego_rural.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============ GALLERY (Scenario 2) ============
+function renderGallery(filter) {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+  const filtered = filter && filter !== 'all' ? GAMES.filter(g => g.category === filter) : GAMES;
+  filtered.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'game-card ' + g.category;
+    card.innerHTML = `
+      <div class="game-type">${g.type}</div>
+      <h4>${g.title}</h4>
+      <p>${g.summary}</p>
+      <div class="click-hint">Tocar para ver el diseño completo →</div>
+    `;
+    card.addEventListener('click', () => openModal(g));
+    grid.appendChild(card);
+  });
+}
+
+function openModal(game) {
+  const modal = document.getElementById('modal-bg');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>${game.title}</h3>
+    <div class="modal-meta">
+      <span class="meta-tag">${game.type}</span>
+      <span class="meta-tag">${game.category === 'outdoor' ? 'Al aire libre' : game.category === 'hybrid' ? 'Híbrido' : 'De mesa'}</span>
+    </div>
+    <p style="color:var(--ink-soft);font-style:italic;font-size:13px;">${game.inspiration}</p>
+    <div class="modal-section"><h4>Idea general</h4><p>${game.summary}</p></div>
+    <div class="modal-section"><h4>Mecánica</h4><p>${game.mechanics}</p></div>
+    <div class="modal-section"><h4>Materialidad (agentes no humanos)</h4><p>${game.materials}</p></div>
+    <div class="modal-section"><h4>Tipo de jugadores</h4><p>${game.agents}</p></div>
+    <div class="modal-section"><h4>Equilibrio paideia / ludus</h4><p>${game.paideia}</p></div>
+    <div class="modal-section"><h4>Objetivo educativo y político</h4><p>${game.objective}</p></div>
+    <div class="modal-critical">
+      <h4>Examen crítico antes de aplicar</h4>
+      <p>${game.critical}</p>
+    </div>
+    <div class="modal-section"><h4>Lectura desde Freire / Gramsci</h4><p>${game.freire}</p></div>
+    <div class="actions">
+      <button class="btn" onclick="downloadGameFicha('${game.id}')">Descargar ficha de este juego</button>
+      <button class="btn secondary" onclick="closeModal()">Cerrar</button>
+    </div>
+  `;
+  modal.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+}
+
+function downloadGameFicha(id) {
+  const g = GAMES.find(x => x.id === id);
+  if (!g) return;
+  const date = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Ficha · ${g.title}</title>
+<style>
+body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 20px; color: #222; line-height: 1.6; }
+h1 { color: #4a5fb0; border-bottom: 2px solid #4a5fb0; padding-bottom: 10px; }
+h2 { color: #2d5a3d; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 24px; margin-bottom: 4px; }
+.meta { color: #666; font-style: italic; font-size: 13px; margin-bottom: 20px; }
+.section { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+.critical { background: #fff0f0; padding: 14px 18px; border-left: 4px solid #c0392b; margin: 16px 0; }
+.critical h2 { color: #c0392b; margin-top: 0; }
+.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666; }
+</style></head><body>
+<h1>${g.title}</h1>
+<p class="meta">Tipo: ${g.type} · Galería Ludogénesis · Escenario: convivencia juvenil en barrio popular de Cali · ${date}</p>
+<p style="font-style:italic;color:#555;font-size:13px;">${g.inspiration}</p>
+<div class="section"><h2>Idea general</h2><p>${g.summary}</p></div>
+<div class="section"><h2>Mecánica</h2><p>${g.mechanics}</p></div>
+<div class="section"><h2>Materialidad (agentes no humanos)</h2><p>${g.materials}</p></div>
+<div class="section"><h2>Tipo de jugadores</h2><p>${g.agents}</p></div>
+<div class="section"><h2>Equilibrio paideia / ludus</h2><p>${g.paideia}</p></div>
+<div class="section"><h2>Objetivo educativo y político</h2><p>${g.objective}</p></div>
+<div class="critical"><h2>Examen crítico antes de aplicar</h2><p>${g.critical}</p></div>
+<div class="section"><h2>Lectura desde Freire / Gramsci</h2><p>${g.freire}</p></div>
+<div class="footer">
+<strong>Cómo usar esta ficha como educador popular:</strong><br>
+1. No apliques el juego tal cual. Conversa primero con la comunidad sobre si esta forma de nombrar el conflicto les hace sentido.<br>
+2. Adapta materiales y nombres al contexto específico del barrio.<br>
+3. Decide quién facilita y por qué. La facilitación no es neutral.<br>
+4. Documenta lo que pase. La sistematización es parte de la pedagogía.
+</div>
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ficha_${g.id}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  // Tab nav
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.addEventListener('click', () => showPanel(b.dataset.panel));
+  });
+  // Configurator
+  renderConfigurator();
+  updatePreview();
+  document.getElementById('btn-download-config').addEventListener('click', downloadConfigFicha);
+  // Gallery
+  renderGallery('all');
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      renderGallery(b.dataset.filter);
+    });
+  });
+  // Modal close
+  document.getElementById('modal-bg').addEventListener('click', e => {
+    if (e.target.id === 'modal-bg') closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+});
+
+</script>
+</body>
+</html>
