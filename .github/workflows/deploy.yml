@@ -28,6 +28,8 @@ jobs:
           - algoritmos-card-game
           - analizador-sesgos-busquedas
           - mi-apuesta-editorial
+          - panoptico-digital
+          - data-mine-simulador
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
