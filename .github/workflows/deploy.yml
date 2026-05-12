@@ -30,6 +30,7 @@ jobs:
           - mi-apuesta-editorial
           - panoptico-digital
           - data-mine-simulador
+          - casino-atencion
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
