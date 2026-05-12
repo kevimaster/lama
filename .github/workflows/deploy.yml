@@ -89,15 +89,38 @@ jobs:
 
       - name: Inject Google Tag Manager into all HTML files
         run: |
-          GTM_HEAD='<!-- Google Tag Manager -->\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"\\u0026l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f);})(window,document,"script","dataLayer","GTM-KSBX4368");<\/script>\n<!-- End Google Tag Manager -->'
-          GTM_BODY='<!-- Google Tag Manager (noscript) -->\n<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KSBX4368" height="0" width="0" style="display:none;visibility:hidden"><\/iframe><\/noscript>\n<!-- End Google Tag Manager (noscript) -->'
-          find _site -name "*.html" | while read f; do
-            if ! grep -q "GTM-KSBX4368" "$f"; then
-              sed -i "s|<head>|<head>\n${GTM_HEAD}|" "$f"
-              sed -i "s|<body>|<body>\n${GTM_BODY}|" "$f"
-            fi
-          done
-          echo "GTM injected into $(find _site -name '*.html' | wc -l) HTML files"
+          python3 << 'PYEOF'
+          import glob
+
+          GTM_HEAD = (
+            "<!-- Google Tag Manager -->\n"
+            "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n"
+            "new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\n"
+            "j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n"
+            "'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n"
+            "})(window,document,'script','dataLayer','GTM-KSBX4368');</script>\n"
+            "<!-- End Google Tag Manager -->"
+          )
+
+          GTM_BODY = (
+            "<!-- Google Tag Manager (noscript) -->\n"
+            "<noscript><iframe src=\"https://www.googletagmanager.com/ns.html?id=GTM-KSBX4368\"\n"
+            "height=\"0\" width=\"0\" style=\"display:none;visibility:hidden\"></iframe></noscript>\n"
+            "<!-- End Google Tag Manager (noscript) -->"
+          )
+
+          files = glob.glob('_site/**/*.html', recursive=True) + glob.glob('_site/*.html')
+          count = 0
+          for path in set(files):
+              content = open(path, encoding='utf-8').read()
+              if 'GTM-KSBX4368' in content:
+                  continue
+              content = content.replace('<head>', '<head>\n' + GTM_HEAD, 1)
+              content = content.replace('<body>', '<body>\n' + GTM_BODY, 1)
+              open(path, 'w', encoding='utf-8').write(content)
+              count += 1
+          print(f'GTM injected into {count} HTML files')
+          PYEOF
 
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
