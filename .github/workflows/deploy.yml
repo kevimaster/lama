@@ -33,6 +33,7 @@ jobs:
           - casino-atencion
           - si-entonces
           - analiza-plataformas
+          - caja-oscura
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
