@@ -34,6 +34,7 @@ jobs:
           - si-entonces
           - analiza-plataformas
           - caja-oscura
+          - contagio-informacional
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,0 +1,9 @@
+/* Reset mínimo — el resto de estilos viven en App.jsx (GLOBAL_STYLES)
+   para mantener el componente portable como archivo único. */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #0f1420;
+  color: #f1f4f9;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
