@@ -1,8 +1,56 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+/**
+ * ============================================================================
+ * EL ENSAMBLAJE — Cartografía de una decisión periodística
+ * LAMA · Laboratorio de Mediaciones Algorítmicas · Universidad del Valle
+ * ============================================================================
+ *
+ * TEMA VISUAL: "Plano Nocturno" (theme-factory)
+ *   Mesa de trazado nocturna: tinta fría, trazas de fósforo, rótulos de
+ *   máquina. La decisión que el estudiante reconstruye es un acto de
+ *   instrumentación —una plataforma midiendo lectores— y la interfaz lo dice:
+ *   no es papel sepia de archivo, es un plano de levantamiento bajo luz de
+ *   instrumento.
+ *
+ * REGLAS DE COLOR (verificadas, no improvisadas)
+ *   · Tres hues categóricos para las tres dimensiones del ensamblaje, validados
+ *     con dataviz/validate_palette.js contra la superficie oscura: banda de
+ *     luminosidad, piso de croma, separación CVD, piso de visión normal y
+ *     contraste ≥3:1 — los cinco en PASS.
+ *   · Los CUATRO tipos de relación NO son un cuarto eje de color: siete hues
+ *     categóricos fallan la separación CVD. Se codifican por PATRÓN DE TRAZO
+ *     (continuo · punteado · discontinuo · grueso con punta) más el rótulo que
+ *     cada arista ya lleva. El color de las aristas es una sola tinta neutra,
+ *     salvo "tensiona", que toma el ámbar reservado de advertencia.
+ *   · El cálido es señal, nunca superficie.
+ * ============================================================================
+ */
 
-// ─────────────────────────────────────────────
-// DATOS
-// ─────────────────────────────────────────────
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+
+/* ───────────────────────────── TOKENS DEL TEMA ───────────────────────────── */
+
+const T = {
+  void:       "#0B1016",
+  surface:    "#121A23",
+  raised:     "#18222D",
+  raisedHi:   "#1E2A37",
+  hairline:   "rgba(147,169,196,0.16)",
+  grid:       "rgba(147,169,196,0.07)",
+
+  ink:        "#EAF0F6",
+  inkSec:     "#A9BACD",
+  inkMuted:   "#6F8399",
+
+  trace:      "#93A9C4",
+  warn:       "#F2B441",
+  good:       "#45C98A",
+
+  display:    "'Bricolage Grotesque', 'Helvetica Neue', sans-serif",
+  body:       "'Newsreader', Georgia, serif",
+  mono:       "'IBM Plex Mono', ui-monospace, monospace",
+};
+
+/* ────────────────── DATOS DEL CASO (sin cambios) ─────────────────── */
 
 const CASO = {
   titulo: "El Faro Verifica y el convenio con VeritasNet",
@@ -28,18 +76,275 @@ const NODOS_DISPONIBLES = [
   { id: "n15", categoria: "organizacional", label: "Capacidad técnica limitada",               descripcion: "Sin desarrollador propio. Dependencia de herramientas externas para análisis de datos y verificación.",                                                                                   icono: "💻" },
 ];
 
+
+/* ── Tipos de relación: el patrón de trazo es la codificación primaria ────── */
 const TIPOS_RELACION = [
-  { id: "condiciona", label: "Condiciona", color: "#8B5E3C", dash: "0" },
-  { id: "posibilita", label: "Posibilita", color: "#2D6A4F", dash: "0" },
-  { id: "tensiona",   label: "Tensiona",   color: "#C44B4B", dash: "6,4" },
-  { id: "produce",    label: "Produce",    color: "#5C7AEA", dash: "0" },
+  { id: "condiciona", label: "Condiciona", color: T.trace, dash: "0",   width: 1.4, cap: "butt",  glifo: "───" },
+  { id: "posibilita", label: "Posibilita", color: T.trace, dash: "1,5", width: 2.2, cap: "round", glifo: "· · ·" },
+  { id: "tensiona",   label: "Tensiona",   color: T.warn,  dash: "7,5", width: 1.6, cap: "butt",  glifo: "– – –" },
+  { id: "produce",    label: "Produce",    color: T.ink,   dash: "0",   width: 2.6, cap: "round", glifo: "──▶" },
 ];
 
+/* ── Dimensiones: tres hues categóricos validados ────────────────────────── */
 const CATEGORIAS = {
-  estructural:    { label: "Estructural",    color: "#8B5E3C", bg: "#FDF3E7", border: "#D4A96A", desc: "Factores del entorno macro: economía, política, tecnología, territorio" },
-  relacional:     { label: "Relacional",     color: "#2D6A4F", bg: "#EEF7F2", border: "#74B994", desc: "Vínculos entre actores: alianzas, dependencias, negociaciones" },
-  organizacional: { label: "Organizacional", color: "#5C4A8A", bg: "#F2EEF9", border: "#A48BC4", desc: "Factores internos del medio: cultura, capacidades, prácticas" },
+  estructural: {
+    label: "Estructural", color: "#24A0CB",
+    bg: "rgba(36,160,203,0.13)", border: "rgba(36,160,203,0.55)",
+    desc: "Factores del entorno macro: economía, política, tecnología, territorio",
+  },
+  relacional: {
+    label: "Relacional", color: "#F94D3A",
+    bg: "rgba(249,77,58,0.13)", border: "rgba(249,77,58,0.5)",
+    desc: "Vínculos entre actores: alianzas, dependencias, negociaciones",
+  },
+  organizacional: {
+    label: "Organizacional", color: "#B166F8",
+    bg: "rgba(177,102,248,0.13)", border: "rgba(177,102,248,0.5)",
+    desc: "Factores internos del medio: cultura, capacidades, prácticas",
+  },
 };
+
+const FEEDBACK_COLORS = {
+  inicio:    { icon: "→", color: T.trace },
+  alerta:    { icon: "!", color: T.warn },
+  accion:    { icon: "↑", color: "#24A0CB" },
+  reflexion: { icon: "?", color: "#B166F8" },
+  positivo:  { icon: "✓", color: T.good },
+  neutro:    { icon: "·", color: T.inkMuted },
+};
+
+/* ───────────────────── FONDO GENERATIVO CON SEMILLA ──────────────────────
+ * [TÉCNICA] Constelación reproducible: misma semilla, mismo dibujo en cada
+ * carga y en cada build. No es decoración aleatoria — es la figura del propio
+ * objeto de la herramienta (nodos heterogéneos débilmente acoplados) usada
+ * como atmósfera, a opacidad que nunca compite con el contenido.
+ * ───────────────────────────────────────────────────────────────────────── */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function Constelacion({ seed = 1712, n = 46, opacidad = 0.5 }) {
+  const { pts, links } = useMemo(() => {
+    const rnd = mulberry32(seed);
+    const pts = Array.from({ length: n }, () => ({
+      x: rnd() * 1000, y: rnd() * 700, r: 0.8 + rnd() * 2.1,
+    }));
+    const links = [];
+    pts.forEach((p, i) => {
+      pts.slice(i + 1).forEach((q, j) => {
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < 165 && rnd() > 0.45) links.push({ a: i, b: i + 1 + j, d });
+      });
+    });
+    return { pts, links };
+  }, [seed, n]);
+
+  return (
+    <svg
+      viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true"
+      style={{
+        position: "absolute", inset: 0, width: "100%", height: "100%",
+        opacity: opacidad, pointerEvents: "none",
+        maskImage: "radial-gradient(ellipse 62% 58% at 38% 48%, transparent 25%, #000 78%)",
+        WebkitMaskImage: "radial-gradient(ellipse 62% 58% at 38% 48%, transparent 25%, #000 78%)",
+      }}
+    >
+      {links.map((l, i) => (
+        <line
+          key={i} x1={pts[l.a].x} y1={pts[l.a].y} x2={pts[l.b].x} y2={pts[l.b].y}
+          stroke={T.trace} strokeWidth="0.5" strokeOpacity={0.5 * (1 - l.d / 165)}
+        />
+      ))}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={T.trace} fillOpacity={0.26} />
+      ))}
+    </svg>
+  );
+}
+
+/* ───────────────────────────── ESTILOS GLOBALES ─────────────────────────── */
+const GLOBAL_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: ${T.void};
+  color: ${T.ink};
+  font-family: ${T.body};
+  -webkit-font-smoothing: antialiased;
+}
+
+/* La retícula del plano: una sola textura, heredada por todas las pantallas */
+.plano {
+  background-color: ${T.void};
+  background-image:
+    linear-gradient(${T.grid} 1px, transparent 1px),
+    linear-gradient(90deg, ${T.grid} 1px, transparent 1px);
+  background-size: 34px 34px, 34px 34px;
+}
+.plano-fino {
+  background-image:
+    linear-gradient(${T.grid} 1px, transparent 1px),
+    linear-gradient(90deg, ${T.grid} 1px, transparent 1px),
+    radial-gradient(ellipse 60% 50% at 20% 0%, rgba(36,160,203,0.10), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 90% 100%, rgba(177,102,248,0.09), transparent 70%);
+  background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
+}
+
+/* Grano: rompe el plano liso sin pesar. */
+.grano::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  opacity: 0.16; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.rotulo {
+  font-family: ${T.mono};
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: ${T.inkMuted};
+}
+
+.btn {
+  font-family: ${T.mono}; font-size: 12px; letter-spacing: 0.06em;
+  border-radius: 2px; cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.btn:focus-visible, .chip:focus-visible, textarea:focus-visible {
+  outline: 2px solid #24A0CB; outline-offset: 2px;
+}
+
+.chip {
+  font-family: ${T.mono}; font-size: 11px; letter-spacing: 0.04em;
+  border-radius: 2px; cursor: pointer; background: transparent;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+/* Entrada escalonada: un solo momento orquestado al cargar. */
+@keyframes surge { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.surge { animation: surge 0.62s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes trazo { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: ${T.void}; }
+::-webkit-scrollbar-thumb { background: #27333F; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #33424F; }
+
+textarea::placeholder { color: ${T.inkMuted}; opacity: 0.75; }
+
+/* ── Respuesta a ancho reducido ──────────────────────────────────────────
+   Los estilos en línea no admiten media queries, así que las tres rejillas
+   que sí tienen que reacomodarse viven aquí. */
+
+.rejilla-portada {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+.col-procedimiento {
+  border-left: 1px solid ${T.hairline};
+  padding-left: clamp(18px, 2.5vw, 30px);
+}
+@media (max-width: 880px) {
+  .rejilla-portada { grid-template-columns: 1fr; gap: 34px; }
+  .col-procedimiento {
+    border-left: none;
+    border-top: 1px solid ${T.hairline};
+    padding-left: 0;
+    padding-top: 28px;
+  }
+}
+
+/* El panel de elementos pasa a cajón superpuesto cuando no cabe al lado. */
+.mesa-panel {
+  width: 288px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid ${T.hairline};
+  background: ${T.surface};
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 820px) {
+  .mesa-panel {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: min(300px, 88vw);
+    z-index: 45;
+    box-shadow: 18px 0 44px rgba(0,0,0,0.6);
+  }
+  .mesa-cuerpo { position: relative; }
+}
+
+/* Las tres lecturas: el resumen se apila encima cuando el ancho aprieta. */
+.analisis-cuerpo { flex: 1; display: flex; overflow: hidden; }
+.analisis-lateral {
+  width: 264px; flex-shrink: 0;
+  border-right: 1px solid ${T.hairline};
+  background: ${T.surface}; overflow-y: auto; padding: 18px 16px;
+}
+@media (max-width: 820px) {
+  .analisis-cuerpo { flex-direction: column; overflow-y: auto; }
+  .analisis-lateral {
+    width: auto; border-right: none;
+    border-bottom: 1px solid ${T.hairline};
+    overflow-y: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surge { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}
+`;
+
+function EstilosGlobales() {
+  return <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />;
+}
+
+/* ── Rótulo de dimensión ─────────────────────────────────────────────────── */
+function Badge({ categoria, mini = false }) {
+  const cat = CATEGORIAS[categoria];
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      fontFamily: T.mono, fontSize: mini ? 9 : 10, fontWeight: 500,
+      letterSpacing: "0.12em", color: cat.color,
+      border: `1px solid ${cat.border}`, background: cat.bg,
+      borderRadius: 2, padding: mini ? "1px 4px" : "2px 6px",
+      textTransform: "uppercase", whiteSpace: "nowrap",
+    }}>
+      <span style={{ width: 4, height: 4, background: cat.color, borderRadius: "50%" }} />
+      {cat.label}
+    </span>
+  );
+}
+
+/* ── Muestra del patrón de trazo (leyenda sin depender del color) ────────── */
+function MuestraTrazo({ tipo, activo }) {
+  return (
+    <svg width="26" height="8" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <line
+        x1="1" y1="4" x2={tipo.id === "produce" ? 20 : 25} y2="4"
+        stroke={activo ? T.void : tipo.color} strokeWidth={tipo.width}
+        strokeDasharray={tipo.dash} strokeLinecap={tipo.cap}
+      />
+      {tipo.id === "produce" && (
+        <polygon points="20,1 26,4 20,7" fill={activo ? T.void : tipo.color} />
+      )}
+    </svg>
+  );
+}
 
 const PREGUNTAS_CIERRE = [
   "¿Qué elemento del ensamblaje consideras más determinante? ¿Por qué es difícil responder esa pregunta?",
@@ -48,9 +353,7 @@ const PREGUNTAS_CIERRE = [
   "¿Qué oculta la lectura determinista que la sociotécnica hace visible? ¿Y al revés?",
 ];
 
-// ─────────────────────────────────────────────
-// LECTURAS PERSONALIZADAS
-// ─────────────────────────────────────────────
+/* ───────────── LECTURAS Y RETROALIMENTACIÓN (sin cambios) ────────── */
 
 function generarLectura(marco, nodos, conexiones) {
   const ids = nodos.map(n => n.id);
@@ -252,42 +555,9 @@ function generarFeedback(nodos, conexiones) {
   };
 }
 
-// ─────────────────────────────────────────────
-// UTILIDADES
-// ─────────────────────────────────────────────
-
 function getId() { return Math.random().toString(36).slice(2, 9); }
 
-const FEEDBACK_COLORS = {
-  inicio:    { bg: "#F5EDD8", border: "#D4A96A", icon: "→", color: "#8B5E3C" },
-  alerta:    { bg: "#FEF3E7", border: "#E8922A", icon: "!", color: "#C44B4B" },
-  accion:    { bg: "#EEF7F2", border: "#74B994", icon: "↑", color: "#2D6A4F" },
-  reflexion: { bg: "#F2EEF9", border: "#A48BC4", icon: "?", color: "#5C4A8A" },
-  positivo:  { bg: "#EEF7F2", border: "#2D6A4F", icon: "✓", color: "#2D6A4F" },
-  neutro:    { bg: "#F5EDD8", border: "#D4A96A", icon: "·", color: "#8B5E3C" },
-};
-
-// ─────────────────────────────────────────────
-// BADGE
-// ─────────────────────────────────────────────
-
-function Badge({ categoria }) {
-  const cat = CATEGORIAS[categoria];
-  return (
-    <span style={{
-      display: "inline-block", fontSize: 11, fontWeight: 700,
-      letterSpacing: "0.06em", color: cat.color,
-      background: cat.bg, border: `1px solid ${cat.border}`,
-      borderRadius: 4, padding: "2px 6px", fontFamily: "monospace",
-    }}>
-      {cat.label.toUpperCase()}
-    </span>
-  );
-}
-
-// ─────────────────────────────────────────────
-// CANVAS
-// ─────────────────────────────────────────────
+/* ═══════════════════════════ MESA DE TRAZADO ════════════════════════════ */
 
 function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, tipoRelacionActivo, modoConexion, setModoConexion }) {
   const canvasRef = useRef(null);
@@ -356,7 +626,7 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
 
   const getCenter = (id) => {
     const n = nodosEnCanvas.find(n => n.id === id);
-    return n ? { x: n.x + 72, y: n.y + 36 } : { x: 0, y: 0 };
+    return n ? { x: n.x + 76, y: n.y + 34 } : { x: 0, y: 0 };
   };
 
   const origenNodo = origenConexion ? nodosEnCanvas.find(n => n.id === origenConexion) : null;
@@ -365,34 +635,32 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
   return (
     <div
       ref={canvasRef}
+      className="plano plano-fino"
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onClick={handleCanvasClick}
       style={{
-        position: "relative", width: "100%", height: "100%",
-        overflow: "hidden",
+        position: "relative", width: "100%", height: "100%", overflow: "hidden",
         cursor: modoConexion ? (origenConexion ? "crosshair" : "cell") : "default",
-        backgroundColor: "#FEFAF4",
-        backgroundImage: `
-          radial-gradient(ellipse at 15% 85%, rgba(139,94,60,0.06) 0%, transparent 55%),
-          radial-gradient(ellipse at 85% 15%, rgba(45,106,79,0.05) 0%, transparent 55%),
-          linear-gradient(rgba(139,94,60,0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(139,94,60,0.035) 1px, transparent 1px)
-        `,
-        backgroundSize: "100% 100%, 100% 100%, 32px 32px, 32px 32px",
       }}
     >
-      {/* SVG conexiones */}
+      {/* Marcas de esquina: el plano se anuncia como instrumento */}
+      {[["top", "left"], ["top", "right"], ["bottom", "left"], ["bottom", "right"]].map(([v, h]) => (
+        <div key={v + h} style={{
+          position: "absolute", [v]: 12, [h]: 12, width: 13, height: 13,
+          [`border${v === "top" ? "Top" : "Bottom"}`]: `1px solid ${T.hairline}`,
+          [`border${h === "left" ? "Left" : "Right"}`]: `1px solid ${T.hairline}`,
+          pointerEvents: "none",
+        }} />
+      ))}
+
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}>
         <defs>
           {TIPOS_RELACION.map(tr => (
-            <marker key={tr.id} id={`arr-${tr.id}`} markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill={tr.color} opacity="0.9" />
+            <marker key={tr.id} id={`arr-${tr.id}`} markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill={tr.color} />
             </marker>
           ))}
-          <filter id="shadow-soft">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.12" />
-          </filter>
         </defs>
 
         {conexiones.map(c => {
@@ -402,55 +670,64 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
           const mx   = (from.x + to.x) / 2;
           const my   = (from.y + to.y) / 2;
           const isSel = selectedConn === c.id;
-          // Curva suave
-          const dx = to.x - from.x;
-          const dy = to.y - from.y;
-          const cx1 = from.x + dx * 0.5;
-          const cy1 = from.y + dy * 0.1;
-          const cx2 = from.x + dx * 0.5;
-          const cy2 = from.y + dy * 0.9;
+          const dx = to.x - from.x, dy = to.y - from.y;
+          const cx1 = from.x + dx * 0.5, cy1 = from.y + dy * 0.1;
+          const cx2 = from.x + dx * 0.5, cy2 = from.y + dy * 0.9;
+          const d = `M${from.x},${from.y} C${cx1},${cy1} ${cx2},${cy2} ${to.x},${to.y}`;
+          const w = tr.label.length * 6.6 + 16;
           return (
             <g key={c.id}>
-              <path d={`M${from.x},${from.y} C${cx1},${cy1} ${cx2},${cy2} ${to.x},${to.y}`}
-                stroke="transparent" strokeWidth="14" fill="none"
+              <path d={d} stroke="transparent" strokeWidth="16" fill="none"
                 style={{ cursor: "pointer", pointerEvents: "stroke" }}
                 onClick={(e) => { e.stopPropagation(); setSelConn(isSel ? null : c.id); }}
               />
-              <path d={`M${from.x},${from.y} C${cx1},${cy1} ${cx2},${cy2} ${to.x},${to.y}`}
-                stroke={tr.color} strokeWidth={isSel ? 2.5 : 1.5}
-                strokeDasharray={tr.dash} strokeOpacity={isSel ? 1 : 0.65}
-                fill="none" markerEnd={`url(#arr-${tr.id})`}
-                style={{ transition: "all 0.2s", pointerEvents: "none" }}
+              <path d={d} stroke={tr.color} strokeWidth={isSel ? tr.width + 1.1 : tr.width}
+                strokeDasharray={tr.dash} strokeLinecap={tr.cap}
+                strokeOpacity={isSel ? 1 : 0.8} fill="none"
+                markerEnd={tr.id === "produce" ? `url(#arr-${tr.id})` : undefined}
+                style={{ transition: "stroke-width 0.16s, stroke-opacity 0.16s", pointerEvents: "none" }}
               />
-              {/* Etiqueta */}
-              <rect x={mx - 34} y={my - 11} width={68} height={20} rx={5}
-                fill="white" stroke={tr.color} strokeWidth="0.8"
-                opacity={isSel ? 1 : 0.9} filter="url(#shadow-soft)"
-                style={{ pointerEvents: "none" }}
+            </g>
+          );
+        })}
+
+        {modoConexion && origenNodo && (
+          <line
+            x1={origenNodo.x + 76} y1={origenNodo.y + 34} x2={mouse.x} y2={mouse.y}
+            stroke={tipoActivo?.color || T.trace} strokeWidth={tipoActivo?.width || 1.5}
+            strokeDasharray="4,4" opacity="0.85" style={{ pointerEvents: "none" }}
+          />
+        )}
+      </svg>
+
+      {/* Capa de rótulos: por ENCIMA de los nodos. La identidad de una relación
+          nunca puede quedar tapada, porque es lo que la hace legible sin color. */}
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 12 }}>
+        {conexiones.map(c => {
+          const from = getCenter(c.from);
+          const to   = getCenter(c.to);
+          const tr   = TIPOS_RELACION.find(t => t.id === c.tipo) || TIPOS_RELACION[0];
+          const mx   = (from.x + to.x) / 2;
+          const my   = (from.y + to.y) / 2;
+          const isSel = selectedConn === c.id;
+          const w = tr.label.length * 6.6 + 16;
+          return (
+            <g key={c.id}>
+              <rect x={mx - w / 2} y={my - 9} width={w} height={18} rx={2}
+                fill={T.void} stroke={tr.color} strokeWidth="1" strokeOpacity={isSel ? 1 : 0.6}
               />
               <text x={mx} y={my + 4} textAnchor="middle"
-                fill={tr.color} fontSize="11" fontFamily="monospace" fontWeight="700"
-                style={{ pointerEvents: "none" }}
+                fill={isSel ? T.ink : T.inkSec} fontSize="10" fontFamily={T.mono}
+                letterSpacing="0.1em"
               >
                 {tr.label.toUpperCase()}
               </text>
             </g>
           );
         })}
-
-        {/* Línea provisional */}
-        {modoConexion && origenNodo && (
-          <line
-            x1={origenNodo.x + 72} y1={origenNodo.y + 36}
-            x2={mouse.x} y2={mouse.y}
-            stroke={tipoActivo?.color || "#8B5E3C"}
-            strokeWidth="2" strokeDasharray="5,4" opacity="0.7"
-            style={{ pointerEvents: "none" }}
-          />
-        )}
       </svg>
 
-      {/* Nodos */}
+      {/* Nodos: fichas de instrumento con barra de dimensión */}
       {nodosEnCanvas.map(nodo => {
         const cat     = CATEGORIAS[nodo.categoria];
         const isOrig  = origenConexion === nodo.id;
@@ -464,43 +741,44 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
             onMouseLeave={() => setHoveredNodo(null)}
             style={{
               position: "absolute", left: nodo.x, top: nodo.y,
-              width: 144, zIndex: isOrig ? 15 : 10,
-              background: isOrig ? cat.bg : "rgba(255,255,255,0.92)",
-              border: `${isOrig ? "2.5px" : "1.5px"} solid ${isOrig ? (tipoActivo?.color || cat.border) : cat.border}`,
-              borderRadius: 10, padding: "9px 11px",
+              width: 152, zIndex: isOrig ? 15 : 10,
+              background: isOrig ? T.raisedHi : T.raised,
+              borderRight:  `1px solid ${isOrig ? (tipoActivo?.color || cat.color) : (isHover ? cat.border : T.hairline)}`,
+              borderBottom: `1px solid ${isOrig ? (tipoActivo?.color || cat.color) : (isHover ? cat.border : T.hairline)}`,
+              borderLeft:   `1px solid ${isOrig ? (tipoActivo?.color || cat.color) : (isHover ? cat.border : T.hairline)}`,
+              borderTop:    `2px solid ${cat.color}`,
+              borderRadius: 2, padding: "9px 11px 8px",
               cursor: modoConexion ? "pointer" : "grab",
               userSelect: "none",
               boxShadow: isOrig
-                ? `0 0 0 4px ${tipoActivo?.color || cat.border}33, 0 6px 20px rgba(0,0,0,0.14)`
-                : isHover
-                ? "0 4px 18px rgba(0,0,0,0.12)"
-                : "0 2px 8px rgba(0,0,0,0.07)",
-              transition: "box-shadow 0.15s, border 0.15s, transform 0.1s",
-              transform: isOrig ? "scale(1.04)" : "scale(1)",
-              outline: modoConexion && !isOrig ? `2px dashed ${cat.border}66` : "none",
-              outlineOffset: 3,
+                ? `0 0 0 3px ${(tipoActivo?.color || cat.color)}33, 0 10px 30px rgba(0,0,0,0.5)`
+                : isHover ? "0 6px 22px rgba(0,0,0,0.45)" : "0 2px 10px rgba(0,0,0,0.35)",
+              transition: "box-shadow 0.16s, border-color 0.16s, transform 0.12s, background 0.16s",
+              transform: isOrig ? "translateY(-2px)" : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-              <span style={{ fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>{nodo.icono}</span>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#2C1F0E", lineHeight: 1.4, fontFamily: "'Georgia', serif" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 7 }}>
+              <span style={{ fontSize: 14, lineHeight: 1.35, flexShrink: 0, filter: "saturate(0.75)" }}>{nodo.icono}</span>
+              <div style={{ fontFamily: T.body, fontSize: 12.5, fontWeight: 400, color: T.ink, lineHeight: 1.4 }}>
                 {nodo.label}
               </div>
             </div>
-            <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Badge categoria={nodo.categoria} />
+            <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Badge categoria={nodo.categoria} mini />
               {!modoConexion && (
                 <button
+                  className="btn"
                   onMouseDown={e => e.stopPropagation()}
                   onClick={e => {
                     e.stopPropagation();
                     setNodosEnCanvas(prev => prev.filter(n => n.id !== nodo.id));
                     setConexiones(prev => prev.filter(c => c.from !== nodo.id && c.to !== nodo.id));
                   }}
-                  style={{ background: "none", border: "none", color: "#C44B4B88", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 2px", transition: "color 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#C44B4B"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#C44B4B88"}
+                  style={{ background: "none", border: "none", color: T.inkMuted, fontSize: 14, lineHeight: 1, padding: "0 2px" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "#F94D3A"}
+                  onMouseLeave={e => e.currentTarget.style.color = T.inkMuted}
                   title="Quitar del mapa"
+                  aria-label={`Quitar ${nodo.label} del mapa`}
                 >×</button>
               )}
             </div>
@@ -508,61 +786,56 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
         );
       })}
 
-      {/* Eliminar conexión seleccionada */}
       {selectedConn && (() => {
         const c = conexiones.find(x => x.id === selectedConn);
         if (!c) return null;
         const from = getCenter(c.from);
         const to   = getCenter(c.to);
         return (
-          <div style={{ position: "absolute", left: (from.x + to.x) / 2 + 38, top: (from.y + to.y) / 2 - 18, zIndex: 30 }}>
+          <div style={{ position: "absolute", left: (from.x + to.x) / 2 + 46, top: (from.y + to.y) / 2 - 14, zIndex: 30 }}>
             <button
+              className="btn"
               onClick={(e) => { e.stopPropagation(); deleteConexion(selectedConn); }}
               style={{
-                background: "#C44B4B", color: "white", border: "none",
-                borderRadius: 5, padding: "5px 12px", fontSize: 12,
-                cursor: "pointer", fontFamily: "monospace", fontWeight: 700,
-                boxShadow: "0 2px 8px rgba(196,75,75,0.4)",
+                background: T.raised, color: "#F94D3A", border: "1px solid #F94D3A",
+                padding: "5px 11px", fontWeight: 500,
               }}
             >× Eliminar relación</button>
           </div>
         );
       })()}
 
-      {/* Banner modo conexión */}
       {modoConexion && (
         <div style={{
-          position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)",
-          background: origenConexion ? (tipoActivo?.color || "#8B5E3C") : "#2C1F0E",
-          color: "white", borderRadius: 24,
-          padding: "8px 20px", fontSize: 12,
-          fontFamily: "monospace", fontWeight: 700,
-          boxShadow: "0 3px 16px rgba(0,0,0,0.22)",
-          zIndex: 20, pointerEvents: "none", letterSpacing: "0.05em",
-          transition: "background 0.2s",
+          position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)",
+          background: T.raised,
+          border: `1px solid ${origenConexion ? (tipoActivo?.color || T.trace) : T.hairline}`,
+          color: origenConexion ? (tipoActivo?.color || T.ink) : T.inkSec,
+          borderRadius: 2, padding: "7px 16px",
+          fontFamily: T.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+          boxShadow: "0 8px 26px rgba(0,0,0,0.5)",
+          zIndex: 20, pointerEvents: "none",
+          transition: "border-color 0.2s, color 0.2s",
         }}>
-          {origenConexion
-            ? `▶ Origen listo · Haz clic en el nodo destino`
-            : `🔗 Modo conexión · Haz clic en el nodo ORIGEN`}
+          {origenConexion ? "Origen fijado · marca el destino" : "Modo conexión · marca el origen"}
         </div>
       )}
 
-      {/* Estado vacío */}
       {nodosEnCanvas.length === 0 && (
         <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-          pointerEvents: "none", gap: 12,
+          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", pointerEvents: "none", gap: 18,
         }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: "50%",
-            background: "rgba(139,94,60,0.08)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28,
-          }}>🗺️</div>
-          <div style={{ fontSize: 14, color: "#8B7355", opacity: 0.65, fontFamily: "'Georgia', serif", textAlign: "center", maxWidth: 260, lineHeight: 1.7 }}>
-            Haz clic en cualquier elemento<br />del panel para agregarlo al mapa
+          <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true" style={{ opacity: 0.5 }}>
+            <circle cx="38" cy="38" r="37" fill="none" stroke={T.hairline} />
+            <circle cx="38" cy="38" r="24" fill="none" stroke={T.hairline} strokeDasharray="2,4" />
+            <line x1="38" y1="4" x2="38" y2="72" stroke={T.hairline} />
+            <line x1="4" y1="38" x2="72" y2="38" stroke={T.hairline} />
+            <circle cx="38" cy="38" r="3" fill={T.trace} fillOpacity="0.55" />
+          </svg>
+          <div className="rotulo" style={{ textAlign: "center", lineHeight: 2, letterSpacing: "0.22em" }}>
+            Plano vacío<br />
+            <span style={{ color: T.inkMuted, opacity: 0.7 }}>elige un elemento del panel</span>
           </div>
         </div>
       )}
@@ -570,37 +843,36 @@ function Canvas({ nodosEnCanvas, setNodosEnCanvas, conexiones, setConexiones, ti
   );
 }
 
-// ─────────────────────────────────────────────
-// PANEL DE RETROALIMENTACIÓN
-// ─────────────────────────────────────────────
-
+/* ── Estado del análisis ─────────────────────────────────────────────────── */
 function PanelFeedback({ nodos, conexiones }) {
   const fb = generarFeedback(nodos, conexiones);
   const pal = FEEDBACK_COLORS[fb.tipo];
 
   return (
     <div style={{
-      background: pal.bg,
-      border: `1.5px solid ${pal.border}`,
-      borderRadius: 10, padding: "14px 16px",
-      transition: "all 0.4s ease",
+      background: T.raised,
+      borderTop:    `1px solid ${T.hairline}`,
+      borderRight:  `1px solid ${T.hairline}`,
+      borderBottom: `1px solid ${T.hairline}`,
+      borderLeft:   `2px solid ${pal.color}`,
+      borderRadius: 2,
+      padding: "12px 14px", transition: "border-left-color 0.4s ease",
     }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <div style={{
-          width: 26, height: 26, borderRadius: "50%",
-          background: pal.color, color: "white",
+          width: 18, height: 18, borderRadius: 2, flexShrink: 0,
+          border: `1px solid ${pal.color}`, color: pal.color,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 900, flexShrink: 0, fontFamily: "monospace",
-        }}>{pal.icon}</div>
+          fontSize: 11, fontFamily: T.mono, marginTop: 1,
+        }} aria-hidden="true">{pal.icon}</div>
         <div>
-          <div style={{ fontSize: 13, color: "#2C1F0E", lineHeight: 1.5, marginBottom: fb.pregunta ? 8 : 0 }}>
+          <div style={{ fontFamily: T.body, fontSize: 13, color: T.inkSec, lineHeight: 1.6, marginBottom: fb.pregunta ? 9 : 0 }}>
             {fb.texto}
           </div>
           {fb.pregunta && (
             <div style={{
-              fontSize: 13, color: pal.color, lineHeight: 1.6,
-              fontStyle: "italic", borderLeft: `2px solid ${pal.color}55`,
-              paddingLeft: 10,
+              fontFamily: T.body, fontSize: 13, color: pal.color, lineHeight: 1.65,
+              fontStyle: "italic", opacity: 0.92,
             }}>
               {fb.pregunta}
             </div>
@@ -611,128 +883,163 @@ function PanelFeedback({ nodos, conexiones }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// PANTALLA: INTRO
-// ─────────────────────────────────────────────
+/* ═══════════════════════════ PANTALLA: PORTADA ══════════════════════════ */
 
 function PantallaIntro({ onStart }) {
   const [expanded, setExpanded] = useState(false);
-  const preview = CASO.contexto.slice(0, 220) + "…";
+  const preview = CASO.contexto.slice(0, 260) + "…";
+
+  const PASOS = [
+    { n: "01", title: "Construye el mapa",  desc: "Selecciona factores del ecosistema y ubícalos en el plano", color: CATEGORIAS.estructural.color },
+    { n: "02", title: "Traza relaciones",   desc: "Conecta los nodos: condiciona, posibilita, tensiona, produce", color: CATEGORIAS.relacional.color },
+    { n: "03", title: "Lee el ensamblaje",  desc: "El sistema devuelve tres lecturas del mapa que construiste",   color: CATEGORIAS.organizacional.color },
+  ];
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(155deg, #FDF8F0 0%, #F5EDD8 60%, #EDE0C4 100%)",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      padding: "40px 24px",
-      fontFamily: "'Georgia', 'Times New Roman', serif",
-      position: "relative", overflow: "hidden",
-    }}>
-      {/* Decoración fondo */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(45,106,79,0.05)" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -60, width: 300, height: 300, borderRadius: "50%", background: "rgba(139,94,60,0.06)" }} />
-        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04 }} xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#8B5E3C" strokeWidth="0.8"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
+    <div className="plano grano" style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <Constelacion seed={1712} n={52} opacidad={0.42} />
 
-      <div style={{ maxWidth: 700, width: "100%", position: "relative" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
-          <div style={{ width: 32, height: 3, background: "#2D6A4F", borderRadius: 2 }} />
-          <span style={{ fontSize: 12, letterSpacing: "0.25em", color: "#2D6A4F", fontFamily: "monospace", fontWeight: 700 }}>
+      <div style={{
+        position: "relative", zIndex: 2,
+        maxWidth: 1120, margin: "0 auto", padding: "clamp(28px, 6vh, 68px) clamp(16px, 5vw, 56px) 72px",
+      }}>
+        {/* Cabecera institucional */}
+        <div className="surge" style={{
+          display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+          paddingBottom: 22, borderBottom: `1px solid ${T.hairline}`, animationDelay: "0.02s",
+        }}>
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="21" height="21" fill="none" stroke={T.trace} strokeOpacity="0.5" />
+            <circle cx="6" cy="6" r="2" fill={CATEGORIAS.estructural.color} />
+            <circle cx="16" cy="9" r="2" fill={CATEGORIAS.relacional.color} />
+            <circle cx="9" cy="16" r="2" fill={CATEGORIAS.organizacional.color} />
+            <path d="M6 6 L16 9 L9 16 Z" fill="none" stroke={T.trace} strokeOpacity="0.55" />
+          </svg>
+          <span className="rotulo" style={{ color: T.inkSec }}>
             LAMA · Universidad del Valle · Periodismo y Sociedad IV
+          </span>
+          <span className="rotulo" style={{ marginLeft: "auto", opacity: 0.7 }}>
+            Herramienta de análisis sociotécnico
           </span>
         </div>
 
-        {/* Título */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 13, letterSpacing: "0.18em", color: "#A07840", fontFamily: "monospace", marginBottom: 6 }}>
-            HERRAMIENTA DE ANÁLISIS SOCIOTÉCNICO
-          </div>
-          <h1 style={{ fontSize: 58, fontWeight: 700, color: "#2C1F0E", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.03em" }}>
-            El Ensamblaje
+        {/* Título: desbordado a la izquierda, no centrado */}
+        <div className="surge" style={{ margin: "clamp(34px, 7vh, 66px) 0 0", animationDelay: "0.1s" }}>
+          <h1 style={{
+            fontFamily: T.display,
+            fontSize: "clamp(56px, 13vw, 148px)",
+            fontWeight: 800, lineHeight: 0.84, letterSpacing: "-0.045em",
+            margin: 0, color: T.ink, textWrap: "balance",
+          }}>
+            El<br />Ensamblaje
           </h1>
-          <div style={{ fontSize: 20, color: "#8B5E3C", fontWeight: 400, fontStyle: "italic" }}>
-            Cartografía de una decisión periodística
+          <div style={{
+            display: "flex", alignItems: "baseline", gap: 16, marginTop: 22, flexWrap: "wrap",
+          }}>
+            <div style={{ height: 1, width: 64, background: CATEGORIAS.relacional.color, alignSelf: "center" }} />
+            <span style={{
+              fontFamily: T.body, fontSize: "clamp(17px, 2.1vw, 23px)",
+              fontStyle: "italic", fontWeight: 300, color: T.inkSec,
+            }}>
+              Cartografía de una decisión periodística
+            </span>
           </div>
         </div>
 
-        {/* Caso */}
-        <div style={{
-          background: "rgba(255,255,255,0.72)",
-          border: "1px solid #D4A96A",
-          borderLeft: "5px solid #8B5E3C",
-          borderRadius: 10, padding: "20px 24px",
-          marginBottom: 28, backdropFilter: "blur(6px)",
+        {/* Cuerpo: dos columnas asimétricas */}
+        <div className="surge rejilla-portada" style={{
+          marginTop: "clamp(38px, 7vh, 72px)", animationDelay: "0.18s",
         }}>
-          <div style={{ fontSize: 12, color: "#8B5E3C", letterSpacing: "0.18em", fontFamily: "monospace", marginBottom: 8 }}>EL CASO</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#2C1F0E", marginBottom: 12 }}>{CASO.titulo}</div>
-          <p style={{ fontSize: 15, color: "#5C4A30", lineHeight: 1.85, margin: "0 0 8px" }}>
-            {expanded ? CASO.contexto : preview}
-          </p>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{ background: "none", border: "none", color: "#8B5E3C", cursor: "pointer", fontSize: 13, fontFamily: "monospace", padding: 0, textDecoration: "underline" }}
-          >
-            {expanded ? "← Contraer" : "Leer completo →"}
-          </button>
-          <p style={{ fontSize: 15, color: "#8B5E3C", fontStyle: "italic", margin: "12px 0 0", borderTop: "1px solid #E8D9B8", paddingTop: 10 }}>
-            ❝ {CASO.pregunta} ❞
-          </p>
-        </div>
-
-        {/* Pasos */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 36 }}>
-          {[
-            { n: "01", title: "Construye el mapa", desc: "Selecciona factores del ecosistema y ubícalos en el canvas", color: "#8B5E3C" },
-            { n: "02", title: "Traza relaciones", desc: "Conecta los nodos: condiciona, tensiona, posibilita, produce", color: "#2D6A4F" },
-            { n: "03", title: "Lee el ensamblaje", desc: "El sistema genera tres lecturas personalizadas de tu mapa", color: "#5C4A8A" },
-          ].map(item => (
-            <div key={item.n} style={{
-              background: "rgba(255,255,255,0.6)",
-              border: `1px solid rgba(139,94,60,0.18)`,
-              borderTop: `4px solid ${item.color}`,
-              borderRadius: 8, padding: "16px 16px 14px",
+          {/* Expediente */}
+          <div>
+            <div className="rotulo" style={{ marginBottom: 12 }}>Expediente · el caso</div>
+            <h2 style={{
+              fontFamily: T.display, fontSize: "clamp(22px, 2.8vw, 30px)", fontWeight: 700,
+              letterSpacing: "-0.02em", lineHeight: 1.18, margin: "0 0 18px", color: T.ink,
             }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: item.color, fontFamily: "monospace", marginBottom: 6, letterSpacing: "-0.03em" }}>{item.n}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#2C1F0E", marginBottom: 5 }}>{item.title}</div>
-              <div style={{ fontSize: 13, color: "#7A6040", lineHeight: 1.6 }}>{item.desc}</div>
-            </div>
-          ))}
+              {CASO.titulo}
+            </h2>
+            <p style={{
+              fontFamily: T.body, fontSize: 16.5, fontWeight: 300, lineHeight: 1.78,
+              color: T.inkSec, margin: "0 0 14px", maxWidth: "62ch",
+            }}>
+              {expanded ? CASO.contexto : preview}
+            </p>
+            <button
+              className="btn"
+              onClick={() => setExpanded(!expanded)}
+              style={{
+                background: "none", border: "none", padding: 0, color: CATEGORIAS.estructural.color,
+                borderBottom: `1px solid ${CATEGORIAS.estructural.color}55`,
+              }}
+            >
+              {expanded ? "← Contraer" : "Leer el expediente completo →"}
+            </button>
+
+            <blockquote style={{
+              margin: "30px 0 0", padding: "18px 0 0",
+              borderTop: `1px solid ${T.hairline}`,
+            }}>
+              <p style={{
+                fontFamily: T.body, fontStyle: "italic", fontWeight: 300,
+                fontSize: "clamp(17px, 2.2vw, 21px)", lineHeight: 1.6,
+                color: T.ink, margin: 0, maxWidth: "48ch",
+              }}>
+                {CASO.pregunta}
+              </p>
+            </blockquote>
+          </div>
+
+          {/* Procedimiento: lista con filete, no tres tarjetas iguales */}
+          <div className="col-procedimiento">
+            <div className="rotulo" style={{ marginBottom: 18 }}>Procedimiento</div>
+            {PASOS.map((p, i) => (
+              <div key={p.n} style={{
+                display: "grid", gridTemplateColumns: "auto 1fr", gap: 14,
+                paddingBottom: 20, marginBottom: 20,
+                borderBottom: i < PASOS.length - 1 ? `1px solid ${T.hairline}` : "none",
+              }}>
+                <div style={{
+                  fontFamily: T.mono, fontSize: 12, color: p.color,
+                  border: `1px solid ${p.color}55`, borderRadius: 2,
+                  width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{p.n}</div>
+                <div>
+                  <div style={{
+                    fontFamily: T.display, fontSize: 15.5, fontWeight: 700,
+                    color: T.ink, marginBottom: 5, letterSpacing: "-0.01em",
+                  }}>{p.title}</div>
+                  <div style={{ fontFamily: T.body, fontSize: 14, fontWeight: 300, color: T.inkMuted, lineHeight: 1.62 }}>
+                    {p.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <button
-          onClick={onStart}
-          style={{
-            background: "#2C1F0E", color: "#F5EDD8",
-            border: "none", borderRadius: 8,
-            padding: "15px 52px", fontSize: 13,
-            fontWeight: 700, cursor: "pointer",
-            letterSpacing: "0.12em", fontFamily: "monospace",
-            transition: "all 0.2s",
-            boxShadow: "0 4px 20px rgba(44,31,14,0.25)",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#8B5E3C"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(139,94,60,0.35)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#2C1F0E"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,31,14,0.25)"; }}
-        >
-          COMENZAR → CONSTRUIR EL ENSAMBLAJE
-        </button>
+        {/* Entrada */}
+        <div className="surge" style={{ marginTop: "clamp(40px, 7vh, 64px)", animationDelay: "0.26s" }}>
+          <button
+            className="btn"
+            onClick={onStart}
+            style={{
+              background: T.ink, color: T.void, border: `1px solid ${T.ink}`,
+              padding: "16px 40px", fontSize: 12, fontWeight: 600,
+              letterSpacing: "0.16em", textTransform: "uppercase",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.ink; }}
+            onMouseLeave={e => { e.currentTarget.style.background = T.ink; e.currentTarget.style.color = T.void; }}
+          >
+            Abrir el plano →
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// PANTALLA: CANVAS PRINCIPAL
-// ─────────────────────────────────────────────
+/* ═══════════════════════════ PANTALLA: MESA ═════════════════════════════ */
 
 function PantallaCanvas({ onTerminar }) {
   const [nodosEnCanvas, setNodosEnCanvas] = useState([]);
@@ -746,181 +1053,248 @@ function PantallaCanvas({ onTerminar }) {
 
   const puedeTerminar = nodosEnCanvas.length >= 4 && conexiones.length >= 2;
 
-  const nodosUsados     = nodosEnCanvas.map(n => n.id);
+  const nodosUsados      = nodosEnCanvas.map(n => n.id);
   const nodosDisponibles = NODOS_DISPONIBLES.filter(n =>
     !nodosUsados.includes(n.id) &&
     (categoriaFiltro === "all" || n.categoria === categoriaFiltro)
   );
 
+  /* [TÉCNICA] Colocación por mejor-de-N: se proponen candidatos al azar y se
+     queda el que maximiza la distancia al nodo más cercano. Sin esto las fichas
+     se apilan y el plano deja de ser legible justo cuando empieza a tener algo
+     que leer. Barato, determinista en su efecto y suficiente para ~15 nodos. */
   const agregarNodo = (nodo) => {
-    const rect  = canvasAreaRef.current?.getBoundingClientRect();
-    const baseX = rect ? Math.random() * Math.max(100, rect.width  - 220) + 60 : 120;
-    const baseY = rect ? Math.random() * Math.max(80,  rect.height - 140) + 50 : 80;
-    setNodosEnCanvas(prev => [...prev, { ...nodo, x: baseX, y: baseY }]);
+    const rect = canvasAreaRef.current?.getBoundingClientRect();
+    if (!rect) {
+      setNodosEnCanvas(prev => [...prev, { ...nodo, x: 120, y: 80 }]);
+      return;
+    }
+    const maxX = Math.max(60, rect.width  - 200);
+    const maxY = Math.max(60, rect.height - 140);
+    setNodosEnCanvas(prev => {
+      let mejor = null, mejorDist = -1;
+      for (let i = 0; i < 40; i++) {
+        const x = 24 + Math.random() * maxX;
+        const y = 24 + Math.random() * maxY;
+        const dist = prev.length
+          ? Math.min(...prev.map(n => Math.hypot(n.x - x, n.y - y)))
+          : Infinity;
+        if (dist > mejorDist) { mejorDist = dist; mejor = { x, y }; }
+        if (dist > 190) break;
+      }
+      return [...prev, { ...nodo, ...mejor }];
+    });
   };
 
   return (
-    <div style={{ height: "100vh", background: "#F5EDD8", fontFamily: "'Georgia', serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100vh", background: T.void, display: "flex", flexDirection: "column" }}>
 
-      {/* Topbar */}
+      {/* ── Barra superior ─────────────────────────────────────────────── */}
       <div style={{
-        padding: "10px 20px",
-        borderBottom: "1px solid #D4A96A",
-        background: "rgba(253,248,240,0.97)",
-        backdropFilter: "blur(8px)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexShrink: 0, zIndex: 40,
+        padding: "11px 20px", borderBottom: `1px solid ${T.hairline}`,
+        background: T.surface, display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: 16, flexShrink: 0, zIndex: 40,
+        flexWrap: "wrap", rowGap: 10,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
           <div>
-            <div style={{ fontSize: 11, color: "#A07840", letterSpacing: "0.2em", fontFamily: "monospace" }}>EL ENSAMBLAJE</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#2C1F0E" }}>Cartografía de una decisión</div>
+            <div className="rotulo" style={{ fontSize: 10, marginBottom: 2 }}>El Ensamblaje</div>
+            <div style={{ fontFamily: T.display, fontSize: 15, fontWeight: 700, color: T.ink, letterSpacing: "-0.015em" }}>
+              Cartografía de una decisión
+            </div>
           </div>
-          <div style={{ width: 1, height: 32, background: "#D4A96A" }} />
-          <div style={{ fontSize: 12, color: "#8B7355", fontStyle: "italic" }}>{CASO.titulo}</div>
+          <div style={{ width: 1, height: 30, background: T.hairline, flexShrink: 0 }} />
+          <div style={{
+            fontFamily: T.body, fontStyle: "italic", fontWeight: 300, fontSize: 13.5,
+            color: T.inkMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{CASO.titulo}</div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div style={{ fontSize: 12, color: "#8B7355", fontFamily: "monospace" }}>
-            {nodosEnCanvas.length} nodos · {conexiones.length} relaciones
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", rowGap: 8 }}>
+          {/* Contadores: cifras grandes en mono, no un párrafo */}
+          <div style={{ display: "flex", gap: 14, marginRight: 4 }}>
+            {[["nodos", nodosEnCanvas.length], ["relaciones", conexiones.length]].map(([k, v]) => (
+              <div key={k} style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: T.mono, fontSize: 17, color: T.ink, lineHeight: 1 }}>
+                  {String(v).padStart(2, "0")}
+                </div>
+                <div className="rotulo" style={{ fontSize: 9, letterSpacing: "0.14em" }}>{k}</div>
+              </div>
+            ))}
           </div>
           <button
+            className="btn"
             onClick={() => setPanelAbierto(!panelAbierto)}
             style={{
-              background: panelAbierto ? "#2C1F0E" : "rgba(44,31,14,0.08)",
-              color: panelAbierto ? "#F5EDD8" : "#2C1F0E",
-              border: "1px solid #8B5E3C", borderRadius: 6,
-              padding: "6px 14px", fontSize: 12, fontFamily: "monospace", cursor: "pointer",
+              background: "transparent", color: T.inkSec,
+              border: `1px solid ${T.hairline}`, padding: "7px 13px",
             }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = T.trace}
+            onMouseLeave={e => e.currentTarget.style.borderColor = T.hairline}
           >{panelAbierto ? "Ocultar panel" : "Ver elementos"}</button>
           <button
+            className="btn"
             onClick={() => onTerminar({ nodos: nodosEnCanvas, conexiones })}
             disabled={!puedeTerminar}
             title={!puedeTerminar ? "Agrega al menos 4 nodos y 2 conexiones" : ""}
             style={{
-              background: puedeTerminar ? "#2D6A4F" : "rgba(45,106,79,0.12)",
-              color: puedeTerminar ? "white" : "#6B8B78",
-              border: "none", borderRadius: 6,
-              padding: "6px 18px", fontSize: 12,
-              fontFamily: "monospace", fontWeight: 700,
+              background: puedeTerminar ? T.good : "transparent",
+              color: puedeTerminar ? T.void : T.inkMuted,
+              border: `1px solid ${puedeTerminar ? T.good : T.hairline}`,
+              padding: "7px 18px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
               cursor: puedeTerminar ? "pointer" : "not-allowed",
-              transition: "all 0.2s",
-              boxShadow: puedeTerminar ? "0 2px 10px rgba(45,106,79,0.3)" : "none",
             }}
-          >Analizar ensamblaje →</button>
+          >Analizar →</button>
         </div>
       </div>
 
-      {/* Barra tipos de relación */}
+      {/* ── Barra de relaciones: la leyenda ES el control ──────────────── */}
       <div style={{
-        padding: "8px 20px",
-        borderBottom: "1px solid #E8D9B8",
-        background: modoConexion ? "#FFF8EC" : "#FDF8F0",
-        display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+        padding: "9px 20px", borderBottom: `1px solid ${T.hairline}`,
+        background: modoConexion ? T.raised : T.surface,
+        display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap",
         transition: "background 0.25s",
       }}>
         <button
+          className="btn"
           onClick={() => setModoConexion(m => !m)}
           style={{
-            background: modoConexion ? "#8B5E3C" : "transparent",
-            color: modoConexion ? "white" : "#8B5E3C",
-            border: `2px solid #8B5E3C`, borderRadius: 6,
-            padding: "4px 14px", fontSize: 12, fontFamily: "monospace", fontWeight: 700,
-            cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
+            background: modoConexion ? T.trace : "transparent",
+            color: modoConexion ? T.void : T.inkSec,
+            border: `1px solid ${modoConexion ? T.trace : T.hairline}`,
+            padding: "6px 14px", fontWeight: 600, letterSpacing: "0.1em",
+            textTransform: "uppercase", flexShrink: 0,
           }}
-        >{modoConexion ? "🔗 Conectando…" : "🔗 Modo conexión"}</button>
+        >{modoConexion ? "Conectando" : "Modo conexión"}</button>
 
-        <div style={{ width: 1, height: 22, background: "#D4A96A", flexShrink: 0 }} />
-        <span style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", flexShrink: 0 }}>TIPO:</span>
+        <div style={{ width: 1, height: 20, background: T.hairline, flexShrink: 0 }} />
 
-        {TIPOS_RELACION.map(tr => (
-          <button
-            key={tr.id}
-            onClick={() => { setTipoRelActivo(tr.id); if (!modoConexion) setModoConexion(true); }}
-            style={{
-              background: tipoRelActivo === tr.id ? tr.color : "transparent",
-              color: tipoRelActivo === tr.id ? "white" : tr.color,
-              border: `1.5px solid ${tr.color}`, borderRadius: 20,
-              padding: "3px 14px", fontSize: 12, fontFamily: "monospace",
-              cursor: "pointer", transition: "all 0.15s",
-              fontWeight: tipoRelActivo === tr.id ? 700 : 400,
-            }}
-          >{tr.label}</button>
-        ))}
-        <span style={{ fontSize: 12, color: "#B09070", fontStyle: "italic", marginLeft: 4 }}>
-          {modoConexion ? "① Clic en origen → ② Clic en destino" : "Selecciona un tipo para activar el modo conexión"}
+        {TIPOS_RELACION.map(tr => {
+          const activo = tipoRelActivo === tr.id;
+          return (
+            <button
+              key={tr.id}
+              className="chip"
+              onClick={() => { setTipoRelActivo(tr.id); if (!modoConexion) setModoConexion(true); }}
+              aria-pressed={activo}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: activo ? tr.color : "transparent",
+                color: activo ? T.void : T.inkSec,
+                border: `1px solid ${activo ? tr.color : T.hairline}`,
+                padding: "5px 12px", letterSpacing: "0.1em", textTransform: "uppercase",
+                fontWeight: activo ? 600 : 400,
+              }}
+              onMouseEnter={e => { if (!activo) e.currentTarget.style.borderColor = tr.color; }}
+              onMouseLeave={e => { if (!activo) e.currentTarget.style.borderColor = T.hairline; }}
+            >
+              <MuestraTrazo tipo={tr} activo={activo} />
+              {tr.label}
+            </button>
+          );
+        })}
+
+        <span style={{
+          fontFamily: T.body, fontStyle: "italic", fontWeight: 300,
+          fontSize: 13, color: T.inkMuted, marginLeft: 4,
+        }}>
+          {modoConexion ? "① clic en el origen → ② clic en el destino" : "elige un tipo para activar el modo conexión"}
         </span>
       </div>
 
-      {/* Layout */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      {/* ── Cuerpo ─────────────────────────────────────────────────────── */}
+      <div className="mesa-cuerpo" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        {/* Panel izquierdo */}
         {panelAbierto && (
-          <div style={{
-            width: 272, borderRight: "1px solid #D4A96A",
-            background: "#FDF8F0", overflowY: "auto",
-            display: "flex", flexDirection: "column",
-          }}>
-            {/* Filtros */}
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid #E8D9B8" }}>
-              <div style={{ fontSize: 12, color: "#A07840", letterSpacing: "0.12em", fontFamily: "monospace", marginBottom: 10 }}>
-                ELEMENTOS DEL ENSAMBLAJE
-              </div>
+          <div className="mesa-panel">
+            <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${T.hairline}` }}>
+              <div className="rotulo" style={{ marginBottom: 11 }}>Elementos del ensamblaje</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                <button onClick={() => setCatFiltro("all")} style={{ background: categoriaFiltro === "all" ? "#2C1F0E" : "transparent", color: categoriaFiltro === "all" ? "white" : "#8B7355", border: "1px solid #C4A875", borderRadius: 4, padding: "3px 8px", fontSize: 12, fontFamily: "monospace", cursor: "pointer" }}>Todos</button>
-                {Object.entries(CATEGORIAS).map(([key, cat]) => (
-                  <button key={key} onClick={() => setCatFiltro(key)} style={{ background: categoriaFiltro === key ? cat.color : "transparent", color: categoriaFiltro === key ? "white" : cat.color, border: `1px solid ${cat.border}`, borderRadius: 4, padding: "3px 8px", fontSize: 12, fontFamily: "monospace", cursor: "pointer" }}>
-                    {cat.label}
-                  </button>
-                ))}
+                <button
+                  className="chip"
+                  onClick={() => setCatFiltro("all")}
+                  style={{
+                    background: categoriaFiltro === "all" ? T.ink : "transparent",
+                    color: categoriaFiltro === "all" ? T.void : T.inkMuted,
+                    border: `1px solid ${categoriaFiltro === "all" ? T.ink : T.hairline}`,
+                    padding: "4px 9px", textTransform: "uppercase", letterSpacing: "0.1em",
+                  }}
+                >Todos</button>
+                {Object.entries(CATEGORIAS).map(([key, cat]) => {
+                  const on = categoriaFiltro === key;
+                  return (
+                    <button
+                      key={key}
+                      className="chip"
+                      onClick={() => setCatFiltro(key)}
+                      style={{
+                        background: on ? cat.color : "transparent",
+                        color: on ? T.void : cat.color,
+                        border: `1px solid ${on ? cat.color : cat.border}`,
+                        padding: "4px 9px", textTransform: "uppercase", letterSpacing: "0.1em",
+                      }}
+                    >{cat.label}</button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Lista de nodos */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px" }}>
+            <div style={{ flex: "1 1 auto", minHeight: 176, overflowY: "auto", padding: "10px 12px" }}>
               {nodosDisponibles.length === 0 && (
-                <div style={{ fontSize: 12, color: "#B09070", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
-                  Todos los elementos de esta categoría están en el mapa
+                <div style={{
+                  fontFamily: T.body, fontStyle: "italic", fontWeight: 300, fontSize: 13,
+                  color: T.inkMuted, textAlign: "center", padding: "24px 8px", lineHeight: 1.6,
+                }}>
+                  Todos los elementos de esta categoría están en el plano
                 </div>
               )}
               {nodosDisponibles.map(nodo => {
                 const cat = CATEGORIAS[nodo.categoria];
                 return (
-                  <div key={nodo.id} style={{ position: "relative", marginBottom: 6 }}>
+                  <div key={nodo.id} style={{ position: "relative", marginBottom: 5 }}>
                     <div
                       onClick={() => agregarNodo(nodo)}
                       onMouseEnter={() => setTooltipNodo(nodo.id)}
                       onMouseLeave={() => setTooltipNodo(null)}
                       style={{
-                        background: "rgba(255,255,255,0.7)", border: `1px solid ${cat.border}`,
-                        borderLeft: `3px solid ${cat.color}`,
-                        borderRadius: 7, padding: "9px 10px",
-                        cursor: "pointer", transition: "all 0.15s",
-                        display: "flex", gap: 8, alignItems: "flex-start",
+                        background: T.raised,
+                        borderTop:    `1px solid ${T.hairline}`,
+                        borderRight:  `1px solid ${T.hairline}`,
+                        borderBottom: `1px solid ${T.hairline}`,
+                        borderLeft:   `2px solid ${cat.color}`,
+                        borderRadius: 2,
+                        padding: "9px 11px", cursor: "pointer",
+                        display: "flex", gap: 9, alignItems: "flex-start",
+                        transition: "background 0.14s, border-color 0.14s, transform 0.14s",
                       }}
-                      onMouseOver={e => { e.currentTarget.style.background = cat.bg; e.currentTarget.style.transform = "translateX(2px)"; }}
-                      onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.7)"; e.currentTarget.style.transform = "translateX(0)"; }}
+                      onMouseOver={e => { e.currentTarget.style.background = T.raisedHi; e.currentTarget.style.transform = "translateX(2px)"; }}
+                      onMouseOut={e => { e.currentTarget.style.background = T.raised; e.currentTarget.style.transform = "none"; }}
                     >
-                      <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.3 }}>{nodo.icono}</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#2C1F0E", lineHeight: 1.35, marginBottom: 3 }}>{nodo.label}</div>
-                        <Badge categoria={nodo.categoria} />
+                      <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1.35, filter: "saturate(0.75)" }}>{nodo.icono}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.ink, lineHeight: 1.42, marginBottom: 6 }}>
+                          {nodo.label}
+                        </div>
+                        <Badge categoria={nodo.categoria} mini />
                       </div>
                     </div>
-                    {/* Tooltip */}
+
                     {tooltipNodo === nodo.id && (
                       <div style={{
-                        position: "absolute", left: "102%", top: 0,
-                        width: 210, background: "white",
-                        border: `1px solid ${cat.border}`, borderRadius: 8,
-                        padding: 12, zIndex: 50,
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.14)",
-                        fontSize: 13, color: "#5C4A30", lineHeight: 1.6,
+                        position: "absolute", left: "calc(100% + 10px)", top: 0, width: 232,
+                        background: T.raisedHi, border: `1px solid ${cat.border}`, borderRadius: 2,
+                        padding: 13, zIndex: 50, boxShadow: "0 14px 40px rgba(0,0,0,0.6)",
                         pointerEvents: "none",
                       }}>
-                        <div style={{ fontWeight: 700, marginBottom: 5, color: "#2C1F0E" }}>{nodo.label}</div>
-                        {nodo.descripcion}
-                        <div style={{ marginTop: 8, fontSize: 12, color: "#A07840", fontStyle: "italic" }}>Clic para agregar al mapa →</div>
+                        <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 13.5, color: T.ink, marginBottom: 7, lineHeight: 1.3 }}>
+                          {nodo.label}
+                        </div>
+                        <div style={{ fontFamily: T.body, fontSize: 13, fontWeight: 300, color: T.inkSec, lineHeight: 1.62 }}>
+                          {nodo.descripcion}
+                        </div>
+                        <div className="rotulo" style={{ marginTop: 10, fontSize: 9.5, color: cat.color }}>
+                          Clic para fijar en el plano
+                        </div>
                       </div>
                     )}
                   </div>
@@ -928,23 +1302,23 @@ function PantallaCanvas({ onTerminar }) {
               })}
             </div>
 
-            {/* Feedback en tiempo real */}
-            <div style={{ padding: "12px", borderTop: "1px solid #E8D9B8" }}>
-              <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: 8 }}>
-                ESTADO DEL ANÁLISIS
-              </div>
+            <div style={{ padding: 12, borderTop: `1px solid ${T.hairline}` }}>
+              <div className="rotulo" style={{ marginBottom: 9 }}>Estado del análisis</div>
               <PanelFeedback nodos={nodosEnCanvas} conexiones={conexiones} />
             </div>
 
-            {/* Leyenda dimensiones */}
-            <div style={{ padding: "12px 16px", borderTop: "1px solid #E8D9B8" }}>
-              <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: 10 }}>DIMENSIONES</div>
+            <div style={{ padding: "12px 16px 14px", borderTop: `1px solid ${T.hairline}` }}>
+              <div className="rotulo" style={{ marginBottom: 10 }}>Dimensiones</div>
               {Object.entries(CATEGORIAS).map(([key, cat]) => (
-                <div key={key} style={{ display: "flex", gap: 8, marginBottom: 7 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: cat.color, marginTop: 3, flexShrink: 0 }} />
+                <div key={key} style={{ display: "flex", gap: 9, marginBottom: 9 }}>
+                  <div style={{ width: 3, background: cat.color, flexShrink: 0, borderRadius: 1 }} />
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: cat.color }}>{cat.label}</div>
-                    <div style={{ fontSize: 12, color: "#8B7355", lineHeight: 1.4 }}>{cat.desc}</div>
+                    <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: cat.color, marginBottom: 3 }}>
+                      {cat.label}
+                    </div>
+                    <div style={{ fontFamily: T.body, fontSize: 12.5, fontWeight: 300, color: T.inkMuted, lineHeight: 1.52 }}>
+                      {cat.desc}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -952,8 +1326,7 @@ function PantallaCanvas({ onTerminar }) {
           </div>
         )}
 
-        {/* Canvas */}
-        <div ref={canvasAreaRef} id="canvas-area" style={{ flex: 1, position: "relative" }}>
+        <div ref={canvasAreaRef} id="canvas-area" style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <Canvas
             nodosEnCanvas={nodosEnCanvas}
             setNodosEnCanvas={setNodosEnCanvas}
@@ -969,9 +1342,7 @@ function PantallaCanvas({ onTerminar }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// PANTALLA: ANÁLISIS (tres marcos personalizados)
-// ─────────────────────────────────────────────
+/* ═══════════════════════ PANTALLA: TRES LECTURAS ════════════════════════ */
 
 function PantallaAnalisis({ resultado, onReflexion }) {
   const [marcoActivo, setMarcoActivo] = useState("determinismo");
@@ -992,9 +1363,9 @@ function PantallaAnalisis({ resultado, onReflexion }) {
   };
 
   const MARCOS = {
-    determinismo:   { titulo: "Lectura determinista",    subtitulo: "La tecnología lo decidió todo",           color: "#C44B4B", icon: "⚙️" },
-    instrumentalismo: { titulo: "Lectura instrumentalista", subtitulo: "Los periodistas eligieron bien (o mal)", color: "#E8922A", icon: "🔧" },
-    sociotecnico:   { titulo: "Lectura sociotécnica",    subtitulo: "Una configuración que condiciona sin determinar", color: "#2D6A4F", icon: "🕸️" },
+    determinismo:     { titulo: "Lectura determinista",      subtitulo: "La tecnología lo decidió todo",                  color: CATEGORIAS.estructural.color },
+    instrumentalismo: { titulo: "Lectura instrumentalista",   subtitulo: "Los periodistas eligieron bien (o mal)",         color: CATEGORIAS.relacional.color },
+    sociotecnico:     { titulo: "Lectura sociotécnica",       subtitulo: "Una configuración que condiciona sin determinar", color: CATEGORIAS.organizacional.color },
   };
 
   const marco = MARCOS[marcoActivo];
@@ -1002,140 +1373,165 @@ function PantallaAnalisis({ resultado, onReflexion }) {
   if (fase === "reflexion") return <PantallaReflexion resultado={resultado} onTerminar={onReflexion} />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #FDF8F0 0%, #F5EDD8 100%)", fontFamily: "'Georgia', serif", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 28px", borderBottom: "1px solid #D4A96A", background: "rgba(253,248,240,0.95)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ minHeight: "100vh", background: T.void, display: "flex", flexDirection: "column" }}>
+      <div style={{
+        padding: "13px 26px", borderBottom: `1px solid ${T.hairline}`, background: T.surface,
+        display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexShrink: 0,
+      }}>
         <div>
-          <div style={{ fontSize: 12, color: "#A07840", letterSpacing: "0.2em", fontFamily: "monospace" }}>ANÁLISIS DEL ENSAMBLAJE</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#2C1F0E" }}>Tres lecturas del mismo ensamblaje</div>
+          <div className="rotulo" style={{ fontSize: 10, marginBottom: 2 }}>Análisis del ensamblaje</div>
+          <div style={{ fontFamily: T.display, fontSize: 17, fontWeight: 700, color: T.ink, letterSpacing: "-0.018em" }}>
+            Tres lecturas del mismo mapa
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: "#8B7355", fontFamily: "monospace" }}>
-          {stats.total} nodos · {stats.conexiones} relaciones
+        <div style={{ display: "flex", gap: 16 }}>
+          {[["nodos", stats.total], ["relaciones", stats.conexiones]].map(([k, v]) => (
+            <div key={k} style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: T.mono, fontSize: 17, color: T.ink, lineHeight: 1 }}>{String(v).padStart(2, "0")}</div>
+              <div className="rotulo" style={{ fontSize: 9, letterSpacing: "0.14em" }}>{k}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Panel izquierdo: resumen */}
-        <div style={{ width: 240, borderRight: "1px solid #D4A96A", background: "#FDF8F0", overflowY: "auto", padding: 18, flexShrink: 0 }}>
-          <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 14 }}>TU ENSAMBLAJE</div>
+      <div className="analisis-cuerpo">
+        {/* Resumen del mapa */}
+        <div className="analisis-lateral">
+          <div className="rotulo" style={{ marginBottom: 14 }}>Tu ensamblaje</div>
           {Object.entries(stats.porCategoria).map(([cat, count]) => {
             const c = CATEGORIAS[cat];
+            const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
             return (
-              <div key={cat} style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                  <span style={{ fontSize: 13, color: c.color, fontWeight: 700 }}>{c.label}</span>
-                  <span style={{ fontSize: 13, color: c.color, fontFamily: "monospace" }}>{count}</span>
+              <div key={cat} style={{ marginBottom: 13 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.09em", textTransform: "uppercase", color: c.color }}>
+                    {c.label}
+                  </span>
+                  <span style={{ fontFamily: T.mono, fontSize: 13, color: T.ink }}>{count}</span>
                 </div>
-                <div style={{ height: 5, background: "#EDE0C8", borderRadius: 2 }}>
-                  <div style={{ width: `${stats.total > 0 ? (count / stats.total) * 100 : 0}%`, height: "100%", background: c.color, borderRadius: 2, transition: "width 0.8s ease" }} />
+                <div style={{ height: 3, background: "rgba(147,169,196,0.12)" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: c.color, transition: "width 0.9s cubic-bezier(0.22,1,0.36,1)" }} />
                 </div>
               </div>
             );
           })}
 
-          <div style={{ borderTop: "1px solid #E8D9B8", marginTop: 14, paddingTop: 14 }}>
-            <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 10 }}>RELACIONES</div>
+          <div style={{ borderTop: `1px solid ${T.hairline}`, marginTop: 18, paddingTop: 16 }}>
+            <div className="rotulo" style={{ marginBottom: 11 }}>Relaciones</div>
             {stats.porTipo.filter(t => t.count > 0).map(t => (
-              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 18, height: 2, background: t.color, borderRadius: 1 }} />
-                  <span style={{ fontSize: 13, color: "#5C4A30" }}>{t.label}</span>
+              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <MuestraTrazo tipo={t} activo={false} />
+                  <span style={{ fontFamily: T.body, fontSize: 13, fontWeight: 300, color: T.inkSec }}>{t.label}</span>
                 </div>
-                <span style={{ fontSize: 13, color: t.color, fontFamily: "monospace", fontWeight: 700 }}>{t.count}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 13, color: T.ink }}>{t.count}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ borderTop: "1px solid #E8D9B8", marginTop: 14, paddingTop: 14 }}>
-            <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 10 }}>ELEMENTOS</div>
+          <div style={{ borderTop: `1px solid ${T.hairline}`, marginTop: 18, paddingTop: 16 }}>
+            <div className="rotulo" style={{ marginBottom: 11 }}>Elementos</div>
             {resultado.nodos.map(n => (
-              <div key={n.id} style={{ display: "flex", gap: 6, marginBottom: 7, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 13, flexShrink: 0 }}>{n.icono}</span>
-                <div>
-                  <div style={{ fontSize: 12, color: "#2C1F0E", lineHeight: 1.4 }}>{n.label}</div>
-                  <Badge categoria={n.categoria} />
+              <div key={n.id} style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
+                <span style={{
+                  width: 3, alignSelf: "stretch", background: CATEGORIAS[n.categoria].color,
+                  flexShrink: 0, borderRadius: 1,
+                }} />
+                <div style={{ fontFamily: T.body, fontSize: 12.5, fontWeight: 300, color: T.inkSec, lineHeight: 1.5 }}>
+                  {n.label}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Panel central */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "28px 36px" }}>
-          {/* Selector marcos */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
-            {Object.entries(MARCOS).map(([key, m]) => (
-              <button key={key} onClick={() => setMarcoActivo(key)} style={{
-                flex: 1, padding: "14px 10px",
-                background: marcoActivo === key ? m.color : "rgba(255,255,255,0.65)",
-                border: `2px solid ${m.color}`, borderRadius: 10,
-                cursor: "pointer", transition: "all 0.2s",
-                boxShadow: marcoActivo === key ? `0 4px 16px ${m.color}44` : "none",
-              }}>
-                <div style={{ fontSize: 20, marginBottom: 5 }}>{m.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: marcoActivo === key ? "white" : m.color, lineHeight: 1.3 }}>{m.titulo}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Lectura personalizada */}
-          <div style={{
-            background: "rgba(255,255,255,0.75)",
-            border: `1px solid ${marco.color}44`,
-            borderLeft: `5px solid ${marco.color}`,
-            borderRadius: 12, padding: "26px 30px",
-            marginBottom: 18, backdropFilter: "blur(4px)",
-          }}>
-            <div style={{ fontSize: 12, color: marco.color, letterSpacing: "0.18em", fontFamily: "monospace", marginBottom: 8 }}>
-              {marco.subtitulo.toUpperCase()}
+        {/* Lectura */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "30px clamp(24px, 4vw, 52px) 60px", minWidth: 0 }}>
+          <div style={{ maxWidth: 780 }}>
+            {/* Selector: pestañas con filete, no tres botones de color */}
+            <div style={{ display: "flex", gap: 0, marginBottom: 34, borderBottom: `1px solid ${T.hairline}`, flexWrap: "wrap" }}>
+              {Object.entries(MARCOS).map(([key, m]) => {
+                const on = marcoActivo === key;
+                return (
+                  <button
+                    key={key}
+                    className="btn"
+                    onClick={() => setMarcoActivo(key)}
+                    aria-pressed={on}
+                    style={{
+                      background: "transparent", border: "none",
+                      borderBottom: `2px solid ${on ? m.color : "transparent"}`,
+                      padding: "12px 20px 13px", textAlign: "left",
+                      color: on ? T.ink : T.inkMuted, marginBottom: -1,
+                    }}
+                  >
+                    <div style={{ fontFamily: T.display, fontSize: 14.5, fontWeight: 700, letterSpacing: "-0.012em", marginBottom: 3 }}>
+                      {m.titulo}
+                    </div>
+                    <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: on ? m.color : T.inkMuted, textTransform: "uppercase" }}>
+                      {m.subtitulo}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#2C1F0E", margin: "0 0 18px", lineHeight: 1.3 }}>
-              {marco.titulo}
-            </h3>
-            <p style={{ fontSize: 15, color: "#3C2C1A", lineHeight: 1.9, margin: "0 0 20px" }}>
-              {generarLectura(marcoActivo, resultado.nodos, resultado.conexiones)}
-            </p>
-            <div style={{ background: `${marco.color}10`, border: `1px solid ${marco.color}30`, borderRadius: 8, padding: "14px 18px" }}>
-              <div style={{ fontSize: 12, color: marco.color, fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 7 }}>
-                PUNTO CIEGO DE ESTE MARCO
+
+            {/* Cuerpo de la lectura: medida de lectura, serif, sin tarjeta */}
+            <div key={marcoActivo} className="surge">
+              <p style={{
+                fontFamily: T.body, fontSize: 17.5, fontWeight: 300, lineHeight: 1.82,
+                color: T.ink, margin: "0 0 30px", maxWidth: "68ch",
+              }}>
+                {generarLectura(marcoActivo, resultado.nodos, resultado.conexiones)}
+              </p>
+
+              <div style={{
+                borderLeft: `2px solid ${marco.color}`, paddingLeft: 20, margin: "0 0 34px",
+              }}>
+                <div className="rotulo" style={{ color: marco.color, marginBottom: 9 }}>
+                  Punto ciego de este marco
+                </div>
+                <p style={{
+                  fontFamily: T.body, fontSize: 15.5, fontWeight: 300, fontStyle: "italic",
+                  lineHeight: 1.75, color: T.inkSec, margin: 0, maxWidth: "62ch",
+                }}>
+                  {generarCeguera(marcoActivo, resultado.nodos, resultado.conexiones)}
+                </p>
               </div>
-              <p style={{ fontSize: 14, color: "#5C4A30", lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
-                {generarCeguera(marcoActivo, resultado.nodos, resultado.conexiones)}
+            </div>
+
+            <div style={{
+              background: T.surface, border: `1px solid ${T.hairline}`, borderRadius: 2,
+              padding: "18px 22px", marginBottom: 30,
+            }}>
+              <p style={{ fontFamily: T.body, fontSize: 14.5, fontWeight: 300, lineHeight: 1.72, color: T.inkSec, margin: 0 }}>
+                <strong style={{ color: T.ink, fontWeight: 500 }}>Este análisis es una lectura de tu ensamblaje específico.</strong>{" "}
+                Dos estudiantes con mapas distintos recibirán lecturas distintas. Lo que importa no es qué nodos elegiste, sino si puedes argumentar por qué esos factores —y sus relaciones— producen esta configuración y no otra.
               </p>
             </div>
-          </div>
 
-          {/* Nota */}
-          <div style={{ background: "rgba(45,106,79,0.07)", border: "1px solid rgba(45,106,79,0.2)", borderRadius: 10, padding: "16px 20px", marginBottom: 24 }}>
-            <p style={{ fontSize: 14, color: "#2D6A4F", lineHeight: 1.75, margin: 0, fontStyle: "italic" }}>
-              ✦ <strong>Este análisis es una lectura de tu ensamblaje específico.</strong> Dos estudiantes con mapas distintos recibirán lecturas distintas. Lo que importa no es qué nodos elegiste, sino si puedes argumentar por qué esos factores —y sus relaciones— producen esta configuración y no otra.
-            </p>
+            <button
+              className="btn"
+              onClick={() => setFase("reflexion")}
+              style={{
+                background: T.ink, color: T.void, border: `1px solid ${T.ink}`,
+                padding: "14px 32px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.ink; }}
+              onMouseLeave={e => { e.currentTarget.style.background = T.ink; e.currentTarget.style.color = T.void; }}
+            >Continuar: reflexión y cierre →</button>
           </div>
-
-          <button
-            onClick={() => setFase("reflexion")}
-            style={{
-              background: "#2C1F0E", color: "#F5EDD8", border: "none", borderRadius: 8,
-              padding: "13px 36px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              fontFamily: "monospace", letterSpacing: "0.08em", transition: "all 0.2s",
-              boxShadow: "0 3px 14px rgba(44,31,14,0.2)",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "#8B5E3C"}
-            onMouseLeave={e => e.currentTarget.style.background = "#2C1F0E"}
-          >Continuar: reflexión y cierre →</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// PANTALLA: REFLEXIÓN Y CIERRE
-// ─────────────────────────────────────────────
+/* ═══════════════════════ PANTALLA: REFLEXIÓN Y CIERRE ═══════════════════ */
 
 function PantallaReflexion({ resultado, onTerminar }) {
-  const [reflexion, setReflexion] = useState("");
-  const [exportado, setExportado] = useState(false);
+  const [reflexion, setReflexion]     = useState("");
+  const [exportado, setExportado]     = useState(false);
   const [exportError, setExportError] = useState(false);
 
   const cats = {
@@ -1143,6 +1539,7 @@ function PantallaReflexion({ resultado, onTerminar }) {
     r: resultado.nodos.filter(n => n.categoria === "relacional").length,
     o: resultado.nodos.filter(n => n.categoria === "organizacional").length,
   };
+
 
   // Pregunta dinámica según el ensamblaje
   const generarPreguntaReflexion = () => {
@@ -1215,78 +1612,96 @@ function PantallaReflexion({ resultado, onTerminar }) {
     }
   };
 
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(160deg, #FDF8F0 0%, #F0EAD8 100%)",
-      fontFamily: "'Georgia', serif",
-      padding: "48px 40px",
-      display: "flex", flexDirection: "column", alignItems: "center",
-    }}>
-      <div style={{ maxWidth: 740, width: "100%" }}>
-        <div style={{ fontSize: 12, color: "#A07840", letterSpacing: "0.2em", fontFamily: "monospace", marginBottom: 10 }}>
-          CIERRE DEL ANÁLISIS
-        </div>
-        <h2 style={{ fontSize: 34, fontWeight: 400, color: "#2C1F0E", margin: "0 0 6px", lineHeight: 1.2 }}>
-          Reflexión y transferencia
-        </h2>
-        <div style={{ width: 52, height: 3, background: "#8B5E3C", borderRadius: 2, marginBottom: 36 }} />
 
-        {/* Síntesis */}
-        <div style={{
-          background: "rgba(255,255,255,0.72)", border: "1px solid #D4A96A",
-          borderLeft: "5px solid #2D6A4F", borderRadius: 10, padding: "22px 26px", marginBottom: 28,
+  return (
+    <div className="plano grano" style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <Constelacion seed={904} n={34} opacidad={0.4} />
+
+      <div style={{
+        position: "relative", zIndex: 2, maxWidth: 820, margin: "0 auto",
+        padding: "clamp(36px, 8vh, 76px) clamp(16px, 5vw, 40px) 88px",
+      }}>
+        <div className="rotulo" style={{ marginBottom: 14 }}>Cierre del análisis</div>
+        <h2 style={{
+          fontFamily: T.display, fontSize: "clamp(34px, 6vw, 56px)", fontWeight: 700,
+          letterSpacing: "-0.035em", lineHeight: 0.98, color: T.ink, margin: "0 0 28px",
         }}>
-          <div style={{ fontSize: 12, color: "#2D6A4F", fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 12 }}>LO QUE CONSTRUISTE</div>
-          <p style={{ fontSize: 15, color: "#3C2C1A", lineHeight: 1.85, margin: 0 }}>
-            Tu cartografía incluye <strong>{resultado.nodos.length} elementos</strong> —{cats.e} estructurales, {cats.r} relacionales y {cats.o} organizacionales— conectados por <strong>{resultado.conexiones.length} relaciones</strong>. Ningún elemento "causó" la decisión por sí solo. Todos interactúan. Eso es precisamente lo que el enfoque sociotécnico hace visible que el determinismo y el instrumentalismo no pueden ver por separado.
+          Reflexión y<br />transferencia
+        </h2>
+
+        {/* Lo que construiste */}
+        <div style={{ borderTop: `1px solid ${T.hairline}`, paddingTop: 26, marginBottom: 38 }}>
+          <div className="rotulo" style={{ marginBottom: 16 }}>Lo que construiste</div>
+
+          {/* Las cifras primero, como instrumento */}
+          <div style={{ display: "flex", gap: 30, flexWrap: "wrap", marginBottom: 20 }}>
+            {[
+              ["elementos", resultado.nodos.length, T.ink],
+              ["estructurales", cats.e, CATEGORIAS.estructural.color],
+              ["relacionales", cats.r, CATEGORIAS.relacional.color],
+              ["organizacionales", cats.o, CATEGORIAS.organizacional.color],
+              ["relaciones", resultado.conexiones.length, T.ink],
+            ].map(([k, v, c]) => (
+              <div key={k}>
+                <div style={{ fontFamily: T.mono, fontSize: 30, color: c, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                  {String(v).padStart(2, "0")}
+                </div>
+                <div className="rotulo" style={{ fontSize: 9.5, marginTop: 6 }}>{k}</div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{
+            fontFamily: T.body, fontSize: 16.5, fontWeight: 300, lineHeight: 1.8,
+            color: T.inkSec, margin: 0, maxWidth: "64ch",
+          }}>
+            Ningún elemento “causó” la decisión por sí solo. Todos interactúan. Eso es precisamente lo que el enfoque sociotécnico hace visible y que el determinismo y el instrumentalismo no pueden ver por separado.
             {cats.e === 0 && " Tu análisis prescinde de factores estructurales, lo que es una apuesta analítica: implica que el resultado puede explicarse desde las relaciones y la organización interna del medio."}
             {cats.o === 0 && " Tu análisis no incluye factores organizacionales, lo que sitúa la explicación en el entorno externo y los vínculos del medio."}
           </p>
         </div>
 
-        {/* Reflexión dinámica */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 12, color: "#A07840", fontFamily: "monospace", letterSpacing: "0.12em", marginBottom: 10 }}>TU REFLEXIÓN ANALÍTICA</div>
-          <p style={{ fontSize: 15, color: "#5C4A30", lineHeight: 1.75, marginBottom: 14 }}>
+        {/* Reflexión */}
+        <div style={{ borderTop: `1px solid ${T.hairline}`, paddingTop: 26, marginBottom: 38 }}>
+          <div className="rotulo" style={{ marginBottom: 14 }}>Tu reflexión analítica</div>
+          <p style={{
+            fontFamily: T.body, fontSize: 16.5, fontWeight: 400, fontStyle: "italic",
+            lineHeight: 1.72, color: T.ink, marginBottom: 18, maxWidth: "58ch",
+          }}>
             {generarPreguntaReflexion()}
           </p>
           <textarea
             value={reflexion}
             onChange={e => setReflexion(e.target.value)}
-            placeholder="Escribe tu análisis aquí. No hay respuesta correcta: lo que importa es la coherencia del argumento..."
+            placeholder="Escribe tu análisis aquí. No hay respuesta correcta: lo que importa es la coherencia del argumento…"
             style={{
-              width: "100%", minHeight: 140,
-              background: "rgba(255,255,255,0.65)",
-              border: "1.5px solid #C4A875", borderRadius: 8,
-              padding: "14px 16px", fontSize: 14, color: "#2C1F0E",
+              width: "100%", minHeight: 156, background: T.surface,
+              border: `1px solid ${T.hairline}`, borderRadius: 2,
+              padding: "15px 17px", fontSize: 15.5, color: T.ink,
               resize: "vertical", boxSizing: "border-box",
-              fontFamily: "'Georgia', serif", lineHeight: 1.75, outline: "none",
-              transition: "border 0.2s",
+              fontFamily: T.body, fontWeight: 300, lineHeight: 1.78, outline: "none",
+              transition: "border-color 0.2s",
             }}
-            onFocus={e => e.target.style.border = "1.5px solid #8B5E3C"}
-            onBlur={e => e.target.style.border = "1.5px solid #C4A875"}
+            onFocus={e => e.target.style.borderColor = CATEGORIAS.estructural.color}
+            onBlur={e => e.target.style.borderColor = T.hairline}
           />
         </div>
 
-        {/* Preguntas discusión */}
-        <div style={{
-          background: "rgba(255,255,255,0.65)", border: "1px solid #D4A96A",
-          borderRadius: 12, padding: "22px 26px", marginBottom: 32,
-        }}>
-          <div style={{ fontSize: 12, color: "#8B5E3C", fontFamily: "monospace", letterSpacing: "0.15em", marginBottom: 18 }}>
-            PREGUNTAS PARA DISCUSIÓN GRUPAL
-          </div>
+        {/* Preguntas */}
+        <div style={{ borderTop: `1px solid ${T.hairline}`, paddingTop: 26, marginBottom: 40 }}>
+          <div className="rotulo" style={{ marginBottom: 20 }}>Preguntas para discusión grupal</div>
           {PREGUNTAS_CIERRE.map((p, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, marginBottom: 16 }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: "rgba(139,94,60,0.12)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, fontSize: 13, color: "#8B5E3C",
-                fontFamily: "monospace", fontWeight: 700,
-              }}>{i + 1}</div>
-              <p style={{ fontSize: 15, color: "#5C4A30", lineHeight: 1.75, margin: 0 }}>{p}</p>
+            <div key={i} style={{
+              display: "grid", gridTemplateColumns: "auto 1fr", gap: 16,
+              paddingBottom: 18, marginBottom: 18,
+              borderBottom: i < PREGUNTAS_CIERRE.length - 1 ? `1px solid ${T.hairline}` : "none",
+            }}>
+              <div style={{ fontFamily: T.mono, fontSize: 12, color: T.inkMuted, paddingTop: 4 }}>
+                {String(i + 1).padStart(2, "0")}
+              </div>
+              <p style={{ fontFamily: T.body, fontSize: 16, fontWeight: 300, lineHeight: 1.72, color: T.inkSec, margin: 0, maxWidth: "62ch" }}>
+                {p}
+              </p>
             </div>
           ))}
         </div>
@@ -1294,36 +1709,31 @@ function PantallaReflexion({ resultado, onTerminar }) {
         {/* Acciones */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button
+            className="btn"
             onClick={handleExportar}
             style={{
-              background: exportado ? "#2D6A4F" : "#2C1F0E",
-              color: "#F5EDD8", border: "none", borderRadius: 8,
-              padding: "13px 32px", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", fontFamily: "monospace", letterSpacing: "0.08em",
-              transition: "all 0.2s",
-              boxShadow: "0 3px 14px rgba(44,31,14,0.2)",
+              background: exportado ? T.good : T.ink, color: T.void,
+              border: `1px solid ${exportado ? T.good : T.ink}`,
+              padding: "14px 30px", fontWeight: 600, letterSpacing: "0.13em", textTransform: "uppercase",
             }}
-            onMouseEnter={e => { if (!exportado) e.currentTarget.style.background = "#8B5E3C"; }}
-            onMouseLeave={e => { if (!exportado) e.currentTarget.style.background = "#2C1F0E"; }}
           >
             {exportado ? "✓ Exportado" : "↓ Exportar análisis (.txt)"}
           </button>
           <button
+            className="btn"
             onClick={onTerminar}
             style={{
-              background: "transparent", color: "#8B5E3C",
-              border: "1.5px solid #8B5E3C", borderRadius: 8,
-              padding: "13px 28px", fontSize: 13, fontWeight: 600,
-              cursor: "pointer", fontFamily: "monospace",
-              transition: "all 0.2s",
+              background: "transparent", color: T.inkSec,
+              border: `1px solid ${T.hairline}`, padding: "14px 26px",
+              letterSpacing: "0.13em", textTransform: "uppercase",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#8B5E3C"; e.currentTarget.style.color = "#F5EDD8"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8B5E3C"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = T.trace; e.currentTarget.style.color = T.ink; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.hairline; e.currentTarget.style.color = T.inkSec; }}
           >Reiniciar →</button>
         </div>
 
         {exportError && (
-          <div style={{ marginTop: 12, fontSize: 13, color: "#C44B4B", fontFamily: "monospace" }}>
+          <div style={{ marginTop: 14, fontFamily: T.mono, fontSize: 12, color: CATEGORIAS.relacional.color }}>
             ⚠ No se pudo descargar el archivo. Copia tu reflexión manualmente antes de cerrar.
           </div>
         )}
@@ -1332,25 +1742,22 @@ function PantallaReflexion({ resultado, onTerminar }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// APP
-// ─────────────────────────────────────────────
+/* ═══════════════════════════════════ APP ════════════════════════════════ */
 
 export default function App() {
-  const [pantalla, setPantalla] = useState("intro");
+  const [pantalla, setPantalla]   = useState("intro");
   const [resultado, setResultado] = useState(null);
 
-  if (pantalla === "intro") return <PantallaIntro onStart={() => setPantalla("canvas")} />;
-  if (pantalla === "canvas") return (
-    <PantallaCanvas
-      onTerminar={(res) => { setResultado(res); setPantalla("analisis"); }}
-    />
+  return (
+    <>
+      <EstilosGlobales />
+      {pantalla === "intro" && <PantallaIntro onStart={() => setPantalla("canvas")} />}
+      {pantalla === "canvas" && (
+        <PantallaCanvas onTerminar={(res) => { setResultado(res); setPantalla("analisis"); }} />
+      )}
+      {pantalla === "analisis" && (
+        <PantallaAnalisis resultado={resultado} onReflexion={() => setPantalla("intro")} />
+      )}
+    </>
   );
-  if (pantalla === "analisis") return (
-    <PantallaAnalisis
-      resultado={resultado}
-      onReflexion={() => setPantalla("intro")}
-    />
-  );
-  return null;
 }
