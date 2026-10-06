@@ -1,0 +1,2476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tejemedios</title>
+<meta name="description" content="Simulador 3D del modelo sistémico que explica la capacidad de los medios nativos digitales colombianos para cubrir problemáticas sociales y comunidades subrepresentadas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Literata:ital,opsz,wght@0,7..72,400;1,7..72,400&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Composición: la red 3D ocupa el centro; los paneles laterales se pliegan para
+   dejarle todo el ancho. Los estratos del modelo son placas apiladas (estructural
+   abajo, organizacional al centro, relacional arriba); la altura de cada nodo
+   sobre su placa es su nivel. */
+:root {
+  --bg: #0A1719;
+  --panel: #0D1E21;
+  --panel-2: #12292D;
+  --linea: #1F383C;
+  --tinta: #E4EEEB;
+  --tinta-2: #A8BEBA;
+  --tinta-3: #92ACA8;    /* ≥ 4,8:1 en todas las tarjetas tintadas */
+  --k-tinte: 12%;        /* cuánto tiñe cada tarjeta su color (mezcla OKLab) */
+  --e: #2E93D6;          /* estructurales */
+  --o: #DB5496;          /* organizacionales */
+  --r: #7A9F2A;          /* relacionales */
+  --abajo: #B9C6C3;      /* empuje hacia abajo */
+  --accion: #FFD24D;     /* señal de interfaz (trazo y texto): dónde actuar ahora; no codifica datos */
+  --accion-suave: rgba(255, 210, 77, 0.12);
+  --senal: #FFD24D;      /* resaltador: relleno de lo que se hace ahora */
+  --senal-tinta: #1A1608;
+  --marcador: rgba(255, 210, 77, 0.30);
+  --sombra-hoja: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --vidrio: rgba(13, 30, 33, 0.92);      /* superficies flotantes sobre la escena */
+  --vidrio-etq: rgba(10, 23, 25, 0.74);  /* fondo de los rótulos de la red */
+  --escena-centro: #10272B;
+  --velo: rgba(4, 10, 11, 0.74);
+  --sombra: rgba(0, 0, 0, 0.5);
+  --resalte: #FFFFFF;
+  /* Fuentes de financiamiento: otra variable, otra familia de color (validada aparte) */
+  --f-pauta: #DD7046;
+  --f-coop: #957BE4;
+  --f-memb: #2BA897;
+  --fondos-bg: #12262A;
+  --bandeja: #0F2124;    /* fondo de los paneles laterales */
+  --tarjeta: #142B2F;    /* cada sección dentro de un panel */
+  --f-disp: 'Anybody', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --f-texto: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --f-dato: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --f-cita: 'Literata', Georgia, 'Times New Roman', serif;
+  --r-sm: 6px;
+  --col-izq: minmax(290px, 320px);
+  --col-der: minmax(320px, 360px);
+  color-scheme: dark;
+}
+/* Tema claro con la identidad del LAMA: crema, salvia y oliva del sitio lama.lat.
+   El verde del LAMA queda para la dimensión relacional (dato); el color de acción
+   es el oliva, para no confundir un reto con un nodo relacional. Paletas validadas
+   para el fondo crema (luminosidad, croma, daltonismo y contraste). */
+:root[data-tema="claro"] {
+  --bg: #FBF8EF;
+  --panel: #F6F3E8;
+  --panel-2: #EFEDE2;
+  --linea: #DAD6C4;
+  --tinta: #232B12;
+  --tinta-2: #4C5636;
+  --tinta-3: #5C6449;
+  --k-tinte: 7%;
+  --e: #1F7FC0;
+  --o: #C2357E;
+  --r: #5C8607;
+  --abajo: #7F8A72;
+  --accion: #232B12;
+  --accion-suave: #FFF2B8;
+  --senal: #FFD23F;
+  --senal-tinta: #221C05;
+  --marcador: #FFE27A;
+  --sombra-hoja: 0 1px 0 rgba(35, 43, 18, 0.04), 0 14px 30px -24px rgba(35, 43, 18, 0.55);
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .14  0 0 0 0 .17  0 0 0 0 .07  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --vidrio: rgba(253, 250, 241, 0.94);
+  --vidrio-etq: rgba(253, 250, 241, 0.86);
+  --escena-centro: #F0F2E4;
+  --velo: rgba(52, 63, 30, 0.5);
+  --sombra: rgba(52, 63, 30, 0.18);
+  --resalte: #10150A;
+  --f-pauta: #C8572C;
+  --f-coop: #7B5CD1;
+  --f-memb: #008A78;
+  --fondos-bg: #F7F5EC;
+  --bandeja: #F3F0E4;
+  --tarjeta: #FFFEF9;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--tinta); font-family: var(--f-texto);
+  font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+
+/* ---------- Estructura ---------- */
+.app {
+  height: 100dvh; min-height: 640px; display: grid;
+  grid-template-columns: var(--col-izq) minmax(0, 1fr) var(--col-der);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "cab cab cab" "izq escena der";
+}
+.app.sin-izq { --col-izq: 0px; }
+.app.sin-der { --col-der: 0px; }
+.app.sin-izq .izq, .app.sin-der .der { display: none; }
+/* Encabezado: el menú de pasos va a la izquierda, junto al título, donde empieza la lectura */
+.cab {
+  grid-area: cab; display: grid; gap: 4px; padding: 12px 20px 12px; border-bottom: 1px solid var(--linea);
+}
+.cab-fila { display: flex; align-items: center; gap: 12px 22px; flex-wrap: wrap; min-width: 0; }
+.cab-fila .tema-btn { margin-left: auto; }
+.cab-fila .modos { min-width: 0; max-width: 100%; }
+.marca { display: grid; gap: 2px; min-width: 0; }
+.ceja { font-family: var(--f-dato); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-3); }
+.cab h1 { font-family: var(--f-disp); font-stretch: 62%; font-weight: 780; font-size: 32px; line-height: 1; }
+.cab h1 .tramas { display: inline-flex; gap: 3px; margin-left: 10px; vertical-align: middle; }
+.cab h1 .tramas i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.bajada { color: var(--tinta-2); max-width: 92ch; margin-top: 2px; font-size: 13.5px; text-wrap: pretty; }
+
+.tema-btn { border: 1px solid var(--linea); background: var(--panel); border-radius: 999px; padding: 7px 12px 7px 9px; font-size: 12.5px; color: var(--tinta-2); display: inline-flex; gap: 7px; align-items: center; }
+.tema-btn:hover { color: var(--tinta); border-color: var(--tinta-3); }
+.tema-btn svg { display: block; }
+.modos { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--linea); border-radius: 999px; padding: 3px; }
+.modos button { border: 0; background: transparent; padding: 7px 14px 7px 8px; border-radius: 999px; color: var(--tinta-2); font-weight: 500; font-size: 13px; display: inline-flex; gap: 7px; align-items: center; }
+.modos button:hover { color: var(--tinta); }
+.modos .paso { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-dato); font-size: 11px; border: 1px solid var(--tinta-3); }
+.modos button[aria-selected="true"] { background: var(--tinta); color: var(--bg); }
+.modos button[aria-selected="true"] .paso { border-color: var(--bg); }
+.modos button:focus:not(:focus-visible) { outline: none; }
+.punto-reto { width: 7px; height: 7px; border-radius: 50%; background: var(--accion); display: inline-block; }
+
+.panel { overflow-y: auto; overflow-x: hidden; min-width: 0; scrollbar-width: thin; scrollbar-color: var(--linea) transparent; }
+.izq { grid-area: izq; border-right: 1px solid var(--linea); padding: 12px 12px 28px; display: grid; align-content: start; gap: 4px; background: var(--bandeja); }
+.der { grid-area: der; border-left: 1px solid var(--linea); padding: 12px 12px 28px; display: grid; align-content: start; gap: 4px; background: var(--bandeja); }
+/* Encabezado de cada panel: qué tipo de zona es */
+.panel-cab { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+.panel-cab svg { flex: none; }
+
+/* Secciones plegables */
+/* Lenguaje de tarjeta (ver diseno/elemento-fondos.md): el color dice qué contiene la
+   tarjeta y, plegada, muestra un resumen. Solo colores que ya codifican algo. */
+.seccion {
+  --tinte: var(--tinta-3); --tinte-k: 0%;
+  background: color-mix(in oklab, var(--tinte) var(--tinte-k), var(--tarjeta));
+  border: 1px solid color-mix(in oklab, var(--tinte) 22%, var(--linea));
+  border-radius: 12px; padding: 0 14px; margin-bottom: 10px; transition: border-color .15s;
+}
+.seccion[open] { border-color: color-mix(in oklab, var(--tinte) 55%, var(--linea)); }
+.sec-insignia { grid-column: 3; grid-row: 1; justify-self: end; align-self: center; font-family: var(--f-dato); font-size: 10.5px; color: var(--tinta); border: 1px solid color-mix(in oklab, var(--tinte) 45%, var(--linea)); background: color-mix(in oklab, var(--tinte) 10%, transparent); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.sec-insignia:empty { display: none; }
+#secEstado[open] #insEstado { display: none; }   /* abierta, la banda ya está junto al número */
+.sin-num .sec-insignia { grid-column: 2; }
+/* En las tarjetas numeradas (panel angosto) la insignia va bajo el título, para no partirlo */
+.seccion > summary:not(.sin-num) .sec-insignia { grid-column: 2; grid-row: 2; justify-self: start; margin: 4px 0 3px; }
+/* Resumen visible solo con la tarjeta plegada: plegada informa, abierta deja actuar */
+.sec-mini { grid-column: 2 / -1; margin-top: 8px; }
+.sin-num .sec-mini { grid-column: 1 / -1; }
+.seccion[open] .sec-mini { display: none; }
+.mini-barras { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 14px; }
+.mini-barra { display: grid; gap: 2px; font-size: 10.5px; color: var(--tinta-2); }
+.mini-barra span { display: flex; justify-content: space-between; font-family: var(--f-dato); }
+.mini-barra i { display: block; height: 4px; border-radius: 2px; background: color-mix(in oklab, var(--tinte) 18%, var(--linea)); overflow: hidden; }
+.mini-barra i b { display: block; height: 100%; background: var(--tinte); border-radius: 2px; }
+.mini-estado { display: flex; align-items: center; gap: 10px; }
+.mini-estado strong { font-family: var(--f-disp); font-stretch: 60%; font-weight: 760; font-size: 28px; line-height: 1; color: var(--tinta); }
+.mini-estado svg { flex: 1; height: 28px; min-width: 0; }
+.mini-lectura { font-size: 12.5px; color: var(--tinta-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mini-lectura b { color: var(--tinta); }
+.seccion > summary {
+  list-style: none; cursor: pointer; position: relative;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; row-gap: 1px; align-items: center;
+  padding: 14px 26px 13px 0; border-radius: 10px;
+}
+.seccion > summary:focus { outline: none; }
+.seccion > summary:focus-visible { outline: 2px solid var(--accion); outline-offset: 2px; }
+.seccion[open] > summary { border-bottom: 1px solid var(--linea); border-radius: 10px 10px 0 0; margin-bottom: 14px; }
+.seccion > summary::-webkit-details-marker { display: none; }
+.seccion > summary::after {
+  content: ""; position: absolute; right: 4px; top: 21px; width: 7px; height: 7px;
+  border-right: 1.5px solid var(--tinta-3); border-bottom: 1.5px solid var(--tinta-3);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+.seccion[open] > summary::after { transform: rotate(45deg); top: 19px; }
+.seccion > summary:hover::after { border-color: var(--tinta); }
+/* Señal de «siguiente paso»: guía el despliegue progresivo sin abrir nada por el usuario */
+.sec-num.siguiente { background: var(--accion); color: var(--bg); animation: siguiente 1.8s ease-in-out infinite; }
+@keyframes siguiente { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accion) 35%, transparent); } }
+.sec-num { grid-row: 1 / span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-dato); font-size: 12px; color: var(--bg); background: var(--tinta-2); align-self: start; margin-top: 1px; }
+.sec-tit { grid-column: 2; grid-row: 1; font-family: var(--f-disp); font-stretch: 80%; font-weight: 700; font-size: 18px; line-height: 1.1; color: var(--tinta); }
+.sec-sub { grid-column: 2 / -1; font-size: 12px; color: var(--tinta-3); line-height: 1.35; }
+.sin-num .sec-tit { grid-column: 1; }
+.sin-num .sec-sub { grid-column: 1 / -1; }
+.seccion > summary.sin-num { grid-template-columns: minmax(0, 1fr) auto; }
+.der .sec-tit, .vista[data-vista="modelo"] .sec-tit { font-size: 16px; }
+.seccion > summary:hover .sec-tit { color: var(--resalte); }
+.seccion-cuerpo { display: grid; gap: 14px; padding-bottom: 20px; }
+.subtitulo { display: flex; align-items: center; gap: 8px; font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--tinta-3); margin-top: 6px; }
+.subtitulo::after { content: ""; flex: 1; height: 1px; background: var(--linea); }
+.rotulo { font-family: var(--f-dato); font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); }
+.pista { color: var(--tinta-2); font-size: 12.5px; padding: 10px 0 4px; }
+.pista b { color: var(--tinta); font-weight: 600; }
+
+/* ---------- Arquetipos ---------- */
+.arqs { display: grid; gap: 2px; }
+.arq { text-align: left; background: transparent; border: 0; border-radius: var(--r-sm); padding: 6px 8px; display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: 10px; }
+.arq::before { content: ""; grid-row: 1 / span 2; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--tinta-3); margin-top: 4px; box-sizing: border-box; }
+.arq:hover { background: var(--panel-2); }
+.arq[aria-pressed="true"]::before { border: 4px solid var(--tinta); }
+.arq b { font-weight: 600; font-size: 13.5px; grid-column: 2; }
+.arq span { color: var(--tinta-3); font-size: 12px; grid-column: 2; }
+.arq[aria-pressed="true"] b { color: var(--resalte); }
+.ficha { display: grid; gap: 8px; padding: 12px; background: var(--panel-2); border-radius: var(--r-sm); }
+.ficha p { color: var(--tinta-2); font-size: 12.5px; }
+.nota-arq { font-size: 11.5px; color: var(--tinta-3); }
+blockquote.cita { margin: 0; padding: 0 0 0 12px; border-left: 2px solid var(--linea); font-family: var(--f-cita); font-style: italic; font-size: 13.5px; line-height: 1.5; color: var(--tinta); }
+blockquote.cita footer { font-family: var(--f-texto); font-style: normal; font-size: 12px; color: var(--tinta-3); margin-top: 4px; }
+
+/* ---------- Controles ---------- */
+.grupo { display: grid; gap: 6px; }
+.ctl { display: grid; gap: 3px; border-radius: var(--r-sm); margin: 0 -8px; padding: 8px 8px 10px; transition: background .15s; }
+.ctl:hover, .ctl:focus-within { background: var(--panel-2); }
+.ctl-cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ctl label { font-size: 13px; font-weight: 500; }
+.ctl output { font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.ctl .polos { display: flex; justify-content: space-between; font-size: 11px; color: var(--tinta-3); }
+.ctl.bloqueado label::after { content: " · fijo en este reto"; color: var(--tinta-3); font-weight: 400; font-size: 11.5px; }
+.afecta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--tinta-3); align-items: center; }
+.afecta button { border: 0; background: transparent; padding: 0; display: inline-flex; gap: 4px; align-items: center; color: var(--tinta-2); font-size: 11.5px; }
+.afecta button:hover { color: var(--tinta); text-decoration: underline; }
+.afecta button i { width: 6px; height: 6px; border-radius: 50%; }
+.afecta button em { font-style: normal; font-family: var(--f-dato); color: var(--tinta-3); }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; --v: 50%; --c: var(--tinta-2); }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--v), var(--linea) var(--v)); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--linea); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; margin-top: -6px; background: var(--tinta); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--c); }
+input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--tinta); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--c); }
+input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
+.bloque-fondos { background: var(--fondos-bg); border: 1px solid var(--linea); border-radius: 10px; padding: 14px 14px 6px; display: grid; gap: 10px; margin-top: 4px; }
+.fondos-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.fondos-tit { font-family: var(--f-disp); font-stretch: 80%; font-weight: 700; font-size: 16px; }
+.fondos-total { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-2); border: 1px solid var(--linea); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.fondos-nota { font-size: 12px; color: var(--tinta-3); }
+.bloque-fondos .ctl:hover, .bloque-fondos .ctl:focus-within { background: color-mix(in srgb, var(--fondos-bg) 92%, var(--tinta) 8%); }
+.bloque-fondos .ctl label { display: inline-flex; gap: 7px; align-items: center; }
+.bloque-fondos .ctl label i { width: 10px; height: 10px; border-radius: 2px; }
+.ctl[data-k="wP"] input { --c: var(--f-pauta); }
+.ctl[data-k="wC"] input { --c: var(--f-coop); }
+.ctl[data-k="wM"] input { --c: var(--f-memb); }
+.mezcla { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; }
+.mezcla i { display: block; height: 100%; min-width: 0; transition: flex-basis .25s; }
+.mezcla-ley { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--tinta-2); font-family: var(--f-dato); }
+.mezcla-ley span { display: inline-flex; align-items: center; gap: 5px; }
+.mezcla-ley span i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* ---------- Retos ---------- */
+.reto-activo { border: 1px solid var(--accion); border-left-width: 4px; background: var(--accion-suave); border-radius: var(--r-sm); padding: 14px; display: grid; gap: 10px; margin: 12px 0 8px; }
+.reto-activo .rotulo { color: var(--accion); }
+#retoActivo.llamar .reto-activo { animation: llamar .9s ease-in-out 2; }
+@keyframes llamar { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accion) 45%, transparent); } }
+.reto-activo h3 { font-family: var(--f-disp); font-stretch: 75%; font-weight: 700; font-size: 20px; line-height: 1.1; }
+.reto-activo p { color: var(--tinta-2); font-size: 13px; }
+.metas { display: grid; gap: 10px; }
+.meta { display: grid; gap: 4px; }
+.meta-txt { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.meta-txt b { font-family: var(--f-dato); font-weight: 500; font-size: 12px; color: var(--tinta-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meta.cumple .meta-txt b { color: var(--accion); }
+.meta-pista { position: relative; height: 6px; background: var(--linea); border-radius: 3px; }
+.meta-pista i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--tinta-3); }
+.meta.cumple .meta-pista i { background: var(--accion); }
+.meta-pista u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); }
+.meta-pista s { position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--tinta-2); transform: translate(-50%, -50%); background: var(--bg); }
+.racha { display: grid; gap: 4px; }
+.racha-txt { font-family: var(--f-dato); font-size: 11.5px; color: var(--tinta-2); }
+.racha-seg { display: flex; gap: 3px; }
+.racha-seg i { flex: 1; height: 5px; border-radius: 1px; background: var(--linea); }
+.racha-seg i.si { background: var(--accion); }
+.hud-reto { position: absolute; top: 48px; right: 10px; z-index: 4; width: 250px; max-width: calc(100% - 20px); background: var(--vidrio); border: 1px solid var(--accion); border-left-width: 4px; border-radius: var(--r-sm); padding: 10px 12px; display: grid; gap: 8px; }
+.hud-reto .rotulo { color: var(--accion); }
+.hud-datos, .hud-pistas { display: contents; }
+.pistas { display: grid; gap: 8px; border-top: 1px dashed var(--linea); padding-top: 8px; }
+.pista-txt { font-size: 12.5px; color: var(--tinta); line-height: 1.45; }
+.pista-txt span { display: block; font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accion); margin-bottom: 2px; }
+.btn-pista { justify-self: start; border: 1px dashed var(--accion); background: transparent; color: var(--accion); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+.btn-pista:hover { background: var(--accion-suave); }
+.hud-reto { max-height: calc(100% - 140px); overflow-y: auto; }
+.hud-reto h4 { font-family: var(--f-disp); font-stretch: 78%; font-weight: 700; font-size: 15px; line-height: 1.1; }
+.fila-botones { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--linea); background: var(--panel-2); border-radius: var(--r-sm); padding: 6px 11px; font-size: 12.5px; font-weight: 500; color: var(--tinta); }
+.btn:hover { border-color: var(--tinta-3); }
+.btn.primario { background: var(--tinta); color: var(--bg); border-color: var(--tinta); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.retos { display: grid; gap: 8px; }
+.reto-item { text-align: left; border: 1px solid var(--linea); background: transparent; border-radius: var(--r-sm); padding: 12px; display: grid; gap: 4px; }
+.reto-item:hover { border-color: var(--tinta-3); background: var(--panel-2); }
+.reto-item b { font-family: var(--f-disp); font-stretch: 75%; font-weight: 700; font-size: 17px; }
+.reto-item span { color: var(--tinta-2); font-size: 12.5px; }
+.reto-item small { color: var(--tinta-3); font-family: var(--f-dato); font-size: 11px; }
+
+/* ---------- Modelo ---------- */
+.texto { color: var(--tinta-2); font-size: 13px; display: grid; gap: 8px; }
+.texto strong { color: var(--tinta); font-weight: 600; }
+.lazos { display: grid; gap: 8px; }
+.lazo { border: 1px solid var(--linea); border-radius: var(--r-sm); padding: 10px 12px; display: grid; gap: 6px; }
+.lazo[data-activo="true"] { border-color: var(--tinta); }
+.lazo-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.lazo-cab b { font-weight: 600; }
+.lazo-tipo { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-3); text-transform: uppercase; letter-spacing: .06em; }
+.lazo-ruta { font-family: var(--f-dato); font-size: 11.5px; color: var(--tinta-2); }
+.lazo p { font-size: 12.5px; color: var(--tinta-2); }
+.lazo-estado { font-size: 12px; color: var(--tinta); }
+.interruptor { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.interruptor input { margin-top: 3px; accent-color: var(--tinta); }
+.limites { margin: 0; padding-left: 18px; color: var(--tinta-2); font-size: 12.5px; display: grid; gap: 4px; }
+.pie { font-size: 11.5px; color: var(--tinta-3); }
+
+/* ---------- Escena ---------- */
+.escena { grid-area: escena; position: relative; min-width: 0; overflow: hidden; background: radial-gradient(ellipse 80% 70% at 50% 45%, var(--escena-centro) 0%, var(--bg) 70%); }
+.escena canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.etiquetas { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+.etq {
+  position: absolute; left: 0; top: 0; pointer-events: auto; border: 0; background: var(--vidrio-etq);
+  border-radius: 4px; padding: 2px 6px 2px 5px; display: flex; align-items: baseline; gap: 6px; white-space: nowrap;
+  font-size: 12px; font-weight: 500; color: var(--tinta); will-change: transform; transition: opacity .25s;
+}
+.etq i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; align-self: center; }
+.etq b { font-family: var(--f-dato); font-weight: 500; font-size: 11.5px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.sin-niveles .etq:not(.con-valor) b { display: none; }
+.etq.con-valor b { color: var(--tinta); }
+.etq.resultado { font-family: var(--f-disp); font-stretch: 75%; font-weight: 700; font-size: 15px; padding: 3px 8px; }
+.etq.resultado b { font-size: 13px; color: var(--tinta); }
+.etq.sel { outline: 1px solid var(--tinta); }
+.etq.fuera { opacity: 0 !important; pointer-events: none; }
+.etq-placa { position: absolute; left: 0; top: 0; font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; pointer-events: none; will-change: transform; }
+.etq-verbo { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; font-family: var(--f-dato); font-size: 10.5px; color: var(--tinta-2); background: var(--vidrio-etq); padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+
+/* Barra de vista sobre la escena */
+.barra-vista { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 4; display: flex; gap: 6px; align-items: flex-start; pointer-events: none; }
+.barra-vista > * { pointer-events: auto; }
+.barra-vista .espacio { flex: 1; pointer-events: none; }
+/* Tres familias de botón: paneles (sólidos, claros), capas de la red (interruptores
+   en color de acción) y ayuda (sin borde). */
+.bv { border: 1px solid var(--linea); background: var(--vidrio); border-radius: 999px; padding: 5px 11px; font-size: 12px; color: var(--tinta-2); display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.bv:hover { color: var(--tinta); border-color: var(--tinta-3); }
+.bv-panel { border-radius: var(--r-sm); background: var(--panel-2); color: var(--tinta); border-color: var(--tinta-3); font-weight: 500; }
+.bv-panel svg { display: block; }
+.bv-panel[aria-pressed="false"] { background: var(--tinta); color: var(--bg); border-color: var(--tinta); }
+.bv-ver { background: var(--vidrio); border: 1px solid var(--linea); border-radius: 999px; padding: 3px; gap: 2px; align-items: center; }
+.bv-ver .bv { border: 0; background: transparent; padding: 3px 10px; }
+.bv-rot { font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); padding: 0 6px 0 8px; }
+.bv .ojo { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; }
+.bv-ver .bv[aria-pressed="true"] { color: var(--accion); background: var(--accion-suave); }
+.bv-ver .bv[aria-pressed="true"] .ojo { background: var(--accion); border-color: var(--accion); }
+.bv-ayuda { border-color: transparent; background: transparent; }
+.bv-ayuda[aria-expanded="true"] { color: var(--tinta); }
+.ic-ayuda { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; line-height: 1; }
+.grupo-bv { display: inline-flex; gap: 4px; }
+/* Abajo a la izquierda, justo sobre la barra de tiempo: deja libre el centro de la red */
+.pila-inf { position: absolute; left: 10px; bottom: calc(var(--alto-tiempo, 92px) + 8px); z-index: 4; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(460px, calc(100% - 20px)); pointer-events: none; }
+.pila-inf > * { pointer-events: auto; }
+.foco-chip { position: relative; background: var(--panel); border: 1px solid var(--tinta-3); border-radius: 999px; padding: 5px 6px 5px 14px; font-size: 12.5px; color: var(--tinta-2); display: flex; gap: 10px; align-items: center; max-width: calc(100% - 20px); }
+.foco-chip b { color: var(--tinta); font-weight: 600; }
+.foco-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foco-chip button { border: 0; background: var(--panel-2); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--tinta); white-space: nowrap; }
+.leyenda { position: absolute; left: 10px; top: 48px; z-index: 4; width: 270px; max-width: calc(100% - 20px); background: var(--vidrio); border: 1px solid var(--linea); border-radius: var(--r-sm); padding: 12px; font-size: 12px; color: var(--tinta-2); display: grid; gap: 7px; }
+.leyenda-cab { display: flex; justify-content: space-between; align-items: center; }
+.leyenda-cab button { border: 0; background: transparent; color: var(--tinta-3); font-size: 12px; padding: 0 2px; }
+.ley-fila { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: center; }
+.ley-fila svg { display: block; }
+.ley-sep { height: 1px; background: var(--linea); margin: 2px 0; }
+
+.tiempo { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; background: linear-gradient(to top, var(--bg) 55%, transparent); }
+.tiempo .btn:not(.primario) { background: var(--panel); }
+.tiempo .btn.primario { min-width: 92px; }
+.btn.llama { animation: llama 1.6s ease-in-out infinite; }
+@keyframes llama { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accion) 55%, transparent); } }
+.aviso-destino { margin: 0; max-width: 100%; font-size: 12.5px; color: var(--accion); background: var(--vidrio); border: 1px solid var(--accion); border-radius: var(--r-sm); padding: 6px 10px; }
+.aviso-destino b { color: var(--tinta); }
+.reloj { display: grid; gap: 3px; min-width: 150px; flex: 1; }
+.reloj-txt { font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.reloj-txt b { color: var(--tinta); font-weight: 500; }
+.reloj-barra { height: 3px; background: var(--linea); border-radius: 2px; overflow: hidden; }
+.reloj-barra i { display: block; height: 100%; background: var(--tinta); width: 0; }
+.vel { display: flex; border: 1px solid var(--linea); border-radius: var(--r-sm); overflow: hidden; }
+.vel button { border: 0; background: var(--panel); padding: 6px 9px; font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); }
+.vel button[aria-pressed="true"] { background: var(--tinta-2); color: var(--bg); }
+.choques { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip-choque { font-family: var(--f-dato); font-size: 11px; color: var(--tinta); border: 1px dashed var(--tinta-3); border-radius: 999px; padding: 2px 8px; }
+.cierre { position: absolute; inset: 12px 12px 76px; margin: auto; max-width: 640px; height: fit-content; max-height: calc(100% - 90px); overflow: auto; background: var(--panel); border: 1px solid var(--tinta-3); border-radius: 12px; padding: 26px 28px; display: grid; gap: 16px; box-shadow: 0 20px 60px var(--sombra); z-index: 5; }
+.cierre h3 { font-family: var(--f-disp); font-stretch: 70%; font-weight: 760; font-size: 34px; line-height: 1.05; }
+.cierre .ceja { color: var(--tinta-2); font-size: 12px; }
+.cierre .lectura { gap: 10px; font-size: 16px; line-height: 1.55; }
+.cierre .lectura p { color: var(--tinta-2); }
+.cierre .rotulo { font-size: 12px; }
+.cierre ol { margin: 0; padding-left: 22px; display: grid; gap: 10px; color: var(--tinta); font-size: 16px; line-height: 1.5; }
+.cierre .btn { font-size: 14px; padding: 9px 15px; }
+.cierre-graficos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.graf-meta { margin: 0; display: grid; gap: 4px; }
+.graf-meta figcaption { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.graf-meta figcaption span { font-family: var(--f-dato); font-weight: 400; font-size: 11.5px; color: var(--tinta-3); }
+.graf-meta svg { width: 100%; height: auto; display: block; }
+.ir-a { border: 0; background: transparent; padding: 0; font: inherit; color: var(--tinta); text-decoration: underline; text-decoration-color: var(--accion); text-underline-offset: 3px; text-decoration-thickness: 2px; cursor: pointer; }
+.ir-a:hover { color: var(--resalte); }
+
+/* ---------- Panel derecho ---------- */
+.clave-spark { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--tinta-3); }
+.clave-spark span { display: inline-flex; gap: 5px; align-items: center; }
+.ind-principal { display: grid; gap: 2px; }
+.ind-principal .fila { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ind-principal .num { font-family: var(--f-disp); font-stretch: 60%; font-weight: 760; font-size: 48px; line-height: .9; font-variant-numeric: tabular-nums; }
+.ind-principal .de { font-family: var(--f-dato); color: var(--tinta-3); font-size: 12px; }
+.ind-principal .rumbo { font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); margin-left: auto; }
+.ind-principal .nombre { font-weight: 600; font-size: 14px; margin-top: 4px; }
+.ind-principal .sub { color: var(--tinta-3); font-size: 12px; }
+.inds { display: grid; gap: 0; }
+.ind { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--linea); }
+.ind-fila { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto 30px 30px; gap: 8px; align-items: baseline; }
+.ind-delta { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-2); text-align: right; font-variant-numeric: tabular-nums; }
+.banda { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-2); border: 1px solid var(--linea); border-radius: 999px; padding: 1px 8px; }
+.delta-largo { font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); }
+.ind-fila i { width: 7px; height: 7px; border-radius: 50%; align-self: center; }
+.ind-nombre { font-size: 12.5px; min-width: 0; }
+.ind-rumbo { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-3); white-space: nowrap; }
+.ind-val { font-family: var(--f-dato); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.spark-caja { position: relative; }
+.spark-punto { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
+.spark { width: 100%; height: 30px; display: block; cursor: crosshair; }
+.spark.grande { height: 52px; }
+.spark .eje { stroke: var(--linea); stroke-width: 1; }
+.spark .fantasma { fill: none; stroke: var(--tinta-3); stroke-width: 1.5; stroke-dasharray: 2 3; }
+.spark .traza { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark .rumbo-l { fill: none; stroke: var(--tinta-2); stroke-width: 1.5; stroke-dasharray: 1 4; stroke-linecap: round; }
+.spark .evento { stroke: var(--tinta-3); stroke-width: 1; stroke-dasharray: 2 2; }
+.insp { display: grid; gap: 12px; }
+.insp-cab { display: grid; gap: 4px; }
+.chip-dim { font-family: var(--f-dato); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-2); display: inline-flex; gap: 6px; align-items: center; }
+.chip-dim i { width: 8px; height: 8px; border-radius: 2px; }
+.insp h3 { font-family: var(--f-disp); font-stretch: 72%; font-weight: 740; font-size: 24px; line-height: 1.05; }
+.insp .nivel { font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); }
+.insp .desc { color: var(--tinta-2); font-size: 13px; }
+.insp h4 { font-family: var(--f-dato); font-weight: 500; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
+.insp .explica { font-size: 11.5px; color: var(--tinta-3); margin-top: -6px; }
+.barras { display: grid; gap: 7px; }
+.empujes { display: grid; gap: 10px; }
+.empuje-grupo { font-family: var(--f-dato); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta); border-bottom: 1px solid var(--linea); padding-bottom: 4px; }
+.empuje { display: grid; gap: 2px; }
+.empuje-txt { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 13px; }
+.empuje-txt b { font-weight: 600; }
+.empuje-txt span { font-family: var(--f-dato); font-size: 11px; color: var(--tinta-2); white-space: nowrap; }
+.empuje p { font-size: 12px; color: var(--tinta-3); line-height: 1.35; }
+.empuje-pista { height: 5px; background: var(--linea); border-radius: 3px; overflow: hidden; margin-top: 2px; }
+.empuje-pista i { display: block; height: 100%; border-radius: 3px; }
+.empuje-pista i.neg { background: repeating-linear-gradient(135deg, var(--abajo) 0 3px, transparent 3px 5px); }
+.vacio { font-size: 12px; color: var(--tinta-3); }
+.barra { display: grid; gap: 3px; }
+.barra-txt { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.barra-txt span { min-width: 0; }
+.barra-txt em { font-style: normal; color: var(--tinta-3); font-size: 11.5px; }
+.barra-txt b { font-family: var(--f-dato); font-weight: 400; font-size: 11px; color: var(--tinta-2); white-space: nowrap; }
+.barra-pista { position: relative; height: 6px; }
+.barra-pista::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--tinta-3); }
+.barra-pista i { position: absolute; top: 0; height: 100%; border-radius: 1px; }
+.barra-pista i.neg { background: repeating-linear-gradient(135deg, var(--abajo) 0 3px, transparent 3px 5px); }
+.salidas { display: flex; flex-wrap: wrap; gap: 6px; }
+.salida { border: 1px solid var(--linea); background: transparent; border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--tinta-2); display: inline-flex; gap: 5px; align-items: center; }
+.salida:hover { color: var(--tinta); border-color: var(--tinta-3); }
+.salida i { width: 6px; height: 6px; border-radius: 50%; }
+.nota { font-size: 12px; color: var(--tinta-3); border-top: 1px solid var(--linea); padding-top: 8px; }
+.lectura { display: grid; gap: 8px; font-size: 13px; }
+.lectura p { color: var(--tinta-2); }
+.lectura p b { color: var(--tinta); font-weight: 600; }
+
+/* ---------- Recorrido guiado ---------- */
+.tour-bloqueo { position: fixed; inset: 0; z-index: 60; }
+.tour-luz { position: fixed; z-index: 61; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 9999px var(--velo); outline: 2px solid var(--accion); outline-offset: 2px; transition: left .35s ease, top .35s ease, width .35s ease, height .35s ease; }
+.tour-tarjeta { position: fixed; z-index: 62; width: 330px; max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--accion); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; box-shadow: 0 24px 60px var(--sombra); transition: left .35s ease, top .35s ease; }
+.tour-paso { font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accion); }
+.tour-tarjeta h3 { font-family: var(--f-disp); font-stretch: 72%; font-weight: 760; font-size: 24px; line-height: 1.05; }
+.tour-tarjeta p { color: var(--tinta-2); font-size: 13.5px; }
+.tour-puntos { display: flex; gap: 5px; }
+.tour-puntos i { width: 18px; height: 3px; border-radius: 2px; background: var(--linea); }
+.tour-puntos i.si { background: var(--accion); }
+.tour-botones { display: flex; gap: 6px; align-items: center; }
+.tour-saltar { margin-left: auto; border: 0; background: transparent; color: var(--tinta-3); font-size: 12.5px; text-decoration: underline; }
+.btn-guia { border-color: var(--accion); color: var(--accion); background: transparent; }
+@media (prefers-reduced-motion: reduce) { .tour-luz, .tour-tarjeta { transition: none; } }
+
+/* ---------- Tableta y teléfono ---------- */
+@media (max-width: 1080px) {
+  .app { grid-template-columns: var(--col-izq) minmax(0, 1fr); grid-template-areas: "cab cab" "izq escena" "der der"; grid-template-rows: auto clamp(520px, 78vh, 860px) auto; height: auto; min-height: 100dvh; }
+  .app.sin-der { grid-template-rows: auto clamp(520px, 78vh, 860px); }
+  .der { border-left: 0; border-top: 1px solid var(--linea); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 12px; align-items: start; }
+  .der .panel-cab { grid-column: 1 / -1; }
+  #tgDer { display: none; }
+}
+@media (max-width: 760px) {
+  .app { display: flex; flex-direction: column; }
+  .cab { padding: 12px 16px; }
+  .cab h1 { font-size: 30px; }
+  .modos { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .modos button { white-space: nowrap; font-size: 12.5px; padding: 6px 10px 6px 6px; }
+  .escena { order: 2; overflow: visible; }
+  .escena canvas { height: 64vh; min-height: 420px; }
+  .etiquetas { bottom: auto; height: max(64vh, 420px); }
+  .izq { order: 3; border-right: 0; border-top: 1px solid var(--linea); overflow: visible; }
+  .der { order: 4; overflow: visible; grid-template-columns: 1fr; }
+  #tgIzq { display: none; }
+  .bv .txt-largo { display: none; }
+  .tiempo { position: relative; background: var(--panel); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); padding: 12px 16px; }
+  .reloj { order: -1; flex-basis: 100%; }
+  .cierre { position: fixed; inset: 16px; max-height: none; z-index: 20; }
+  .hud-reto { position: static; margin: 10px 16px 0; width: auto; max-width: none; }
+  .pila-inf { bottom: auto; top: 46px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sec-num.siguiente { animation: none; }
+  .btn.llama { animation: none; outline: 2px solid var(--accion); }
+  .mezcla i, .etq, .ctl, .seccion > summary::before { transition: none; }
+}
+/* ======================================================================
+   SISTEMA VISUAL · tinta, papel y resaltador
+   1. Color: la red es dueña de los colores de dato (azul, magenta, verde).
+      La interfaz es tinta y papel, con UNA señal: el amarillo resaltador,
+      la herramienta con que un periodista marca lo importante. Marca dónde
+      actuar ahora: paso activo, Iniciar, paso siguiente, reto, pregunta inicial.
+   2. Zonas: encabezado (qué es y por dónde ir) · panel «decides» · escena ·
+      panel «le pasa al medio». Paneles en bandeja con grano; la escena limpia.
+   3. Jerarquía tipográfica: display (Anybody) para nombres y cifras; texto
+      (Hanken) para instrucciones; mono (Spline) solo para datos y rótulos de
+      zona; serif (Literata) para la lectura interpretativa, como en una nota.
+   4. Orden de lectura: ruta 1·2·3 → paso a·b·c → red → Iniciar → estado.
+   ====================================================================== */
+body { background-image: var(--grano); }
+.cab, .izq, .der { background-image: var(--grano); }
+
+/* Encabezado */
+.cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "marca tema" "marca ruta"; align-items: end; column-gap: 32px; row-gap: 12px; padding: 14px 24px 16px; background-color: var(--bg); }
+.cab-marca { grid-area: marca; display: grid; gap: 3px; min-width: 0; }
+.cab h1 { font-size: 46px; font-stretch: 56%; letter-spacing: -0.01em; line-height: .95; }
+.cab h1 .tramas i { width: 10px; height: 10px; }
+.bajada { max-width: 66ch; font-size: 14px; line-height: 1.5; margin-top: 4px; }
+.bajada mark { color: var(--tinta); font-weight: 500; background: linear-gradient(transparent 55%, var(--marcador) 55%); padding: 0 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.tema-btn { grid-area: tema; justify-self: end; align-self: start; }
+
+/* Ruta de aprendizaje: el menú clave */
+.ruta { grid-area: ruta; background: transparent; border: 0; padding: 0; gap: 6px; border-radius: 0; }
+.ruta button { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; text-align: left; padding: 6px 14px 6px 7px; border: 1px solid var(--linea); border-radius: 999px; background: var(--tarjeta); color: var(--tinta-2); box-shadow: var(--sombra-hoja); position: relative; }
+.ruta button:hover { border-color: var(--tinta-3); color: var(--tinta); }
+.ruta .paso { width: 24px; height: 24px; font-family: var(--f-disp); font-stretch: 80%; font-weight: 700; font-size: 13px; border: 1.5px solid var(--tinta-3); color: var(--tinta); }
+.ruta-txt { display: grid; gap: 1px; }
+.ruta-txt b { font-family: var(--f-disp); font-stretch: 80%; font-weight: 700; font-size: 15px; line-height: 1.05; color: var(--tinta); }
+.ruta button[aria-selected="true"] { background: var(--tinta); border-color: var(--tinta); }
+.ruta button[aria-selected="true"] .ruta-txt b { color: var(--bg); }
+.ruta button[aria-selected="true"] .paso { background: var(--senal); border-color: var(--senal); color: var(--senal-tinta); }
+.ruta .punto-reto { position: absolute; top: 4px; right: 6px; width: 9px; height: 9px; background: var(--senal); box-shadow: 0 0 0 2px var(--tarjeta); }
+
+/* Zonas laterales: bandejas con rótulo de zona */
+.panel-cab { color: var(--tinta-2); font-size: 11px; letter-spacing: .12em; padding: 4px 4px 10px; }
+.panel-cab::after { content: ""; flex: 1; height: 1px; background: var(--linea); margin-left: 4px; }
+
+/* Tarjetas: hojas de papel; el estado abierto se marca con tinta, no con color */
+.seccion { background: var(--tarjeta); border: 1px solid var(--linea); box-shadow: var(--sombra-hoja); }
+.seccion[open] { border-color: color-mix(in oklab, var(--tinta) 32%, var(--linea)); }
+.sec-num { background: var(--tinta); color: var(--bg); font-family: var(--f-disp); font-stretch: 85%; font-weight: 700; font-size: 15px; line-height: 1; padding-bottom: 2px; }
+.sec-num.siguiente { background: var(--senal); color: var(--senal-tinta); }
+@keyframes siguiente { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--senal) 45%, transparent); } }
+.sec-tit { letter-spacing: -0.005em; }
+.sec-insignia { color: var(--tinta-2); border-color: var(--linea); background: var(--panel-2); display: inline-flex; gap: 5px; align-items: center; }
+.punto-dim { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.mini-barra i { background: var(--linea); }
+.mini-barra i b { background: var(--tinta-2); }
+.mini-estado svg path { stroke: var(--o); }
+
+/* Lectura interpretativa con voz de nota periodística */
+.lectura p, .mini-lectura { font-family: var(--f-cita); font-size: 14.5px; line-height: 1.55; }
+.cierre .lectura p { font-size: 16px; }
+
+/* Acción: el amarillo marca lo que se hace ahora */
+.btn.primario { background: var(--senal); color: var(--senal-tinta); border-color: var(--senal); font-weight: 600; }
+.btn.primario:hover { border-color: var(--tinta); }
+@keyframes llama { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--senal) 55%, transparent); } }
+.reto-activo, .hud-reto { border: 1px solid var(--linea); border-left: 5px solid var(--senal); background: color-mix(in oklab, var(--senal) 11%, var(--tarjeta)); }
+.hud-reto { box-shadow: 0 12px 30px -18px var(--sombra); }
+.reto-activo .rotulo, .hud-reto .rotulo { color: var(--tinta); }
+.aviso-destino { color: var(--tinta); border: 1px solid var(--linea); border-left: 4px solid var(--senal); background: var(--vidrio); }
+.ir-a { text-decoration-color: var(--senal); }
+.bv-ver .bv[aria-pressed="true"] .ojo { background: var(--senal); border-color: var(--tinta); }
+.bv-ver .bv[aria-pressed="true"] { color: var(--tinta); }
+.tour-luz { outline-color: var(--senal); }
+.tour-tarjeta { border-color: var(--linea); border-top: 5px solid var(--senal); }
+.tour-puntos i.si { background: var(--senal); }
+
+/* Sobre este artefacto */
+.cab-util { grid-area: tema; justify-self: end; align-self: start; display: flex; gap: 6px; }
+.cab-util .tema-btn { grid-area: auto; }
+.tema-btn .ic-ayuda { width: 16px; height: 16px; font-family: var(--f-cita); font-style: italic; font-size: 11px; }
+.nota-modelo { font-size: 12px; color: var(--tinta-3); border-top: 1px solid var(--linea); padding-top: 10px; line-height: 1.45; }
+.nota-modelo .ir-a { font-size: 12px; color: var(--tinta-2); }
+.acerca { width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--linea); border-top: 5px solid var(--senal); border-radius: 14px; background: var(--tarjeta); color: var(--tinta); box-shadow: 0 30px 80px -30px var(--sombra); }
+.acerca::backdrop { background: var(--velo); }
+.acerca-cab { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: end; padding: 20px 26px 14px; background: var(--tarjeta); border-bottom: 1px solid var(--linea); }
+.acerca-cab .ceja { grid-column: 1; }
+.acerca-cab h3 { grid-column: 1; font-family: var(--f-disp); font-stretch: 66%; font-weight: 760; font-size: 30px; line-height: 1.05; }
+.acerca-cab .btn { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+#acercaCuerpo { padding: 18px 26px 26px; }
+.acerca-texto { display: grid; gap: 18px; font-size: 14px; line-height: 1.55; color: var(--tinta-2); }
+.acerca-texto h4 { font-family: var(--f-disp); font-stretch: 80%; font-weight: 700; font-size: 17px; color: var(--tinta); margin-bottom: 4px; }
+.acerca-texto p + p { margin-top: 8px; }
+.acerca-texto strong { color: var(--tinta); font-weight: 600; }
+.acerca-texto ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.es-noes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.es-noes section { background: var(--panel-2); border-radius: 10px; padding: 12px 14px; }
+.advertencia { border-left: 5px solid var(--senal); background: color-mix(in oklab, var(--senal) 11%, var(--tarjeta)); border-radius: 0 10px 10px 0; padding: 12px 16px; }
+.advertencia p { font-family: var(--f-cita); font-size: 15px; color: var(--tinta); }
+.creditos { border-top: 1px solid var(--linea); padding-top: 14px; font-size: 13px; }
+.creditos a { color: var(--tinta); text-underline-offset: 2px; }
+.creditos-panel { margin: 18px 4px 0; padding-top: 12px; border-top: 1px solid var(--linea); display: grid; gap: 4px; font-size: 12px; line-height: 1.45; color: var(--tinta-3); }
+.creditos-panel strong { color: var(--tinta-2); font-weight: 600; }
+.creditos-panel a { color: var(--tinta-2); text-underline-offset: 2px; }
+.creditos-panel .creditos-ia { margin-top: 4px; }
+#acercaTarjeta .acerca-texto { font-size: 13px; }
+#acercaTarjeta .es-noes { grid-template-columns: 1fr; }
+@media (max-width: 640px) { .es-noes { grid-template-columns: 1fr; } .acerca-cab { padding: 16px 18px 12px; } #acercaCuerpo { padding: 14px 18px 20px; } }
+
+@media (max-width: 1180px) {
+  .cab { grid-template-areas: "marca tema" "ruta ruta"; }
+}
+@media (max-width: 760px) {
+  .cab { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "marca tema" "ruta ruta"; padding: 12px 16px 14px; column-gap: 12px; }
+  .cab h1 { font-size: 38px; }
+  /* Los tres pasos siempre visibles: nadie debe descubrir el tercero deslizando */
+  .ruta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+  .ruta button { grid-template-columns: 1fr; justify-items: start; row-gap: 4px; padding: 8px 10px; white-space: normal; }
+  .ruta .paso { grid-row: auto; width: 24px; height: 24px; font-size: 13px; }
+  .ruta-txt b { font-size: 14px; }
+  .tema-btn .txt-tema { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app sin-niveles" id="app">
+  <header class="cab">
+    <div class="cab-marca">
+      <span class="ceja">LAMA-33 · Laboratorio de Mediaciones Algorítmicas · Univalle</span>
+      <h1>Tejemedios<span class="tramas" aria-hidden="true"><i style="background:var(--e)"></i><i style="background:var(--o)"></i><i style="background:var(--r)"></i></span></h1>
+      <p class="bajada"><mark>¿Por qué algunos medios nativos digitales logran contar las historias de comunidades que casi nadie cubre, y otros no?</mark> Toma las decisiones de un medio colombiano, cambia su contexto y observa mes a mes cómo se propagan los efectos por una red de 14 factores.</p>
+    </div>
+    <div class="cab-util">
+      <button class="tema-btn" id="btnAcerca" type="button"><span class="ic-ayuda" aria-hidden="true">i</span><span class="txt-tema">Sobre este artefacto</span></button>
+      <button class="tema-btn" id="btnTema" type="button" aria-pressed="false"></button>
+    </div>
+    <nav class="modos ruta" role="tablist" aria-label="Ruta de aprendizaje">
+      <button role="tab" aria-selected="true" data-modo="lab" title="Decide y mira qué pasa"><span class="paso">1</span><span class="ruta-txt"><b>Explorar</b></span></button>
+      <button role="tab" aria-selected="false" data-modo="modelo" title="Los lazos que lo mueven"><span class="paso">2</span><span class="ruta-txt"><b>Entender el sistema</b></span></button>
+      <button role="tab" aria-selected="false" data-modo="retos" title="Cinco situaciones"><span class="paso">3</span><span class="ruta-txt"><b>Resolver retos</b></span><i class="punto-reto" id="puntoReto" hidden></i></button>
+    </nav>
+  </header>
+
+  <aside class="panel izq" id="panelIzq" aria-label="Controles">
+    <div class="panel-cab"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 3h8M2 6h8M2 9h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="4" cy="3" r="1.4" fill="currentColor"/><circle cx="8" cy="6" r="1.4" fill="currentColor"/><circle cx="5" cy="9" r="1.4" fill="currentColor"/></svg>Lo que tú decides</div>
+    <div class="vista" data-vista="lab">
+      <div id="retoActivo" hidden></div>
+      <details class="seccion" id="secArq">
+        <summary><span class="sec-num siguiente">a</span><span class="sec-tit">Elige un punto de partida</span><span class="sec-sub" id="arqResumen"></span></summary>
+        <div class="seccion-cuerpo"><div class="arqs" id="arqs"></div><div class="ficha" id="fichaArq"></div></div>
+      </details>
+      <details class="seccion con-tinte" id="secDecide">
+        <summary><span class="sec-num">b</span><span class="sec-tit">Decide como medio</span><span class="sec-insignia" id="insDecide"></span><span class="sec-sub">Pasa el cursor por un control para ver en la red qué factores mueve</span><span class="sec-mini" id="miniDecide"></span></summary>
+        <div class="seccion-cuerpo">
+          <div class="grupo" id="ctlDecision"></div>
+          <div class="bloque-fondos">
+            <div class="fondos-cab"><span class="fondos-tit">De dónde viene el dinero</span><span class="fondos-total">suma 100 %</span></div>
+            <p class="fondos-nota">Estos tres controles se reparten los ingresos: subir uno achica la porción de los otros. La barra muestra la mezcla resultante.</p>
+            <div class="mezcla" id="mezclaBarra" aria-hidden="true"></div>
+            <div class="mezcla-ley" id="mezclaLey"></div>
+            <div class="grupo" id="ctlFondos"></div>
+          </div>
+        </div>
+      </details>
+      <details class="seccion con-tinte" id="secContexto">
+        <summary><span class="sec-num">c</span><span class="sec-tit">Cambia el contexto</span><span class="sec-insignia" id="insContexto"></span><span class="sec-sub" id="subContexto">Lo que el medio no decide: el entorno en el que trabaja</span><span class="sec-mini" id="miniContexto"></span></summary>
+        <div class="seccion-cuerpo"><div class="grupo" id="ctlContexto"></div></div>
+      </details>
+    </div>
+    <div class="vista" data-vista="retos" hidden>
+      <div class="seccion-cuerpo" style="padding-top:12px">
+        <span class="rotulo">Retos</span>
+        <p class="texto">Cada reto parte de una situación y pide un estado del medio. No hay puntaje: al final, el simulador describe cómo quedó el sistema y deja preguntas para discutir.</p>
+        <div class="retos" id="listaRetos"></div>
+      </div>
+    </div>
+    <div class="vista" data-vista="modelo" hidden>
+      <details class="seccion" id="secAcerca">
+        <summary class="sin-num"><span class="sec-tit">Qué es y qué no es</span><span class="sec-sub">Origen, propósito y limitaciones del artefacto</span></summary>
+        <div class="seccion-cuerpo" id="acercaTarjeta"></div>
+      </details>
+      <details class="seccion" open>
+        <summary class="sin-num"><span class="sec-tit">Lazos de retroalimentación</span><span class="sec-sub">Por qué los cambios se amplifican o se frenan</span></summary>
+        <div class="seccion-cuerpo">
+          <p class="texto">Un lazo de refuerzo amplifica lo que pasa: si la capacidad sube, sube más; si baja, se hunde. Uno de balance frena el cambio. Resalta uno para verlo aislado en la red.</p>
+          <div class="lazos" id="lazos"></div>
+        </div>
+      </details>
+      <details class="seccion">
+        <summary class="sin-num"><span class="sec-tit">La figura y el modelo</span><span class="sec-sub">Qué se agregó a la figura de la tesis</span></summary>
+        <div class="seccion-cuerpo">
+          <div class="texto">
+            <p>Catorce factores en tres dimensiones: <strong>estructurales</strong> (la placa de abajo), <strong>organizacionales</strong> (la del centro) y <strong>relacionales</strong> (la de arriba). En el centro están las <strong>prácticas periodísticas</strong>: el resultado de todas las influencias, que a la vez retroalimenta el ecosistema.</p>
+            <p>La figura de la tesis es estática y sus 19 flechas van en un solo sentido. El texto describe un sistema circular y recursivo; por eso aquí el modelo se completa con los lazos que el texto nombra y con la presión judicial y política, que el texto trata como factor.</p>
+          </div>
+          <label class="interruptor"><input type="checkbox" id="soloFigura"> <span>Mostrar solo las 19 flechas de la figura original</span></label>
+        </div>
+      </details>
+      <details class="seccion">
+        <summary class="sin-num"><span class="sec-tit">Cómo calcula</span></summary>
+        <div class="seccion-cuerpo texto">
+          <p>Cada mes, cada factor se mueve hacia el nivel que le fijan las influencias que recibe. Unos responden rápido (el financiamiento, en dos meses) y otros muy despacio (el vínculo con las comunidades tarda más de un año).</p>
+          <p>Las decisiones cuestan: estar en terreno, aliarse o protegerse rinden según el financiamiento disponible. Por eso subir todo al máximo no funciona.</p>
+          <p>Los pesos son didácticos. Ordenan las magnitudes según el texto de la tesis, pero no se estimaron con datos: el simulador sirve para razonar sobre el sistema, no para predecir a un medio real.</p>
+        </div>
+      </details>
+    </div>
+    <footer class="creditos-panel">
+      <p>Por: <strong>Kevin Alexis García</strong> / Laboratorio de Mediaciones Algorítmicas.</p>
+      <p>Escuela de Comunicación Social, Universidad del Valle, Cali, Colombia. <a href="https://lama.lat" target="_blank" rel="noopener">lama.lat</a></p>
+      <p class="creditos-ia">Programado con la asistencia de Claude Opus 5.5 (Anthropic).</p>
+    </footer>
+  </aside>
+
+  <main class="escena" id="escena">
+    <canvas id="lienzo" aria-label="Red 3D de factores e influencias. Arrastra para girar, rueda o pellizco para acercar, toca un nodo para aislar sus relaciones."></canvas>
+    <div class="etiquetas" id="etiquetas"></div>
+
+    <div class="barra-vista" role="toolbar" aria-label="Vista de la red">
+      <button class="bv bv-panel" id="tgIzq" aria-pressed="true" title="Mostrar u ocultar el panel de controles"></button>
+      <div class="grupo-bv bv-ver" role="group" aria-label="Qué mostrar en la red">
+        <span class="bv-rot">Ver</span>
+        <button class="bv" id="tgCapas" aria-pressed="true" title="Mostrar u ocultar las placas de las tres dimensiones"><span class="ojo"></span>Capas</button>
+        <button class="bv" id="tgNiveles" aria-pressed="false" title="Mostrar el nivel de 0 a 100 junto a cada nombre"><span class="ojo"></span>Niveles</button>
+      </div>
+      <button class="bv bv-ayuda" id="tgLeyenda" aria-expanded="false" aria-controls="leyenda"><span class="ic-ayuda" aria-hidden="true">?</span>Cómo leer</button>
+      <span class="espacio"></span>
+      <button class="bv bv-panel" id="tgDer" aria-pressed="true" title="Mostrar u ocultar el panel de estado"></button>
+    </div>
+
+    <div class="hud-reto" id="hudReto" hidden aria-live="polite"></div>
+    <div class="pila-inf" id="pilaInf">
+      <div class="foco-chip" id="focoChip" hidden><span id="focoTxt"></span><button id="focoQuitar">Ver toda la red</button></div>
+      <p class="aviso-destino" id="avisoDestino" hidden>Cambiaste hacia dónde va el medio: mira los anillos huecos. Pulsa <b>Iniciar</b> para que corra el tiempo.</p>
+    </div>
+
+    <div class="leyenda" id="leyenda" hidden>
+      <div class="leyenda-cab"><span class="rotulo">Cómo leer</span><button id="leyendaCerrar" aria-label="Cerrar">Cerrar</button></div>
+      <div class="ley-fila"><svg width="30" height="12"><rect x="1" y="2" width="28" height="8" rx="2" fill="none" stroke="var(--r)"/></svg><span>Placa de arriba: relacionales</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><rect x="1" y="2" width="28" height="8" rx="2" fill="none" stroke="var(--o)"/></svg><span>Centro: organizacionales</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><rect x="1" y="2" width="28" height="8" rx="2" fill="none" stroke="var(--e)"/></svg><span>Abajo: estructurales</span></div>
+      <div class="ley-sep"></div>
+      <div class="ley-fila"><svg width="30" height="16"><line x1="15" y1="15" x2="15" y2="5" stroke="var(--tinta-3)"/><circle cx="15" cy="5" r="4" fill="var(--tinta-2)"/></svg><span>Más alto sobre su placa: nivel más alto</span></div>
+      <div class="ley-fila"><svg width="30" height="18"><ellipse cx="15" cy="4" rx="7" ry="2.5" fill="none" stroke="var(--tinta-2)" stroke-width="1.5"/><line x1="15" y1="6" x2="15" y2="12" stroke="var(--tinta-3)" stroke-dasharray="2 2"/><circle cx="15" cy="14" r="3.5" fill="var(--tinta-2)"/></svg><span>Anillo hueco: hacia dónde va el factor si nada cambia</span></div>
+      <div class="ley-fila"><svg width="30" height="14"><polygon points="15,1 21,7 15,13 9,7" fill="var(--e)"/></svg><span>Rombo: contexto que el medio no decide</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><line x1="1" y1="6" x2="29" y2="6" stroke="var(--tinta-2)" stroke-width="1.5"/></svg><span>Trazo continuo: impulsa</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><line x1="1" y1="6" x2="29" y2="6" stroke="var(--tinta-2)" stroke-width="1.5" stroke-dasharray="4 3"/></svg><span>Discontinuo: frena o limita</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><circle cx="7" cy="6" r="3" fill="var(--o)"/><circle cx="17" cy="6" r="3" fill="var(--o)"/><circle cx="26" cy="6" r="2" fill="var(--abajo)" opacity=".8"/></svg><span>Partículas de color: empuja hacia arriba ahora; grises: hacia abajo</span></div>
+      <div class="ley-sep"></div>
+      <span>Toca un nodo para aislar sus relaciones directas. Arrastra para girar y usa la rueda para acercar.</span>
+    </div>
+
+    <div class="tiempo" id="tiempo">
+      <button class="btn primario" id="btnPlay">Iniciar</button>
+      <button class="btn" id="btnPaso" title="Avanzar un mes">+1 mes</button>
+      <div class="vel" role="group" aria-label="Velocidad" id="vel">
+        <button data-v="0" aria-pressed="false">1×</button><button data-v="1" aria-pressed="true">2×</button><button data-v="2" aria-pressed="false">5×</button>
+      </div>
+      <div class="reloj"><span class="reloj-txt" id="relojTxt"></span><div class="reloj-barra"><i id="relojBarra"></i></div></div>
+      <button class="btn" id="btnReinicio" title="Vuelve al mes 0 con tus controles actuales; la corrida anterior queda como sombra">Volver al mes 0</button>
+      <div class="choques" id="choques">
+        <span class="rotulo">Choques</span>
+        <button class="btn" data-choque="demanda">Demanda judicial</button>
+        <button class="btn" data-choque="cooperacion">Fin de convocatoria</button>
+        <button class="btn" data-choque="conflicto">Recrudece el conflicto</button>
+        <span id="choquesActivos" class="choques"></span>
+      </div>
+    </div>
+    <div class="cierre" id="cierre" hidden></div>
+  </main>
+
+  <aside class="panel der" id="panelDer" aria-label="Estado del medio">
+    <div class="panel-cab"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 10l3-4 2.5 2L11 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Lo que le pasa al medio</div>
+    <details class="seccion con-tinte" id="secEstado">
+      <summary class="sin-num"><span class="sec-tit">Estado del medio</span><span class="sec-insignia" id="insEstado"></span><span class="sec-sub">Cómo está hoy y hacia dónde va</span><span class="sec-mini" id="miniEstado"></span></summary>
+      <div class="seccion-cuerpo">
+        <div class="ind-principal" id="indPrincipal"></div>
+        <div class="clave-spark" aria-hidden="true">
+          <span><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--tinta-2)" stroke-width="2"/></svg>meses simulados</span>
+          <span><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--tinta-2)" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/></svg>hacia dónde va</span>
+          <span><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--tinta-3)" stroke-width="1.5" stroke-dasharray="2 3"/></svg>corrida anterior</span>
+          <span><b style="font-family:var(--f-dato);font-weight:500">+6</b>cambio desde el mes 0</span>
+        </div>
+        <div class="inds" id="inds"></div>
+        <p class="nota-modelo">Modelo didáctico: los números orientan el razonamiento; no miden a ningún medio real. <button type="button" class="ir-a" data-abrir-acerca>Qué es y qué no es</button></p>
+      </div>
+    </details>
+    <details class="seccion con-tinte" id="secInsp">
+      <summary class="sin-num"><span class="sec-tit">Factor seleccionado</span><span class="sec-insignia" id="insInsp"></span><span class="sec-sub" id="subInsp">Toca un nodo de la red para cambiarlo</span></summary>
+      <div class="seccion-cuerpo"><div class="insp" id="insp"></div></div>
+    </details>
+    <details class="seccion" id="secLectura">
+      <summary class="sin-num"><span class="sec-tit">Lectura del sistema</span><span class="sec-sub">Qué lo sostiene y qué lo frena, en palabras</span><span class="sec-mini" id="miniLectura"></span></summary>
+      <div class="seccion-cuerpo"><div class="lectura" id="lectura"></div></div>
+    </details>
+  </aside>
+</div>
+
+<template id="tplAcerca"><div class="acerca-texto">
+  <section>
+    <h4>De dónde viene</h4>
+    <p>Tejemedios nace de la tesis doctoral <em>Medios nativos digitales y cambio social en democracias deficitarias. Un análisis crítico del caso colombiano</em>, realizada por Kevin Alexis García (Director del LAMA). La investigación realizó más de 25 entrevistas, estudió el ecosistema de medios nativos colombiano y analizó en profundidad los medios La Silla Vacía y Colombiacheck. Como resultado propuso un modelo de interrelación sistémica para sostener que la capacidad de un medio para cubrir problemáticas sociales y comunidades subrepresentadas no depende de un factor aislado, sino de factores estructurales, organizacionales y relacionales que se influyen entre sí.</p>
+    <p>Con base en los hallazgos, el Laboratorio de Mediaciones Algorítmicas (LAMA) de la Universidad del Valle convirtió ese modelo en un artefacto interactivo para la formación en periodismo.</p>
+  </section>
+  <section>
+    <h4>Para qué sirve</h4>
+    <p>Para pensar los medios como un <strong>sistema de dependencias interrelacionadas</strong>: ver que una decisión mueve varios factores a la vez, que unos cambios tardan meses y otros años, que hay lazos que amplifican y lazos que frenan, y que el contexto fija el horizonte de lo posible.</p>
+  </section>
+  <div class="es-noes">
+    <section>
+      <h4>Qué es</h4>
+      <ul>
+        <li>Un modelo didáctico para razonar, discutir y formular preguntas.</li>
+        <li>Una simplificación deliberada de los hallazgos de la investigación.</li>
+        <li>Un punto de partida para la conversación en clase, no su conclusión.</li>
+      </ul>
+    </section>
+    <section>
+      <h4>Qué no es</h4>
+      <ul>
+        <li><strong>No es una medición.</strong> Los números de 0 a 100 orientan el razonamiento; no describen a ningún medio real.</li>
+        <li><strong>No es una predicción.</strong> No dice qué le pasará a un medio concreto.</li>
+        <li><strong>No es una receta.</strong> Ninguna configuración gana: los retos muestran tensiones, no soluciones únicas.</li>
+        <li><strong>No es la realidad.</strong> Los medios, sus territorios y sus contextos cambian de maneras que ningún modelo captura.</li>
+      </ul>
+    </section>
+  </div>
+  <section>
+    <h4>Sus limitaciones</h4>
+    <ul>
+      <li>La figura de la tesis es estática. Aquí se completó, a partir del texto, con lazos de retroalimentación y con la presión judicial y política. Esas relaciones y todos los pesos son decisiones de diseño, no hallazgos medidos.</li>
+      <li>Algunas reglas son del cálculo, no de la investigación: por ejemplo, que un factor por debajo de 50 frene lo que normalmente impulsa, o los umbrales de capacidad baja, media y alta.</li>
+      <li>No distingue entre periodistas: el riesgo específico de las mujeres periodistas solo entra a través de la seguridad.</li>
+      <li>El ecosistema es un solo factor, no muchos medios que compiten y se alían. Las audiencias y las plataformas no aparecen como factores propios.</li>
+      <li>Los puntos de partida son composiciones didácticas. Las citas provienen de entrevistas de la investigación y se presentan sin nombres.</li>
+    </ul>
+  </section>
+  <section class="advertencia">
+    <h4>La realidad es dinámica</h4>
+    <p>Lo que ves aquí es más simple que cualquier medio real. Úsalo para preguntar mejor, no para concluir: ¿qué le falta al modelo?, ¿qué pasaría en tu región?, ¿qué medio conoces que lo contradiga?</p>
+  </section>
+  <section class="creditos">
+    <h4>Créditos</h4>
+    <p>Por: Kevin Alexis García / Laboratorio de Mediaciones Algorítmicas.<br>Escuela de Comunicación Social, Universidad del Valle, Cali, Colombia. <a href="https://lama.lat" target="_blank" rel="noopener">lama.lat</a></p>
+    <p>Programado con la asistencia de Claude Opus 5.5 (Anthropic).</p>
+  </section>
+</div></template>
+<dialog class="acerca" id="acerca" aria-labelledby="acercaTit">
+  <div class="acerca-cab"><span class="ceja">Sobre este artefacto</span><h3 id="acercaTit">Qué es Tejemedios, y qué no es</h3><button class="btn" id="acercaCerrar">Cerrar</button></div>
+  <div id="acercaCuerpo"></div>
+</dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+// ===== §MOTOR-INICIO =====
+// [PEDAGOGÍA] Motor del modelo de interrelación sistémica (tesis, §5.10.5–5.10.6).
+// Cada factor tiene un nivel entre 0 y 1. Cada mes, cada factor se mueve hacia un
+// «nivel objetivo» que resulta de la suma de las influencias que recibe. La inercia
+// (τ, en meses) dice qué tan lento responde: la confianza de las comunidades tarda
+// más de un año; el flujo de financiamiento, dos meses.
+// [TÉCNICA] objetivo = σ(base + Σ términos), σ logística con pendiente K. Los pesos son
+// didácticos: ordenan magnitudes relativas según el texto, no son mediciones.
+
+const K_PENDIENTE = 1.9;
+const sigma = z => 1 / (1 + Math.exp(-K_PENDIENTE * z));
+const cen = v => v - 0.5;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+
+// Dimensiones: E estructural · O organizacional · R relacional
+const NODOS = {
+  CP: { dim: 'E', nombre: 'Contexto político', corto: 'Contexto político', exogeno: true },
+  CA: { dim: 'E', nombre: 'Conflicto armado', corto: 'Conflicto armado', exogeno: true, invertido: true },
+  SF: { dim: 'E', nombre: 'Sostenibilidad financiera', corto: 'Sostenibilidad', tau: 8, base: 0 },
+  PJ: { dim: 'E', nombre: 'Presión judicial y política', corto: 'Presión judicial', tau: 5, base: 0, invertido: true, anadido: true },
+  PI: { dim: 'O', nombre: 'Prácticas de innovación', corto: 'Innovación', tau: 6, base: 0 },
+  CR: { dim: 'O', nombre: 'Capacidades y recursos', corto: 'Capacidades', tau: 5, base: 0 },
+  AE: { dim: 'O', nombre: 'Autonomía editorial', corto: 'Autonomía', tau: 6, base: 0 },
+  FI: { dim: 'O', nombre: 'Financiamiento', corto: 'Financiamiento', tau: 2, base: 0 },
+  IN: { dim: 'O', nombre: 'Infraestructura', corto: 'Infraestructura', tau: 9, base: 0 },
+  RH: { dim: 'O', nombre: 'Recursos humanos', corto: 'Recursos humanos', tau: 6, base: 0 },
+  PP: { dim: 'O', nombre: 'Prácticas periodísticas', corto: 'Prácticas periodísticas', tau: 4, base: 0, resultado: true },
+  TC: { dim: 'R', nombre: 'Trabajo colaborativo', corto: 'Colaboración', tau: 7, base: 0 },
+  VC: { dim: 'R', nombre: 'Vínculo con comunidades', corto: 'Vínculo comunitario', tau: 14, base: 0 },
+  EM: { dim: 'R', nombre: 'Ecosistema de medios', corto: 'Ecosistema', tau: 12, base: 0 },
+};
+
+// Palancas (controles). grupo: 'contexto' (lo que el medio no elige) o 'decision'.
+const PALANCAS = {
+  cp:     { grupo: 'contexto', nombre: 'Garantías democráticas', izq: 'Hostiles', der: 'Amplias', def: 0.45 },
+  ca:     { grupo: 'contexto', nombre: 'Intensidad del conflicto armado en el territorio', izq: 'Baja', der: 'Alta', def: 0.4 },
+  conc:   { grupo: 'contexto', nombre: 'Concentración de la pauta estatal en medios tradicionales', izq: 'Repartida', der: 'Concentrada', def: 0.75 },
+  brecha: { grupo: 'contexto', nombre: 'Brecha digital del territorio', izq: 'Conectado', der: 'Desconectado', def: 0.45 },
+  dist:   { grupo: 'contexto', nombre: 'Distancia lingüística y cultural con las comunidades', izq: 'Cercana', der: 'Grande', def: 0.4 },
+  wP:     { grupo: 'fondos', nombre: 'Pauta estatal', def: 0.1 },
+  wC:     { grupo: 'fondos', nombre: 'Cooperación internacional', def: 0.45 },
+  wM:     { grupo: 'fondos', nombre: 'Membresías y lectores', def: 0.45 },
+  colab:  { grupo: 'decision', nombre: 'Tiempo invertido en alianzas con otros medios', izq: 'Solo', der: 'En red', def: 0.45 },
+  terr:   { grupo: 'decision', nombre: 'Presencia sostenida en los territorios', izq: 'Remota', der: 'En terreno', def: 0.4 },
+  prof:   { grupo: 'decision', nombre: 'Ritmo editorial', izq: 'Velocidad', der: 'Profundidad', def: 0.5 },
+  seg:    { grupo: 'decision', nombre: 'Protocolos de seguridad', izq: 'Ninguno', der: 'Robustos', def: 0.35 },
+};
+
+// Mezcla de fondos normalizada
+function mezcla(c) {
+  const s = c.wP + c.wC + c.wM;
+  if (s <= 0.0001) return { P: 1 / 3, C: 1 / 3, M: 1 / 3 };
+  return { P: c.wP / s, C: c.wC / s, M: c.wM / s };
+}
+
+// Contexto efectivo: los choques modifican el contexto por un tiempo
+function efectivo(c, choques) {
+  const e = Object.assign({}, c);
+  e.coopFactor = 1;
+  for (const ch of choques) {
+    if (ch.tipo === 'conflicto') e.ca = clamp01(e.ca + 0.3);
+    if (ch.tipo === 'cooperacion') e.coopFactor = 0.15;
+  }
+  return e;
+}
+
+// Términos de influencia de cada factor.
+// de: nodo de origen (arista del grafo) o palanca (p:clave). verbo: rótulo de la flecha.
+// fig: true si la flecha está en la figura de la tesis; false si completa el modelo desde el texto.
+// f(x, c, m) devuelve la contribución ya ponderada al objetivo.
+// [PEDAGOGÍA] Las decisiones cuestan: estar en terreno, aliarse o protegerse rinden
+// según el financiamiento disponible. Con la caja vacía, la misma decisión rinde la mitad.
+// Por eso subir todas las decisiones al máximo no es una estrategia ganadora: drena
+// la sostenibilidad y, con ella, la eficacia de todo lo demás.
+function ef(c, x, k) { return Math.min(1, c[k] * (0.5 + x.FI)); }
+
+const TERMINOS = {
+  SF: [
+    { p: 'fondos', verbo: 'Mezcla de fondos', f: (x, c, m) => 1.8 * (m.P * (1 - c.conc) * 0.95 + m.C * 0.5 * c.coopFactor + m.M * (0.35 + 0.3 * alcance(x, c)) - 0.42) },
+    { p: 'fondos', verbo: 'Diversificación de fuentes', f: (x, c, m) => 0.9 * (1 - (m.P * m.P + m.C * m.C + m.M * m.M) - 0.45) },
+    { de: 'PP', verbo: 'Sostiene', fig: false, f: (x, c, m) => 1.8 * (0.6 * m.C * c.coopFactor + 0.7 * m.M) * cen(x.PP) },
+    { p: 'costos', verbo: 'Costo de las decisiones', f: (x, c) => -2.4 * (0.22 * c.terr + 0.16 * c.seg + 0.17 * c.colab + 0.09 * c.prof - 0.25) },
+    { de: 'PJ', verbo: 'Desgasta', fig: false, f: x => -0.9 * cen(x.PJ) },
+  ],
+  FI: [
+    { de: 'SF', verbo: 'Condiciona', fig: true, f: x => 1.6 * cen(x.SF) },
+  ],
+  PJ: [
+    { de: 'AE', verbo: 'Provoca', fig: false, f: x => 1.2 * cen(x.AE) },
+    { de: 'CP', verbo: 'Contiene', fig: false, f: (x, c) => -0.9 * cen(c.cp) },
+    { de: 'TC', verbo: 'Protege', fig: false, f: x => -0.6 * cen(x.TC) },
+  ],
+  AE: [
+    { de: 'CP', verbo: 'Condiciona', fig: true, f: (x, c) => 0.8 * cen(c.cp) },
+    { p: 'fondos', verbo: 'Dependencia de la pauta', f: (x, c, m) => -0.95 * m.P - 0.3 * m.C + 0.2 },
+    { de: 'TC', verbo: 'Respalda', fig: false, f: x => 0.55 * cen(x.TC) },
+    { de: 'SF', verbo: 'Da margen', fig: false, f: x => 0.35 * cen(x.SF) },
+    { de: 'PJ', verbo: 'Amedrenta', fig: false, f: x => -0.6 * cen(x.PJ) },
+  ],
+  TC: [
+    { p: 'colab', verbo: 'Decisión de aliarse', f: (x, c) => 1.4 * cen(ef(c, x, 'colab')) },
+    { de: 'SF', verbo: 'Posibilita', fig: true, f: x => 0.5 * cen(x.SF) },
+    { de: 'EM', verbo: 'Articula', fig: false, f: x => 0.6 * cen(x.EM) },
+  ],
+  PI: [
+    { de: 'SF', verbo: 'Influye en', fig: true, f: x => 0.5 * cen(x.SF) },
+    { de: 'TC', verbo: 'Fomenta', fig: true, f: x => 1.0 * cen(x.TC) },
+  ],
+  RH: [
+    { de: 'FI', verbo: 'Estabiliza', fig: false, f: x => 1.4 * cen(x.FI) },
+    { de: 'CA', verbo: 'Amenaza', fig: false, f: (x, c) => -0.7 * (c.ca * (1 - 0.7 * ef(c, x, 'seg')) - 0.25) - 0.4 * c.ca * ef(c, x, 'terr') * (1 - ef(c, x, 'seg')) },
+  ],
+  IN: [
+    { p: 'brecha', verbo: 'Brecha digital', f: (x, c) => -1.1 * cen(c.brecha) },
+    { de: 'FI', verbo: 'Equipa', fig: false, f: x => 0.8 * cen(x.FI) },
+  ],
+  CR: [
+    { de: 'PI', verbo: 'Potencia', fig: true, f: x => 0.9 * cen(x.PI) },
+    { de: 'TC', verbo: 'Impulsa', fig: true, f: x => 0.9 * cen(x.TC) },
+  ],
+  VC: [
+    { p: 'terr', verbo: 'Presencia en terreno', f: (x, c) => 1.4 * cen(ef(c, x, 'terr')) },
+    { de: 'CR', verbo: 'Facilita', fig: true, f: x => 0.6 * cen(x.CR) },
+    { de: 'RH', verbo: 'Permite procesos largos', fig: false, f: x => 0.6 * cen(x.RH) },
+    { de: 'PP', verbo: 'Legitima', fig: false, f: x => 0.5 * cen(x.PP) },
+    { p: 'prof', verbo: 'Ritmo de profundidad', f: (x, c) => 0.3 * cen(c.prof) },
+    { de: 'CA', verbo: 'Impacta en', fig: true, f: (x, c) => -0.8 * (c.ca * (1 - 0.6 * ef(c, x, 'seg')) - 0.3) },
+    { p: 'dist', verbo: 'Barrera lingüística y cultural', f: (x, c) => -0.8 * (c.dist * (1 - 0.75 * ef(c, x, 'terr')) - 0.25) },
+  ],
+  EM: [
+    { de: 'CP', verbo: 'Moldea', fig: true, f: (x, c) => 0.6 * cen(c.cp) },
+    { de: 'AE', verbo: 'Moldea', fig: true, f: x => 0.5 * cen(x.AE) },
+    { de: 'VC', verbo: 'Fortalece', fig: true, f: x => 0.5 * cen(x.VC) },
+    { de: 'PP', verbo: 'Retroalimenta', fig: false, f: x => 0.6 * cen(x.PP) },
+  ],
+  PP: [
+    { de: 'AE', verbo: 'Influye en', fig: true, f: x => 0.6 * cen(x.AE) },
+    { de: 'FI', verbo: 'Sustenta', fig: true, f: x => 0.8 * cen(x.FI) },
+    { de: 'IN', verbo: 'Incide en', fig: true, f: x => 0.35 * cen(x.IN) },
+    { de: 'RH', verbo: 'Afecta', fig: true, f: x => 0.55 * cen(x.RH) },
+    { de: 'CR', verbo: 'Determina', fig: true, f: x => 0.7 * cen(x.CR) },
+    { de: 'VC', verbo: 'Enriquece', fig: true, f: x => 0.9 * cen(x.VC) },
+    { de: 'CA', verbo: 'Limita', fig: true, f: (x, c) => -0.7 * (c.ca * (1 - 0.6 * ef(c, x, 'seg')) - 0.3) },
+    { p: 'prof', verbo: 'Ritmo de profundidad', f: (x, c) => 0.45 * cen(c.prof) },
+  ],
+};
+
+// Alcance de audiencia: la velocidad da alcance, pero solo si hay infraestructura
+function alcance(x, c) { return x.IN * (0.35 + 0.65 * (1 - c.prof)); }
+
+const ORDEN = ['SF', 'FI', 'PJ', 'AE', 'TC', 'PI', 'RH', 'IN', 'CR', 'VC', 'EM', 'PP'];
+
+// Evalúa los términos de un nodo sobre el estado actual
+function terminos(id, x, c) {
+  const m = mezcla(c);
+  return TERMINOS[id].map(t => ({ ...t, v: t.f(x, c, m) }));
+}
+function objetivo(id, x, c) {
+  let z = NODOS[id].base;
+  for (const t of terminos(id, x, c)) z += t.v;
+  return sigma(z);
+}
+
+// Un mes de simulación. Actualización síncrona: todos leen el estado del mes anterior.
+function paso(x, cBase, choques) {
+  const c = efectivo(cBase, choques);
+  const n = Object.assign({}, x);
+  n.CP = c.cp; n.CA = c.ca;
+  for (const id of ORDEN) {
+    const T = objetivo(id, x, c);
+    n[id] = clamp01(x[id] + (T - x[id]) / NODOS[id].tau);
+  }
+  return n;
+}
+
+function estadoInicial(c) {
+  const x = {};
+  for (const id in NODOS) x[id] = 0.4;
+  x.CP = c.cp; x.CA = c.ca;
+  return x;
+}
+// Equilibrio: lo que el sistema alcanza si nada cambia (usado para arrancar escenarios)
+function equilibrio(c, meses = 400) {
+  let x = estadoInicial(c);
+  for (let i = 0; i < meses; i++) x = paso(x, c, []);
+  return x;
+}
+
+// Choque inmediato de una demanda judicial (el resto de choques duran 12 meses)
+function aplicarDemanda(x) {
+  const n = Object.assign({}, x);
+  n.PJ = clamp01(n.PJ + 0.4);
+  n.SF = clamp01(n.SF - 0.18 * (1 - 0.6 * n.TC));
+  return n;
+}
+// ===== §MOTOR-FIN =====
+
+// ===== Contenido pedagógico =====
+// [PEDAGOGÍA] Descripciones y citas tomadas de la tesis (§5.10.5–5.10.6).
+const DIMS = {
+  E: { nombre: 'Estructural', plural: 'Factores estructurales', css: 'var(--e)', hex: 0x2E93D6, hexClaro: 0x1F7FC0 },
+  O: { nombre: 'Organizacional', plural: 'Factores organizacionales', css: 'var(--o)', hex: 0xDB5496, hexClaro: 0xC2357E },
+  R: { nombre: 'Relacional', plural: 'Factores relacionales', css: 'var(--r)', hex: 0x7A9F2A, hexClaro: 0x5C8607 },
+};
+
+const INFO = {
+  CP: { desc: 'Las garantías democráticas del entorno: libertad de prensa, instituciones que protegen la crítica. En una democracia deficitaria son frágiles. Moldea el ecosistema y condiciona la autonomía editorial.', citas: [] },
+  CA: { desc: 'La persistencia del conflicto armado afecta la cobertura territorial, la seguridad de quienes informan y la vida de las comunidades. Limita las prácticas periodísticas e impacta el vínculo con las comunidades.', citas: [
+    { t: 'Golpea muy duro al Pacífico.' },
+    { t: 'Hay zonas donde el conflicto no ha cesado, siguen las comunidades sufriendo el desplazamiento.' } ] },
+  SF: { desc: 'Factor crítico transversal. No es solo dinero: es una sostenibilidad integral, con dimensiones institucionales, de vinculación social y de seguridad. La pauta estatal se concentra en los medios tradicionales.', citas: [
+    { t: 'El mayor reto que enfrentamos, al igual que todos los medios independientes digitales, es la financiación.' },
+    { t: 'El tema central es el financiamiento y la estructura de gobernanza.' } ] },
+  PJ: { desc: 'Demandas y presiones políticas que buscan amedrentar. El texto la trata como factor del ecosistema. Aquí la provoca la autonomía (incomodar al poder tiene costo) y la contienen las garantías democráticas y la red de alianzas.', citas: [
+    { t: 'Siempre hay una especie de amenaza sombra judicial. Sobre ciertos temas hay abogados que te pueden poner demandas millonarias para tratar de amedrentar a los periodistas y los medios.' } ] },
+  PI: { desc: 'Innovar desde la escasez: enfrentar la falta de recursos humanos y técnicos con prácticas colaborativas y adaptativas. La fomenta el trabajo colaborativo y la hace posible la sostenibilidad.', citas: [] },
+  CR: { desc: 'Personal y recursos técnicos. Cuando faltan, un mismo periodista tiene que hacer «de todo un poquito». Determina las prácticas periodísticas y facilita el vínculo con las comunidades.', citas: [
+    { t: 'No tienen la capacidad económica ni siquiera para comprar un dominio.' } ] },
+  AE: { desc: 'Valor fundamental de los medios nativos. Enfrenta presiones constantes y se ejerce de manera colectiva, a través de redes de apoyo: una autonomía interdependiente.', citas: [
+    { t: 'Independientemente de si sabemos que eso no le va a gustar a la audiencia.' },
+    { t: 'No apostamos nunca a financiación pública porque eso iría totalmente en contra de los intereses y de la misión.' } ] },
+  FI: { desc: 'El dinero que efectivamente entra y paga la operación mes a mes. Lo condiciona la sostenibilidad y sustenta las prácticas periodísticas.', citas: [] },
+  IN: { desc: 'Conectividad, equipos, plataformas. Las brechas digitales y las limitaciones de infraestructura son un desafío, pero también impulsan estrategias híbridas de presencia y cobertura.', citas: [] },
+  RH: { desc: 'Condiciones laborales y estabilidad del equipo. Cuando hay estabilidad, permite procesos de largo plazo con las comunidades. El miedo y la inseguridad la erosionan, sobre todo para las mujeres periodistas.', citas: [
+    { t: 'Permiten ser profundos, tomar la cosa en serio.', a: 'Testimonio recogido en la investigación, sobre las condiciones laborales' },
+    { t: 'Hay otros temas como los miedos propios, el pensar en las repercusiones que puede tener tocar ciertos temas.' } ] },
+  PP: { desc: 'El resultado del sistema: la capacidad de abordar problemáticas sociales y comunidades subrepresentadas. Emerge de múltiples influencias y, a su vez, retroalimenta el ecosistema, el vínculo con las comunidades y la sostenibilidad.', citas: [] },
+  TC: { desc: 'Alianzas y redes entre medios para superar limitaciones individuales, compartir recursos especializados y desarrollar estrategias colectivas de protección.', citas: [] },
+  VC: { desc: 'La confianza con las comunidades requiere tiempo, presencia sostenida y sensibilidad cultural. Las barreras lingüísticas y los tiempos propios de las comunidades demandan aproximaciones situadas. Es el factor más lento del modelo.', citas: [
+    { t: 'Otro desafío es ganarse la confianza de la gente en los territorios, que suele ser muy celosa y desconfiada.' },
+    { t: 'Incide para llegar a las comunidades, en mi caso, no saber el idioma wayúu.' },
+    { t: 'Me toca conversar con ellos con traductores, pero físicamente. No hay otra manera.' } ] },
+  EM: { desc: 'El conjunto de medios, redes y organizaciones de apoyo. Lo moldean el contexto político y la autonomía de los medios, lo fortalece el vínculo con las comunidades y lo retroalimentan las prácticas periodísticas.', citas: [] },
+};
+
+const ARQUETIPOS = [
+  { id: 'neutro', nombre: 'Punto de partida', linea: 'Medio mediano, contexto promedio',
+    texto: 'Un medio nativo mediano en un contexto promedio. Sirve para mover una palanca a la vez y ver qué pasa.', c: {}, citas: [] },
+  { id: 'verif', nombre: 'Verificador nacional', linea: 'Velocidad, redes, sin pauta',
+    texto: 'Redacción nacional dedicada a verificar el discurso público. Trabaja en red con otros verificadores, prioriza la velocidad y no acepta pauta estatal.',
+    c: { cp: .45, ca: .3, conc: .75, brecha: .3, dist: .4, wP: 0, wC: .6, wM: .4, colab: .7, terr: .2, prof: .35, seg: .5 },
+    citas: [{ t: 'No apostamos nunca a financiación pública porque eso iría totalmente en contra de los intereses y de la misión.' }] },
+  { id: 'invest', nombre: 'Investigación con redacción estable', linea: 'Profundidad, lectores, estabilidad',
+    texto: 'Periodismo político y de investigación con condiciones laborales estables, financiado por lectores y cooperación. Prioriza la profundidad.',
+    c: { cp: .45, ca: .35, conc: .75, brecha: .3, dist: .35, wP: 0, wC: .35, wM: .65, colab: .45, terr: .45, prof: .8, seg: .5 },
+    citas: [{ t: 'Independientemente de si sabemos que eso no le va a gustar a la audiencia.' }] },
+  { id: 'territ', nombre: 'Periodista territorial en solitario', linea: 'Una persona, conflicto, otra lengua',
+    texto: 'Una sola persona hace de todo un poquito en un territorio con conflicto activo, conectividad precaria y comunidades que hablan otra lengua.',
+    c: { cp: .4, ca: .6, conc: .8, brecha: .7, dist: .7, wP: .3, wC: .2, wM: .5, colab: .15, terr: .85, prof: .5, seg: .1 },
+    citas: [{ t: 'No tienen la capacidad económica ni siquiera para comprar un dominio.' },
+      { t: 'Incide para llegar a las comunidades, en mi caso, no saber el idioma wayúu.' }] },
+  { id: 'pacif', nombre: 'Medio del Pacífico en red', linea: 'Conflicto alto, cooperación, alianzas',
+    texto: 'Medio pequeño en una región golpeada por el conflicto, sostenido por cooperación internacional y alianzas con otros medios.',
+    c: { cp: .35, ca: .75, conc: .8, brecha: .65, dist: .55, wP: 0, wC: .7, wM: .3, colab: .85, terr: .7, prof: .7, seg: .6 },
+    citas: [{ t: 'Golpea muy duro al Pacífico.' },
+      { t: 'Otro desafío es ganarse la confianza de la gente en los territorios, que suele ser muy celosa y desconfiada.' }] },
+];
+
+// [PEDAGOGÍA] Lazos nombrados. La ruta es una secuencia de aristas existentes.
+const LAZOS = [
+  { id: 'legitimidad', nombre: 'Legitimidad', tipo: 'refuerzo', ruta: ['PP', 'VC', 'PP'],
+    texto: 'Cubrir con cuidado construye confianza en las comunidades, y la confianza abre historias que de otro modo no llegan.' },
+  { id: 'sostenibilidad', nombre: 'Sostenibilidad', tipo: 'refuerzo', ruta: ['PP', 'SF', 'FI', 'RH', 'PP'],
+    texto: 'El buen periodismo atrae lectores y cooperación; ese dinero estabiliza al equipo, y un equipo estable hace mejor periodismo.' },
+  { id: 'red', nombre: 'Red', tipo: 'refuerzo', ruta: ['PP', 'EM', 'TC', 'CR', 'PP'],
+    texto: 'Las prácticas de cada medio fortalecen el ecosistema; un ecosistema fuerte articula alianzas que comparten recursos.' },
+  { id: 'interdependiente', nombre: 'Autonomía interdependiente', tipo: 'refuerzo', ruta: ['TC', 'AE', 'EM', 'TC'],
+    texto: 'La autonomía se ejerce en colectivo: la red respalda a cada medio, y medios autónomos moldean un ecosistema que sostiene la red.' },
+  { id: 'presion', nombre: 'Presión', tipo: 'balance', ruta: ['AE', 'PJ', 'AE'],
+    texto: 'Cuanto más incomoda un medio al poder, más presión judicial y política recibe; la presión amedrenta y frena la autonomía.' },
+];
+
+// [PEDAGOGÍA] Pistas escalonadas: la primera dice dónde mirar; la segunda es concreta.
+// Se ofrecen (no se imponen) cuando pasa `pistaMes` sin lograr el reto. Lo que afirma
+// la segunda pista se verificó con pruebas/pistas.js sobre el propio motor.
+// [PEDAGOGÍA] Retos: ninguno premia una estrategia única. La factibilidad se verificó
+// con barridos del motor: R1, R2 y R4 tienen solución en cerca del 3 % de las
+// combinaciones de decisiones; R5 no la tiene dentro del medio, a propósito.
+const CONTEXTO = ['cp', 'ca', 'conc', 'brecha', 'dist'];
+const RETOS = [
+  { id: 'sin-pauta', titulo: 'Independencia sin pauta estatal', arq: 'neutro',
+    resumen: 'Buen periodismo y caja sana sin un peso del Estado.',
+    texto: 'Desde el punto de partida y sin pauta estatal, lleva las prácticas periodísticas a 55 o más con una sostenibilidad financiera de al menos 45. Mantenlo durante 12 meses.',
+    fija: { wP: 0 }, bloquea: ['wP', ...CONTEXTO],
+    metas: [{ id: 'PP', min: .55 }, { id: 'SF', min: .45 }], sostener: 12, plazo: 60, pistaMes: 24,
+    pistas: ['Toca «Prácticas periodísticas» en la red y mira qué la frena. Luego pregúntate qué gasto no necesita un medio en un contexto de conflicto moderado.',
+      'Las configuraciones que resuelven este reto comparten dos rasgos: ninguna prioriza la velocidad y ninguna depende de una sola fuente, sino que reparte entre cooperación y lectores. Casi ninguna lleva los protocolos de seguridad al máximo.'],
+    preguntas: ['¿Qué tuviste que sacrificar para sostener la caja?', '¿Qué lazo hizo el trabajo pesado: legitimidad, sostenibilidad o red? Compáralos en [[modelo|2 · Entender el sistema]].', '¿Tu configuración funcionaría con un conflicto armado alto? Pruébala en [[lab|1 · Explorar]], moviendo «c · Cambia el contexto».'] },
+  { id: 'territorio', titulo: 'Confianza en el territorio', arq: 'territ',
+    resumen: 'Una periodista sola, conflicto activo, otra lengua.',
+    texto: 'Construye un vínculo con las comunidades de 50 o más sin que los recursos humanos caigan por debajo de 30. Mantenlo durante 12 meses. El contexto no se puede mover.',
+    fija: {}, bloquea: [...CONTEXTO],
+    metas: [{ id: 'VC', min: .5 }, { id: 'RH', min: .3 }], sostener: 12, plazo: 60, pistaMes: 24,
+    pistas: ['Toca «Recursos humanos» y mira qué lo empuja hacia abajo. ¿Qué le pasa a una periodista que está mucho en terreno, en medio del conflicto, sin protección?',
+      'Las configuraciones que resuelven este reto tienen presencia en terreno de 75 o más y protocolos de seguridad de 50 o más. El vínculo tarda más de un año en responder: después de decidir, deja correr el tiempo antes de cambiar otra cosa.'],
+    preguntas: ['¿Cuántos meses tardó en moverse el vínculo después de tu decisión? ¿Qué dice eso sobre los tiempos de las comunidades?', '¿Qué papel jugaron los protocolos de seguridad?', 'El modelo no distingue si quien informa es mujer, aunque la tesis señala riesgos específicos. ¿Qué habría que agregarle?'] },
+  { id: 'demanda', titulo: 'La amenaza sombra judicial', arq: 'invest',
+    resumen: 'Una demanda millonaria llega en el mes 6.',
+    texto: 'Un medio de investigación estable recibe una demanda millonaria en el mes 6. Llega al mes 36 con autonomía editorial de 50 o más y prácticas periodísticas de 55 o más.',
+    fija: {}, bloquea: [...CONTEXTO], eventos: [{ mes: 6, choque: 'demanda' }],
+    metas: [{ id: 'AE', min: .5 }, { id: 'PP', min: .55 }], alMes: 36, plazo: 36, pistaMes: 12,
+    pistas: ['Resalta el [[lazo:interdependiente|lazo de autonomía interdependiente]] y mira qué factor contiene la presión judicial.',
+      'La red de alianzas contiene la presión y respalda la autonomía. Sube el trabajo colaborativo y observa qué le pasa a la sostenibilidad: esa protección tiene un costo.'],
+    preguntas: ['¿Qué hizo la red de alianzas frente a la demanda? Resalta el [[lazo:interdependiente|lazo de autonomía interdependiente]].', '¿Qué pagaste por esa protección?', 'En el modelo, más autonomía provoca más presión. ¿Cómo se ve ese lazo de balance en la vida de una redacción?'] },
+  { id: 'pauta', titulo: 'El precio de la pauta', arq: 'neutro',
+    resumen: 'La pauta está disponible y el medio vive de ella.',
+    texto: 'Aquí la pauta estatal está repartida y el medio depende de ella. Recupera una autonomía editorial de 50 o más sin que la sostenibilidad baje de 50. Mantenlo durante 12 meses.',
+    ctx: { conc: .3, cp: .4 }, fija: {}, inicio: { wP: .7, wC: .15, wM: .15 }, bloquea: [...CONTEXTO],
+    metas: [{ id: 'AE', min: .5 }, { id: 'SF', min: .5 }], sostener: 12, plazo: 60, pistaMes: 24,
+    pistas: ['Toca «Autonomía editorial» y mira qué la está bajando. Después toca «Sostenibilidad financiera»: ¿de qué depende?',
+      'Las configuraciones que resuelven este reto dejan la pauta en una quinta parte de los ingresos o menos, casi siempre reparten el resto entre cooperación y lectores y, en su gran mayoría, se apoyan en alianzas de 50 o más, que respaldan la autonomía.'],
+    preguntas: ['¿Qué mezcla de fondos encontraste? ¿Por qué diversificar ayuda en este modelo?', '¿El modelo explica por qué la pauta erosiona la autonomía, o solo muestra que ocurre?', '¿Qué otras fuentes de financiamiento conoces que el modelo no contempla?'] },
+  { id: 'solo', titulo: 'Lo que un medio no resuelve solo', arq: 'neutro',
+    resumen: 'Conflicto intenso y garantías débiles. Puede no tener solución.',
+    texto: 'Con conflicto intenso y garantías democráticas débiles, lleva las prácticas periodísticas a 55 o más durante 6 meses. Este reto puede no tener solución con las decisiones del medio. Si lo compruebas, libera el contexto y busca qué tendría que cambiar afuera.',
+    ctx: { ca: .8, cp: .3, brecha: .6, dist: .5 }, fija: {}, bloquea: [...CONTEXTO], liberable: true,
+    metas: [{ id: 'PP', min: .55 }], sostener: 6, plazo: 60, pistaMes: 24,
+    pistas: ['Lleva cada decisión a su extremo, una por una, y anota cuánto cambian las prácticas periodísticas. ¿Alguna alcanza?',
+      'Libera el contexto y mueve un solo factor: primero las garantías democráticas, luego el conflicto. Compara ese cambio con todo lo que lograste con las decisiones del medio.'],
+    preguntas: ['¿Hasta dónde llegaste solo con las decisiones del medio?', '¿Qué factor de contexto tuviste que mover? ¿Quién puede moverlo en la realidad?', 'La tesis dice que los factores estructurales fijan el horizonte de posibilidades. ¿Te convence cómo lo muestra el simulador?'] },
+];
+
+
+// ===== Estado de la aplicación =====
+const HORIZONTE = 60;
+const PRINCIPALES = ['VC', 'SF', 'AE', 'TC'];
+const S = {
+  c: {}, x: {}, x0: null, mes: 0, hist: {}, fantasma: null, eventos: [], choques: [],
+  corriendo: false, vel: 1, sel: 'PP', foco: false, lazo: null, palanca: null, soloFig: false,
+  capas: true, capasTocadas: false, niveles: false,
+  arq: 'neutro', reto: null, rp: null, proy: null, flujos: {},
+};
+// Tema: oscuro (diseño original) o claro (identidad LAMA). Preferencia guardada > sistema.
+let TEMA = (() => {
+  try { const t = localStorage.getItem('tejemedios.tema'); if (t === 'claro' || t === 'oscuro') return t; } catch (e) { /* sin almacenamiento */ }
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro';
+})();
+document.documentElement.dataset.tema = TEMA;
+// Recorrido guiado (ver «Recorrido guiado» más abajo)
+const TOUR = { activo: false, i: 0, pasos: [], copia: null, turno: 0 };
+const pct = v => Math.round(v * 100);
+const $ = id => document.getElementById(id);
+const defaults = () => { const c = {}; for (const k in PALANCAS) c[k] = PALANCAS[k].def; return c; };
+
+// Aristas del grafo (solo las que salen de un factor, no de una palanca)
+const ARISTAS = [];
+for (const id in TERMINOS) TERMINOS[id].forEach((t, i) => {
+  if (t.de) ARISTAS.push({ de: t.de, a: id, verbo: t.verbo, fig: t.fig, idx: i, clave: t.de + '>' + id });
+});
+// Signo estructural de cada arista por diferencias finitas (impulsa o frena)
+(function signos() {
+  const c = efectivo(defaults(), []); const x = equilibrio(defaults(), 100);
+  const m = mezcla(c);
+  for (const e of ARISTAS) {
+    const t = TERMINOS[e.a][e.idx];
+    const alto = Object.assign({}, x), bajo = Object.assign({}, x);
+    const cA = Object.assign({}, c), cB = Object.assign({}, c);
+    if (e.de === 'CP') { cA.cp = .7; cB.cp = .3; } else if (e.de === 'CA') { cA.ca = .7; cB.ca = .3; }
+    else { alto[e.de] = .7; bajo[e.de] = .3; }
+    e.signo = Math.sign(t.f(alto, cA, m) - t.f(bajo, cB, m)) || 1;
+  }
+})();
+// [PEDAGOGÍA] Qué factores mueve cada control, y en qué sentido, medido sobre el
+// propio motor (subir el control de 15 a 85). Así el panel nunca promete un efecto
+// que el modelo no tiene.
+const AFECTA = {};
+(function afecta() {
+  const c0 = defaults(); const x = equilibrio(c0, 150);
+  for (const k in PALANCAS) {
+    const cA = efectivo(Object.assign({}, c0, { [k]: .85 }), []), cB = efectivo(Object.assign({}, c0, { [k]: .15 }), []);
+    const lista = [];
+    for (const id of ORDEN) { const d = objetivo(id, x, cA) - objetivo(id, x, cB); if (Math.abs(d) > 0.015) lista.push({ id, d }); }
+    lista.sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
+    if (k === 'cp') lista.unshift({ id: 'CP', d: 1 });
+    if (k === 'ca') lista.unshift({ id: 'CA', d: 1 });
+    AFECTA[k] = lista;
+  }
+})();
+
+function refrescarFlujos() {
+  const c = efectivo(S.c, S.choques); const m = mezcla(c);
+  for (const e of ARISTAS) S.flujos[e.clave] = TERMINOS[e.a][e.idx].f(S.x, c, m);
+}
+// Proyección: hacia dónde va cada factor si nada cambia, y en cuántos meses llega
+function proyectar() {
+  let x = Object.assign({}, S.x); const tray = [x];
+  for (let i = 0; i < 240; i++) { x = paso(x, S.c, []); tray.push(x); }
+  const fin = tray[tray.length - 1]; const meses = {};
+  for (const id in NODOS) {
+    let ult = 0;
+    for (let t = 0; t < tray.length; t++) if (Math.abs(tray[t][id] - fin[id]) >= 0.03) ult = t + 1;
+    meses[id] = ult;
+  }
+  S.proy = { fin, meses };
+}
+
+// ===== Simulación =====
+function iniciarHist() { S.hist = {}; for (const id in NODOS) S.hist[id] = [S.x[id]]; S.eventos = []; }
+function cargarArquetipo(id) {
+  const a = ARQUETIPOS.find(q => q.id === id);
+  S.arq = id;
+  S.c = Object.assign(defaults(), a.c);
+  aplicarRetoAControles();
+  S.x = equilibrio(S.c); S.x0 = Object.assign({}, S.x);
+  S.mes = 0; S.choques = []; S.fantasma = null;
+  iniciarHist(); refrescarFlujos(); proyectar();
+  pintarArquetipos(); pintarControles(); actualizarTodo();
+}
+function aplicarRetoAControles() {
+  const r = S.reto; if (!r) return;
+  if (r.ctx) Object.assign(S.c, r.ctx);
+  if (r.inicio) Object.assign(S.c, r.inicio);
+  Object.assign(S.c, r.fija);
+}
+function volverAlMesCero() {
+  if (S.mes > 0) S.fantasma = JSON.parse(JSON.stringify(S.hist));
+  S.x = Object.assign({}, S.x0); S.mes = 0; S.choques = [];
+  if (S.reto) S.rp = { racha: 0, hecho: false, liberado: S.rp && S.rp.liberado, pistas: S.rp ? S.rp.pistas : 0 };
+  iniciarHist(); refrescarFlujos(); proyectar(); ocultarCierre(); actualizarTodo();
+}
+function lanzarChoque(tipo) {
+  if (tipo === 'demanda') S.x = aplicarDemanda(S.x);
+  else { S.choques = S.choques.filter(ch => ch.tipo !== tipo); S.choques.push({ tipo, restante: 12 }); }
+  S.eventos.push({ mes: S.mes, tipo });
+  refrescarFlujos(); proyectar(); actualizarTodo();
+}
+function avanzarMes() {
+  if (S.mes >= HORIZONTE) {
+    // Nuevo tramo: la corrida anterior queda como sombra
+    S.fantasma = JSON.parse(JSON.stringify(S.hist)); S.x0 = Object.assign({}, S.x); S.mes = 0; iniciarHist();
+  }
+  if (S.reto && S.reto.eventos) for (const ev of S.reto.eventos) if (ev.mes === S.mes + 1) lanzarChoque(ev.choque);
+  S.x = paso(S.x, S.c, S.choques);
+  S.choques.forEach(ch => ch.restante--); S.choques = S.choques.filter(ch => ch.restante > 0);
+  S.mes++;
+  for (const id in NODOS) S.hist[id].push(S.x[id]);
+  refrescarFlujos(); proyectar();
+  if (S.reto && !TOUR.activo) evaluarReto();
+  if (S.mes >= HORIZONTE && S.corriendo) pausar();
+  actualizarTodo();
+}
+function jugar() { S.corriendo = true; $('btnPlay').textContent = 'Pausar'; apagarAviso(); if (!TOUR.activo) abrirEstado(); }
+function pausar() {
+  // [PEDAGOGÍA] Tras correr el tiempo por primera vez, se abre la lectura interpretativa.
+  if (S.corriendo && S.mes >= 6 && !S.lecturaOfrecida && !TOUR.activo) { S.lecturaOfrecida = true; $('secLectura').open = true; }
+  S.corriendo = false; $('btnPlay').textContent = S.mes === 0 ? 'Iniciar' : (S.mes >= HORIZONTE ? 'Seguir 5 años' : 'Continuar'); }
+
+// ===== Retos =====
+function iniciarReto(id) {
+  S.reto = RETOS.find(r => r.id === id);
+  S.rp = { racha: 0, hecho: false, liberado: false, pistas: 0 };
+  S.foco = false; S.lazo = null; S.palanca = null; pintarFocoChip(); encuadreGeneral();
+  pausar(); cambiarModo('lab');
+  cargarArquetipo(S.reto.arq); pausar();
+  abrirEstado();
+  if (!tourVisto()) setTimeout(abrirTour, 450);
+}
+function salirReto() { S.reto = null; S.rp = null; ocultarCierre(); cargarArquetipo(S.arq); pausar(); }
+// [PEDAGOGÍA] Despliegue progresivo: el tablero arranca plegado y se abre a medida que
+// el estudiante avanza. Elegir un punto de partida muestra el estado del medio y señala
+// el paso 2; correr el tiempo por primera vez también abre el estado.
+function abrirEstado() {
+  $('secEstado').open = true;
+  if ($('app').classList.contains('sin-der') && !window.matchMedia('(max-width: 1080px)').matches) alternarPanel('der', true);
+}
+function trasElegirPartida() {
+  abrirEstado();
+  if (!$('secDecide').open) $('secDecide').querySelector('.sec-num').classList.add('siguiente');
+}
+function seguirExplorando() { S.reto = null; S.rp = null; ocultarCierre(); pintarArquetipos(); pintarControles(); actualizarTodo(); pausar(); }
+function cumpleMeta(m) { const v = S.x[m.id]; return (m.min == null || v >= m.min) && (m.max == null || v <= m.max); }
+function evaluarReto() {
+  const r = S.reto, p = S.rp; if (p.hecho) return;
+  const ok = r.metas.every(cumpleMeta);
+  if (r.alMes) {
+    if (S.mes >= r.alMes) { p.hecho = true; p.logrado = ok; pausar(); mostrarCierre(); }
+  } else {
+    p.racha = ok ? p.racha + 1 : 0;
+    if (p.racha >= r.sostener) { p.hecho = true; p.logrado = true; pausar(); mostrarCierre(); }
+    else if (S.mes >= r.plazo) { p.hecho = true; p.logrado = false; pausar(); mostrarCierre(); }
+  }
+}
+function liberarContexto() { S.rp.liberado = true; pintarControles(); pintarRetoActivo(); }
+function bloqueado(k) { return !!(S.reto && S.reto.bloquea.includes(k) && !(S.rp && S.rp.liberado && CONTEXTO.includes(k))); }
+
+// ===== Lectura del sistema =====
+function nombreTermino(t, idDestino) {
+  if (t.de) {
+    // [PEDAGOGÍA] Un factor que frena y hoy suma (o que impulsa y hoy resta) está en nivel bajo
+    const e = ARISTAS.find(q => q.de === t.de && q.a === idDestino);
+    const bajo = e && ((e.signo < 0 && t.v > 0) || (e.signo > 0 && t.v < 0));
+    return NODOS[t.de].nombre.toLowerCase() + (bajo ? ' (en nivel bajo)' : '');
+  }
+  const n = { fondos: 'la mezcla de fondos', costos: 'el costo de las decisiones', colab: 'la decisión de aliarse', terr: 'la presencia en terreno', prof: 'el ritmo de profundidad', brecha: 'la brecha digital', dist: 'la distancia lingüística y cultural' };
+  if (t.verbo === 'Dependencia de la pauta') return 'la dependencia de la pauta';
+  if (t.verbo === 'Diversificación de fuentes') return 'la diversificación de fuentes';
+  return n[t.p] || t.verbo.toLowerCase();
+}
+function listaY(arr) { return arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1]; }
+function sentidoLazo(l) {
+  // [PEDAGOGÍA] Un lazo «gira hacia arriba» si el empuje neto de sus aristas es positivo.
+  const c = efectivo(S.c, S.choques); const m = mezcla(c); let s = 0;
+  for (let i = 0; i < l.ruta.length - 1; i++) {
+    const e = ARISTAS.find(q => q.de === l.ruta[i] && q.a === l.ruta[i + 1]);
+    s += TERMINOS[e.a][e.idx].f(S.x, c, m) * (l.tipo === 'balance' && e.signo < 0 ? -1 : 1);
+  }
+  return s;
+}
+function generarLectura() {
+  const c = efectivo(S.c, S.choques);
+  const ts = terminos('PP', S.x, c).filter(t => Math.abs(t.v) > 0.02);
+  const sost = ts.filter(t => t.v > 0).sort((a, b) => b.v - a.v).slice(0, 2).map(t => nombreTermino(t, 'PP'));
+  const fren = ts.filter(t => t.v < 0).sort((a, b) => a.v - b.v).slice(0, 2).map(t => nombreTermino(t, 'PP'));
+  const destino = pct(S.proy.fin.PP), ahora = pct(S.x.PP);
+  const partes = [];
+  let p1 = `Las prácticas periodísticas están en <b>${ahora}</b> de 100`;
+  p1 += Math.abs(destino - ahora) >= 2 ? ` y, si nada cambia, van hacia <b>${destino}</b>.` : ', cerca de su equilibrio.';
+  partes.push(p1);
+  if (sost.length) partes.push(`Lo que más las sostiene hoy: ${listaY(sost)}.`);
+  if (fren.length) partes.push(`Lo que más las frena: ${listaY(fren)}.`);
+  // Factor más lento
+  let lento = null;
+  for (const id in S.proy.meses) if (!NODOS[id].exogeno && (!lento || S.proy.meses[id] > S.proy.meses[lento])) lento = id;
+  if (lento && S.proy.meses[lento] > 3 && Math.abs(S.proy.fin[lento] - S.x[lento]) > 0.03) {
+    partes.push(`El que más tarda en llegar a su destino es <b>${NODOS[lento].nombre.toLowerCase()}</b>: le faltan unos ${S.proy.meses[lento]} meses.`);
+  }
+  const giros = LAZOS.filter(l => l.tipo === 'refuerzo').map(l => ({ l, s: sentidoLazo(l) })).sort((a, b) => Math.abs(b.s) - Math.abs(a.s));
+  if (giros.length && Math.abs(giros[0].s) > 0.05) {
+    partes.push(`El lazo con más fuerza ahora es el de <b>${giros[0].l.nombre.toLowerCase()}</b>, y empuja hacia ${giros[0].s > 0 ? 'arriba' : 'abajo'}.`);
+  }
+  return partes;
+}
+
+// ===== Interfaz: controles =====
+function citaHTML(q) { return `<blockquote class="cita">«${q.t}»<footer>${q.a || 'Testimonio recogido en la investigación'}</footer></blockquote>`; }
+function pintarArquetipos() {
+  const cont = $('arqs'); cont.innerHTML = '';
+  for (const a of ARQUETIPOS) {
+    const b = document.createElement('button');
+    b.className = 'arq'; b.setAttribute('aria-pressed', String(a.id === S.arq));
+    b.innerHTML = `<b>${a.nombre}</b><span>${a.linea}</span>`;
+    b.onclick = () => { pausar(); cargarArquetipo(a.id); pausar(); trasElegirPartida(); };
+    cont.appendChild(b);
+  }
+  const a = ARQUETIPOS.find(q => q.id === S.arq);
+  $('arqResumen').textContent = `Ahora: ${a.nombre}`;
+  $('fichaArq').innerHTML = `<p>${a.texto}</p>` + (a.citas[0] ? citaHTML(a.citas[0]) : '') +
+    (a.id !== 'neutro' ? '<p class="nota-arq">Arquetipo didáctico: sus valores no son mediciones de ningún medio real.</p>' : '');
+  $('secArq').hidden = !!S.reto;
+}
+function afectaHTML(k) {
+  const lista = AFECTA[k];
+  if (!lista.length) return '';
+  // [PEDAGOGÍA] Si una decisión baja la sostenibilidad es porque cuesta dinero: se dice.
+  const cuesta = a => PALANCAS[k].grupo === 'decision' && a.id === 'SF' && a.d < 0;
+  return `<div class="afecta">Al subirlo:${lista.map(a => `<button type="button" data-ir="${a.id}" title="Al subir este control, ${NODOS[a.id].nombre.toLowerCase()} ${a.d > 0 ? 'sube' : 'baja'}${cuesta(a) ? ' porque cuesta dinero' : ''}"><i style="background:${DIMS[NODOS[a.id].dim].css}"></i>${NODOS[a.id].corto}<em>${a.d > 0 ? '↑' : '↓'}${cuesta(a) ? ' cuesta' : ''}</em></button>`).join('')}</div>`;
+}
+function crearSlider(k, cont) {
+  const p = PALANCAS[k];
+  const d = document.createElement('div'); d.className = 'ctl'; d.dataset.k = k;
+  const muestra = p.grupo === 'fondos' ? `<i style="background:${COLOR_FONDOS[k]}"></i>` : '';
+  d.innerHTML = `<div class="ctl-cab"><label for="r-${k}">${muestra}${p.nombre}</label><output id="o-${k}"></output></div>
+    <input type="range" id="r-${k}" min="0" max="100" step="1">
+    ${p.izq ? `<div class="polos"><span>${p.izq}</span><span>${p.der}</span></div>` : ''}${afectaHTML(k)}`;
+  cont.appendChild(d);
+  const inp = d.querySelector('input');
+  inp.addEventListener('input', () => { if (!bloqueado(k)) { fijarPalanca(k, inp.value / 100); avisarDestino(); } });
+  // [PEDAGOGÍA] Pasar por un control aísla en la red los factores que mueve.
+  // Con teclado solo si el foco es visible: tras arrastrar con el ratón, el control
+  // conserva el foco y la red quedaba aislada aunque el cursor ya estuviera fuera.
+  d.addEventListener('pointerenter', () => ponerPalanca(k));
+  d.addEventListener('pointerleave', () => { if (!inp.matches(':focus-visible')) ponerPalanca(null); });
+  inp.addEventListener('focus', () => { if (inp.matches(':focus-visible')) ponerPalanca(k); });
+  inp.addEventListener('blur', () => ponerPalanca(null));
+  d.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => seleccionar(b.dataset.ir, true));
+}
+function ponerPalanca(k) { if (S.palanca === k || (TOUR.activo && k === null)) return; S.palanca = k; pintarFocoChip(); }
+function fijarPalanca(k, v) {
+  S.c[k] = v; const inp = $('r-' + k); if (inp) inp.value = Math.round(v * 100);
+  if (k === 'cp' || k === 'ca') { const ce = efectivo(S.c, S.choques); S.x.CP = ce.cp; S.x.CA = ce.ca; }
+  refrescarFlujos(); proyectar(); pintarValoresControles(); actualizarTodo();
+}
+// [PEDAGOGÍA] Mover un control en pausa no mueve la red: cambia su destino. Se dice.
+function avisarDestino() {
+  if (S.corriendo || TOUR.activo) return;
+  $('btnPlay').classList.add('llama'); $('avisoDestino').hidden = false;
+}
+function apagarAviso() { $('btnPlay').classList.remove('llama'); $('avisoDestino').hidden = true; }
+function construirControles() {
+  ['colab', 'terr', 'prof', 'seg'].forEach(k => crearSlider(k, $('ctlDecision')));
+  ['wP', 'wC', 'wM'].forEach(k => crearSlider(k, $('ctlFondos')));
+  CONTEXTO.forEach(k => crearSlider(k, $('ctlContexto')));
+}
+const COLOR_FONDOS = { wP: 'var(--f-pauta)', wC: 'var(--f-coop)', wM: 'var(--f-memb)' };
+let contextoFijoAntes = null;
+function pintarControles() {
+  // [PEDAGOGÍA] Si el reto fija el contexto, la sección se pliega: no invita a tocar lo que no se puede tocar.
+  const fijo = CONTEXTO.every(bloqueado);
+  if (fijo !== contextoFijoAntes) {
+    if (fijo) $('secContexto').open = false;
+    else if (contextoFijoAntes === true && S.reto) $('secContexto').open = true;
+    contextoFijoAntes = fijo;
+  }
+  $('subContexto').textContent = fijo ? 'Fijo en este reto: puedes desplegarlo para ver sus valores' : 'Lo que el medio no decide: el entorno en el que trabaja';
+  for (const k in PALANCAS) {
+    const inp = $('r-' + k); if (!inp) continue;
+    inp.value = Math.round(S.c[k] * 100);
+    inp.disabled = bloqueado(k);
+    inp.closest('.ctl').classList.toggle('bloqueado', bloqueado(k));
+  }
+  pintarValoresControles();
+}
+function pintarValoresControles() {
+  const m = mezcla(S.c);
+  for (const k in PALANCAS) {
+    const inp = $('r-' + k); if (!inp) continue;
+    inp.style.setProperty('--v', inp.value + '%');
+    $('o-' + k).textContent = PALANCAS[k].grupo === 'fondos' ? `${Math.round(m[k.slice(1)] * 100)} %` : inp.value;
+  }
+  $('mezclaBarra').innerHTML = ['wP', 'wC', 'wM'].map(k => `<i style="flex-basis:${m[k.slice(1)] * 100}%;background:${COLOR_FONDOS[k]}"></i>`).join('');
+  $('mezclaLey').innerHTML = ['wP', 'wC', 'wM'].map(k => `<span><i style="background:${COLOR_FONDOS[k]}"></i>${PALANCAS[k].nombre.split(' ')[0]} ${Math.round(m[k.slice(1)] * 100)} %</span>`).join('');
+}
+
+// ===== Interfaz: retos =====
+function pintarListaRetos() {
+  $('listaRetos').innerHTML = '';
+  RETOS.forEach((r, i) => {
+    const b = document.createElement('button'); b.className = 'reto-item';
+    b.innerHTML = `<small>Reto ${i + 1} de ${RETOS.length}</small><b>${r.titulo}</b><span>${r.resumen}</span>`;
+    b.onclick = () => iniciarReto(r.id);
+    $('listaRetos').appendChild(b);
+  });
+}
+function etiquetaMeta(m) { return `${NODOS[m.id].nombre} ≥ ${pct(m.min)}`; }
+// [PEDAGOGÍA] Cada meta se ve como distancia al umbral, no solo como número.
+function metasHTML(r) {
+  return `<div class="metas">${r.metas.map(m => { const ok = cumpleMeta(m), v = pct(S.x[m.id]), f = pct(S.proy.fin[m.id]);
+    return `<div class="meta${ok ? ' cumple' : ''}"><div class="meta-txt"><span>${ok ? '✓ ' : ''}${NODOS[m.id].nombre}</span><b>${v}${f !== v ? ` → ${f}` : ''} / meta ${pct(m.min)}</b></div>
+      <div class="meta-pista"><i style="width:${v}%"></i><u style="left:${pct(m.min)}%"></u>${f !== v ? `<s style="left:${f}%"></s>` : ''}</div></div>`; }).join('')}</div>`;
+}
+// [PEDAGOGÍA] Andamiaje: la pista se ofrece, no se impone. Las ya abiertas siguen visibles.
+function pistasHTML(r, p) {
+  if (!r.pistas) return '';
+  const disponible = p.pistas > 0 || (!p.hecho && S.mes >= r.pistaMes);
+  if (!disponible) return '';
+  let h = '<div class="pistas">';
+  for (let i = 0; i < p.pistas; i++) h += `<p class="pista-txt"><span>Pista ${i + 1}</span>${enlazar(r.pistas[i])}</p>`;
+  if (p.pistas < r.pistas.length && !p.hecho) h += `<button class="btn-pista" data-pista>${p.pistas === 0 ? '¿Atascado? Ver una pista' : 'Otra pista, más concreta'}</button>`;
+  return h + '</div>';
+}
+function progresoHTML(r, p, prog) {
+  if (r.alMes) return `<div class="racha"><span class="racha-txt">${prog}</span><div class="racha-seg">${Array.from({ length: r.alMes }, (_, i) => `<i class="${i < S.mes ? 'si' : ''}"></i>`).join('')}</div></div>`;
+  return `<div class="racha"><span class="racha-txt">${prog}</span><div class="racha-seg">${Array.from({ length: r.sostener }, (_, i) => `<i class="${i < p.racha ? 'si' : ''}"></i>`).join('')}</div></div>`;
+}
+// [TÉCNICA] Con el tiempo corriendo, el marcador, la tarjeta del reto y el inspector se
+// redibujan cada mes (hasta 5 veces por segundo). Si un botón se reemplaza entre que el
+// estudiante aprieta y suelta, el clic se pierde. ponerHTML no reescribe lo que no cambió
+// ni la zona que contiene el botón que se está apretando: se redibuja al mes siguiente.
+let apretado = null;
+document.addEventListener('pointerdown', ev => { apretado = ev.target; }, true);
+document.addEventListener('pointerup', () => { apretado = null; }, true);
+document.addEventListener('pointercancel', () => { apretado = null; }, true);
+function ponerHTML(el, html) {
+  if (el._html === html) return false;
+  if (apretado && el.contains(apretado)) return false;
+  el.innerHTML = html; el._html = html; return true;
+}
+function pintarRetoActivo() {
+  const cont = $('retoActivo');
+  $('puntoReto').hidden = !S.reto;
+  if (!S.reto) { cont.hidden = true; $('hudReto').hidden = true; $('escena').classList.remove('con-reto'); return; }
+  cont.hidden = false;
+  const r = S.reto, p = S.rp;
+  let prog;
+  if (r.alMes) prog = S.mes < r.alMes ? `Se evalúa en el mes ${r.alMes} · faltan ${r.alMes - S.mes} meses` : 'Evaluado';
+  else prog = p.hecho ? (p.logrado ? `Sostenido ${r.sostener} meses` : 'Plazo cumplido') : `Meses seguidos cumpliendo las metas: ${p.racha} de ${r.sostener} · mes ${S.mes} de ${r.plazo}`;
+  const metas = metasHTML(r);
+  ponerHTML(cont, `<div class="reto-activo">
+    <span class="rotulo">Reto en curso</span>
+    <h3>${r.titulo}</h3><p>${r.texto}</p>
+    <p class="nota-arq">Sigue las metas en el marcador junto a la red.</p>
+    <div class="fila-botones">
+      ${r.liberable && !p.liberado ? '<button class="btn" id="btnLiberar">Liberar el contexto</button>' : ''}
+      <button class="btn btn-guia" id="btnGuia">¿Cómo se juega?</button>
+      <button class="btn" id="btnSalirReto" title="Vuelve a explorar libremente">Salir del reto</button>
+    </div></div>`);
+  $('hudReto').hidden = false; $('escena').classList.add('con-reto');
+  const hud = $('hudReto');
+  ponerHTML(hud, `<span class="rotulo">Reto en curso</span><h4>${r.titulo}</h4><div class="hud-datos"></div><div class="hud-pistas"></div>`);
+  ponerHTML(hud.querySelector('.hud-datos'), `${metas}${progresoHTML(r, p, prog)}`);
+  ponerHTML(hud.querySelector('.hud-pistas'), pistasHTML(r, p));
+  const bl = $('btnLiberar'); if (bl) bl.onclick = liberarContexto;
+  $('btnSalirReto').onclick = salirReto;
+  $('btnGuia').onclick = abrirTour;
+}
+function mostrarCierre() {
+  const r = S.reto, p = S.rp;
+  const titulo = p.logrado ? (r.alMes ? `Mes ${r.alMes}: metas alcanzadas` : `Meta sostenida durante ${r.sostener} meses`) : (r.alMes ? `Mes ${r.alMes}: así quedó el medio` : `Pasaron ${r.plazo} meses: así quedó el medio`);
+  const estado = r.metas.map(m => `${NODOS[m.id].nombre.toLowerCase()} en ${pct(S.x[m.id])}`).join(', ');
+  const ppEnMetas = r.metas.some(m => m.id === 'PP');
+  $('cierre').innerHTML = `<span class="ceja">${r.titulo} · mes ${S.mes}</span><h3>${titulo}</h3>
+    <div class="cierre-graficos">${r.metas.map(graficoMeta).join('')}</div>
+    <div class="lectura"><p>Estado final: ${estado}.</p>${r.metas.map(explicarMeta).join('')}</div>
+    <span class="rotulo">${ppEnMetas ? 'El medio en conjunto' : 'Y el medio en conjunto'}</span>
+    <div class="lectura">${generarLectura().map(t => `<p>${t}</p>`).join('')}</div>
+    <span class="rotulo">Para discutir</span><ol>${r.preguntas.map(q => `<li>${enlazar(q)}</li>`).join('')}</ol>
+    <div class="fila-botones"><button class="btn primario" id="cierreSeguir">Seguir explorando</button><button class="btn" id="cierreRepetir">Repetir desde el mes 0</button><button class="btn" id="cierreOtro">Elegir otro reto</button></div>`;
+  $('cierre').hidden = false;
+  $('cierreSeguir').onclick = seguirExplorando;
+  $('cierreRepetir').onclick = () => { volverAlMesCero(); pausar(); };
+  $('cierreOtro').onclick = () => { salirReto(); cambiarModo('retos'); };
+}
+function ocultarCierre() { $('cierre').hidden = true; }
+// [PEDAGOGÍA] El cierre explica cada meta: qué la sostuvo y qué la frenó al final.
+function explicarMeta(m) {
+  const c = efectivo(S.c, S.choques);
+  const ts = terminos(m.id, S.x, c).filter(t => Math.abs(t.v) > 0.02);
+  const sost = ts.filter(t => t.v > 0).sort((a, b) => b.v - a.v).slice(0, 2).map(t => nombreTermino(t, m.id));
+  const fren = ts.filter(t => t.v < 0).sort((a, b) => a.v - b.v).slice(0, 1).map(t => nombreTermino(t, m.id));
+  let txt = `<b>${NODOS[m.id].nombre}</b> terminó en ${pct(S.x[m.id])}.`;
+  if (sost.length) txt += ` A favor: ${listaY(sost)}.`;
+  if (fren.length) txt += ` En contra: ${fren[0]}.`;
+  return `<p>${txt}</p>`;
+}
+// Gráfico de la meta a lo largo de la corrida, con la línea del umbral
+function graficoMeta(m) {
+  const h = S.hist[m.id], W = 300, H = 92, pl = 26, pr = 4, pt = 8, pb = 16;
+  const n = Math.max(h.length - 1, 1);
+  // Rango ajustado a los datos y a la meta, para que el cambio se vea; los extremos van rotulados
+  const lo = Math.max(0, Math.min(m.min, ...h) - 0.08), hi = Math.min(1, Math.max(m.min, ...h) + 0.08);
+  const x = i => pl + i / n * (W - pl - pr), y = v => pt + (1 - (v - lo) / (hi - lo)) * (H - pt - pb);
+  const d = h.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join('');
+  const col = DIMS[NODOS[m.id].dim].css;
+  return `<figure class="graf-meta"><figcaption>${NODOS[m.id].nombre} <span>meta ${pct(m.min)}</span></figcaption>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${NODOS[m.id].nombre} de ${pct(h[0])} a ${pct(h[h.length - 1])} en ${h.length - 1} meses">
+      <text x="${pl - 4}" y="${y(hi) + 4}" font-size="10" fill="var(--tinta-3)" font-family="var(--f-dato)" text-anchor="end">${pct(hi)}</text>
+      <text x="${pl - 4}" y="${y(lo)}" font-size="10" fill="var(--tinta-3)" font-family="var(--f-dato)" text-anchor="end">${pct(lo)}</text>
+      <line x1="${pl}" x2="${W - pr}" y1="${y(m.min)}" y2="${y(m.min)}" stroke="var(--tinta-3)" stroke-dasharray="3 3"/>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>
+      <text x="${pl}" y="${H - 3}" font-size="10" fill="var(--tinta-3)" font-family="var(--f-dato)">mes 0 · ${pct(h[0])}</text>
+      <text x="${W - pr}" y="${H - 3}" font-size="10" fill="var(--tinta-3)" font-family="var(--f-dato)" text-anchor="end">mes ${h.length - 1} · ${pct(h[h.length - 1])}</text>
+    </svg></figure>`;
+}
+// [PEDAGOGÍA] Cuando un texto nombra un lugar de la interfaz, lleva hasta él.
+// Sintaxis en los textos: [[destino|texto visible]]; destino: modelo, lab o lazo:<id>.
+function enlazar(t) { return t.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '<button type="button" class="ir-a" data-ir-a="$1">$2</button>'); }
+function irA(dest) {
+  if (dest === 'lab') { if (S.reto && S.rp && S.rp.hecho) seguirExplorando(); else ocultarCierre(); cambiarModo('lab'); return; }
+  ocultarCierre();
+  cambiarModo('modelo');
+  if (dest.startsWith('lazo:')) {
+    S.lazo = dest.slice(5); S.foco = false; pintarLazos(); pintarFocoChip(); ocultarCapasAuto(); encuadrarFoco();
+  }
+}
+
+// ===== Interfaz: lazos =====
+function pintarLazos() {
+  $('lazos').innerHTML = LAZOS.map(l => {
+    const s = sentidoLazo(l);
+    const est = Math.abs(s) < 0.03 ? 'Hoy está casi quieto.' : (l.tipo === 'balance' ? (s > 0 ? 'Hoy la presión frena la autonomía.' : 'Hoy la presión está contenida.') : `Hoy empuja hacia ${s > 0 ? 'arriba' : 'abajo'}.`);
+    return `<div class="lazo" data-activo="${S.lazo === l.id}">
+      <div class="lazo-cab"><b>${l.nombre}</b><span class="lazo-tipo">${l.tipo}</span></div>
+      <p>${l.texto}</p><span class="lazo-estado">${est}</span>
+      <div><button class="btn" data-lazo="${l.id}">${S.lazo === l.id ? 'Quitar resaltado' : 'Resaltar en la red'}</button></div></div>`;
+  }).join('');
+  $('lazos').querySelectorAll('[data-lazo]').forEach(b => b.onclick = () => {
+    S.lazo = S.lazo === b.dataset.lazo ? null : b.dataset.lazo; if (S.lazo) S.foco = false;
+    pintarLazos(); pintarFocoChip(); ocultarCapasAuto();
+    if (S.lazo) encuadrarFoco(); else encuadreGeneral();
+  });
+}
+
+// ===== Interfaz: panel de estado =====
+function sparkSVG(id, grande) {
+  const W = 240, H = grande ? 52 : 30, pad = 3;
+  const y = v => (H - pad) - v * (H - 2 * pad);
+  const xs = i => i / HORIZONTE * W;
+  const camino = arr => arr.map((v, i) => (i ? 'L' : 'M') + xs(i).toFixed(1) + ' ' + y(v).toFixed(1)).join('');
+  const h = S.hist[id]; const color = DIMS[NODOS[id].dim].css;
+  let s = `<svg class="spark${grande ? ' grande' : ''}" data-id="${id}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Evolución de ${NODOS[id].nombre}">`;
+  s += `<line class="eje" x1="0" x2="${W}" y1="${y(.5)}" y2="${y(.5)}" vector-effect="non-scaling-stroke"/>`;
+  for (const ev of S.eventos) s += `<line class="evento" x1="${xs(ev.mes)}" x2="${xs(ev.mes)}" y1="0" y2="${H}" vector-effect="non-scaling-stroke"/>`;
+  if (S.fantasma && S.fantasma[id]) s += `<path class="fantasma" d="${camino(S.fantasma[id])}" vector-effect="non-scaling-stroke"/>`;
+  const ult = h.length - 1;
+  if (S.proy && ult < HORIZONTE) s += `<path class="rumbo-l" d="M${xs(ult)} ${y(h[ult])} L${W} ${y(S.proy.fin[id])}" vector-effect="non-scaling-stroke"/>`;
+  s += `<path class="traza" style="stroke:${color}" d="${camino(h)}" vector-effect="non-scaling-stroke"/></svg>`;
+  return `<div class="spark-caja">${s}<i class="spark-punto" style="left:${xs(ult) / W * 100}%;top:${y(h[ult]) / H * 100}%;background:${color}"></i></div>`;
+}
+function textoDestino(id, largo) {
+  const v = pct(S.x[id]), f = pct(S.proy.fin[id]), m = S.proy.meses[id];
+  if (Math.abs(f - v) < 2) return 'estable';
+  return `${f > v ? '↗' : '↘'} ${largo ? 'va hacia ' : 'a '}${f}${m > 1 ? (largo ? ` en ~${m} meses` : ` en ${m} meses`) : ''}`;
+}
+// [PEDAGOGÍA] Un número solo no dice si es mucho o poco: se le da una banda y se
+// muestra cuánto cambió desde que empezó la corrida.
+function banda(v) { return v < 0.35 ? 'capacidad baja' : v <= 0.6 ? 'capacidad media' : 'capacidad alta'; }
+function deltaHTML(id, largo) {
+  const ini = S.hist[id] ? S.hist[id][0] : S.x[id], d = pct(S.x[id]) - pct(ini);
+  if (S.mes === 0) return largo ? '' : '<span class="ind-delta"></span>';
+  const t = d === 0 ? 'sin cambio' : `${d > 0 ? '+' : '−'}${Math.abs(d)}`;
+  return largo ? `<span class="delta-largo">${t}${d === 0 ? '' : ' puntos'} desde el mes 0</span>` : `<span class="ind-delta" title="Cambio desde el mes 0">${d === 0 ? '±0' : t}</span>`;
+}
+function pintarIndicadores() {
+  $('indPrincipal').innerHTML = `<div class="fila"><span class="num">${pct(S.x.PP)}</span><span class="de">/ 100</span><span class="banda" title="Baja: menos de 35 · media: 35 a 60 · alta: más de 60">${banda(S.x.PP)}</span><span class="rumbo" data-destino="PP">${textoDestino('PP', true)}</span></div>
+    ${deltaHTML('PP', true)}
+    <span class="nombre">Prácticas periodísticas</span>
+    <span class="sub">Capacidad de abordar problemáticas sociales y comunidades subrepresentadas</span>
+    ${sparkSVG('PP', true)}`;
+  $('inds').innerHTML = PRINCIPALES.map(id => `<div class="ind">
+      <div class="ind-fila"><i style="background:${DIMS[NODOS[id].dim].css}"></i><span class="ind-nombre">${NODOS[id].nombre}</span><span class="ind-rumbo" data-destino="${id}">${textoDestino(id)}</span>${deltaHTML(id)}<span class="ind-val">${pct(S.x[id])}</span></div>
+      ${sparkSVG(id)}</div>`).join('');
+  document.querySelectorAll('.spark').forEach(svg => {
+    const id = svg.dataset.id; const dest = document.querySelector(`[data-destino="${id}"]`);
+    const largo = id === 'PP';
+    svg.addEventListener('pointermove', ev => {
+      const r = svg.getBoundingClientRect(); const i = Math.round((ev.clientX - r.left) / r.width * HORIZONTE);
+      const v = S.hist[id][i]; const g = S.fantasma && S.fantasma[id] ? S.fantasma[id][i] : undefined;
+      dest.textContent = v !== undefined ? `mes ${i}: ${pct(v)}${g !== undefined ? ` · antes ${pct(g)}` : ''}` : (g !== undefined ? `mes ${i}: antes ${pct(g)}` : textoDestino(id, largo));
+    });
+    svg.addEventListener('pointerleave', () => { dest.textContent = textoDestino(id, largo); });
+  });
+}
+// [PEDAGOGÍA] El empuje se nombra en palabras: los números del motor son abstractos.
+function fuerza(v) { const a = Math.abs(v); return a < 0.06 ? 'leve' : a < 0.18 ? 'moderado' : 'fuerte'; }
+function pintarInspector() {
+  const id = S.sel, n = NODOS[id], info = INFO[id], d = DIMS[n.dim];
+  const c = efectivo(S.c, S.choques);
+  let h = `<div class="insp-cab"><span class="chip-dim"><i style="background:${d.css}"></i>${d.nombre}${n.anadido ? ' · completado desde el texto' : ''}</span>
+    <h3>${n.nombre}</h3>`;
+  if (n.exogeno) h += `<span class="nivel">Nivel ${pct(S.x[id])} de 100 · lo fija el contexto${n.invertido ? ' (más alto es peor)' : ''}</span>`;
+  else h += `<span class="nivel">Nivel ${pct(S.x[id])} de 100${n.invertido ? ' (más alto es peor)' : ''} · ${textoDestino(id, true)}</span>`;
+  h += `</div><p class="desc">${info.desc}</p>`;
+  if (!n.exogeno) {
+    const ts = terminos(id, S.x, c).filter(t => Math.abs(t.v) > 0.005).sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
+    // [PEDAGOGÍA] Dos listas en palabras: lo que hoy lo sube y lo que hoy lo baja. Cada fila
+    // dice por qué; si un factor que normalmente ayuda aparece frenando, la fila lo explica.
+    const max = Math.max(...ts.map(t => Math.abs(t.v)), 0.001);
+    const fila = t => {
+      const ar = t.de && ARISTAS.find(q => q.de === t.de && q.a === id);
+      const bajo = ar && ((ar.signo > 0 && t.v < 0) || (ar.signo < 0 && t.v > 0));
+      let nombre, porque;
+      if (t.de) {
+        nombre = NODOS[t.de].nombre;
+        const nivel = pct(S.x[t.de]);
+        porque = bajo ? `normalmente ${t.verbo.toLowerCase()} este factor, pero hoy está bajo (${nivel})`
+                      : `${t.verbo.toLowerCase()} este factor (nivel ${nivel})`;
+      } else {
+        nombre = t.verbo;
+        const g = PALANCAS[t.p] && PALANCAS[t.p].grupo;
+        porque = t.p === 'fondos' ? 'tu mezcla de financiamiento' : t.p === 'costos' ? 'lo que cuestan tus decisiones'
+               : g === 'contexto' ? `contexto (${pct(S.c[t.p])})` : `tu decisión (${pct(S.c[t.p])})`;
+      }
+      const col = t.v >= 0 ? (t.de ? DIMS[NODOS[t.de].dim].css : 'var(--tinta-2)') : '';
+      return `<div class="empuje"><div class="empuje-txt"><b>${nombre}</b><span>${fuerza(t.v)}</span></div>
+        <p>${porque}</p><div class="empuje-pista"><i class="${t.v < 0 ? 'neg' : ''}" style="width:${(Math.abs(t.v) / max * 100).toFixed(0)}%${col ? `;background:${col}` : ''}"></i></div></div>`;
+    };
+    const sube = ts.filter(t => t.v > 0), baja = ts.filter(t => t.v < 0);
+    h += `<h4>Qué lo mueve ahora</h4><p class="explica">Ordenado de mayor a menor fuerza. El largo de cada barra se compara con la más fuerte.</p>
+      <div class="empujes"><span class="empuje-grupo">↑ Lo impulsa</span>${sube.length ? sube.map(fila).join('') : '<p class="vacio">Nada lo está impulsando ahora.</p>'}</div>
+      <div class="empujes"><span class="empuje-grupo">↓ Lo frena</span>${baja.length ? baja.map(fila).join('') : '<p class="vacio">Nada lo está frenando ahora.</p>'}</div>`;
+  } else {
+    h += `<p class="desc">Lo mueves en <b>«c · Cambia el contexto»</b>, en el panel de la izquierda.</p>`;
+  }
+  const sal = ARISTAS.filter(e => e.de === id);
+  if (sal.length) h += `<h4>A qué afecta</h4><div class="salidas">` + sal.map(e => `<button class="salida" data-ir="${e.a}"><i style="background:${DIMS[NODOS[e.a].dim].css}"></i>${e.verbo} → ${NODOS[e.a].corto}</button>`).join('') + '</div>';
+  if (info.citas.length) h += `<h4>Voces de la investigación</h4>` + info.citas.map(citaHTML).join('');
+  const agregadas = ARISTAS.filter(e => (e.a === id || e.de === id) && e.fig === false);
+  if (agregadas.length) h += `<p class="nota">Relaciones que completan el modelo a partir del texto (no están en la figura): ${agregadas.map(e => `${NODOS[e.de].corto} ${e.verbo.toLowerCase()} ${NODOS[e.a].corto.toLowerCase()}`).join(' · ')}.</p>`;
+  ponerHTML($('insp'), h);
+  $('insp').querySelectorAll('[data-ir]').forEach(b => b.onclick = () => seleccionar(b.dataset.ir, true));
+}
+function pintarReloj() {
+  const anio = Math.floor(S.mes / 12) + 1;
+  $('relojTxt').innerHTML = `<b>Mes ${S.mes}</b> de ${HORIZONTE} · año ${Math.min(anio, 5)}`;
+  $('relojBarra').style.width = (S.mes / HORIZONTE * 100) + '%';
+  const nombres = { cooperacion: 'Sin cooperación', conflicto: 'Conflicto recrudecido' };
+  $('choquesActivos').innerHTML = S.choques.map(ch => `<span class="chip-choque">${nombres[ch.tipo]} · ${ch.restante} m</span>`).join('');
+  document.querySelectorAll('[data-choque]').forEach(b => b.disabled = !!(S.reto && S.reto.bloquea.includes('ca') && b.dataset.choque !== 'demanda' && !(S.rp && S.rp.liberado)));
+}
+// [PEDAGOGÍA] Cada tarjeta plegada muestra su resumen: el estudiante ve el estado sin abrir nada.
+function miniBarras(items) {
+  return `<span class="mini-barras">${items.map(([n, v]) => `<span class="mini-barra"><span>${n}<em style="font-style:normal">${pct(v)}</em></span><i><b style="width:${pct(v)}%"></b></i></span>`).join('')}</span>`;
+}
+function pintarResumenes() {
+  const c = S.c;
+  const costo = (0.22 * c.terr + 0.16 * c.seg + 0.17 * c.colab + 0.09 * c.prof) / 0.64;
+  $('insDecide').textContent = `costo ${costo < 0.35 ? 'bajo' : costo <= 0.6 ? 'medio' : 'alto'}`;
+  $('insDecide').title = 'Cuánto cuestan, juntas, las cuatro decisiones';
+  $('miniDecide').innerHTML = miniBarras([['Alianzas', c.colab], ['Terreno', c.terr], ['Profundidad', c.prof], ['Seguridad', c.seg]]);
+  const dureza = ((1 - c.cp) + c.ca + c.conc + c.brecha + c.dist) / 5;
+  $('insContexto').textContent = `entorno ${dureza < 0.4 ? 'favorable' : dureza <= 0.58 ? 'mixto' : 'adverso'}`;
+  $('insContexto').title = 'Promedio de los cinco factores de contexto';
+  $('miniContexto').innerHTML = miniBarras([['Garantías', c.cp], ['Conflicto', c.ca], ['Pauta concentrada', c.conc], ['Brecha digital', c.brecha], ['Distancia cultural', c.dist]]);
+  $('insEstado').textContent = banda(S.x.PP);
+  const h = S.hist.PP || [S.x.PP], W = 120, H = 28;
+  const d = h.length > 1 ? h.map((v, i) => `${i ? 'L' : 'M'}${(i / HORIZONTE * W).toFixed(1)} ${(H - 2 - v * (H - 4)).toFixed(1)}`).join('') : '';
+  $('miniEstado').innerHTML = `<span class="mini-estado"><strong>${pct(S.x.PP)}</strong><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" stroke="var(--linea)"/>${d ? `<path d="${d}" fill="none" stroke="var(--o)" stroke-width="2" vector-effect="non-scaling-stroke"/>` : ''}</svg></span>`;
+  const n = NODOS[S.sel];
+  $('secInsp').style.setProperty('--insp-tinte', DIMS[n.dim].css);
+  $('insInsp').innerHTML = `<i class="punto-dim" style="background:${DIMS[n.dim].css}"></i>${DIMS[n.dim].nombre.toLowerCase()}`;
+  $('subInsp').textContent = `Ahora: ${n.nombre}. Toca otro nodo para cambiarlo`;
+  const primera = generarLectura()[0] || '';
+  $('miniLectura').innerHTML = `<span class="mini-lectura">${primera}</span>`;
+}
+function actualizarTodo() {
+  pintarIndicadores(); pintarInspector(); pintarReloj(); pintarRetoActivo(); pintarResumenes();
+  $('lectura').innerHTML = generarLectura().map(t => `<p>${t}</p>`).join('');
+  if (!document.querySelector('[data-vista="modelo"]').hidden) pintarLazos();
+}
+function cambiarModo(m) {
+  // Durante un reto, la vista es la del laboratorio pero la pestaña marcada es «Resolver retos»
+  const marcada = m === 'lab' && S.reto ? 'retos' : m;
+  document.querySelectorAll('.modos button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.modo === marcada)));
+  document.querySelectorAll('.vista').forEach(v => v.hidden = v.dataset.vista !== m);
+  if (m === 'modelo') pintarLazos(); else if (S.lazo) { S.lazo = null; pintarFocoChip(); }
+  if (m !== 'lab' && $('app').classList.contains('sin-izq')) alternarPanel('izq', true);
+}
+
+// ===== Foco: qué parte de la red se aísla =====
+function seleccionar(id, foco) {
+  S.sel = id; S.foco = foco; if (foco) S.lazo = null;
+  $('secInsp').open = true;
+  pintarInspector(); pintarResumenes(); pintarFocoChip(); ocultarCapasAuto();
+  if (foco) encuadrarFoco();
+  if (window.matchMedia('(max-width: 1080px)').matches && foco) $('secInsp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function quitarFoco() { S.foco = false; S.lazo = null; pintarFocoChip(); encuadreGeneral(); if (!document.querySelector('[data-vista="modelo"]').hidden) pintarLazos(); }
+function focoActual() {
+  if (S.palanca) return { nodos: new Set(AFECTA[S.palanca].map(a => a.id)), aristas: new Set(), tipo: 'palanca' };
+  if (S.lazo) {
+    const l = LAZOS.find(q => q.id === S.lazo); const aristas = new Set(), nodos = new Set(l.ruta);
+    for (let i = 0; i < l.ruta.length - 1; i++) aristas.add(l.ruta[i] + '>' + l.ruta[i + 1]);
+    return { nodos, aristas, tipo: 'lazo' };
+  }
+  if (S.foco) {
+    const nodos = new Set([S.sel]), aristas = new Set();
+    for (const e of ARISTAS) if (e.de === S.sel || e.a === S.sel) { aristas.add(e.clave); nodos.add(e.de); nodos.add(e.a); }
+    return { nodos, aristas, tipo: 'nodo' };
+  }
+  return null;
+}
+function pintarFocoChip() {
+  const f = focoActual(); const chip = $('focoChip');
+  if (!f) { chip.hidden = true; return; }
+  chip.hidden = false;
+  let t;
+  if (f.tipo === 'palanca') t = `<b>${PALANCAS[S.palanca].nombre}</b> mueve ${f.nodos.size === 1 ? '1 factor' : f.nodos.size + ' factores'}`;
+  else if (f.tipo === 'lazo') t = `Lazo de <b>${LAZOS.find(l => l.id === S.lazo).nombre.toLowerCase()}</b>`;
+  else t = `<b>${NODOS[S.sel].nombre}</b> y sus ${f.aristas.size} relaciones directas`;
+  $('focoTxt').innerHTML = t;
+  $('focoQuitar').hidden = f.tipo === 'palanca';
+}
+
+// ===== Tema =====
+function pintarBotonTema() {
+  const claro = TEMA === 'claro';
+  const sol = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="3" fill="currentColor"/><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M7 .8v1.6M7 11.6v1.6M.8 7h1.6M11.6 7h1.6M2.6 2.6l1.1 1.1M10.3 10.3l1.1 1.1M2.6 11.4l1.1-1.1M10.3 3.7l1.1-1.1"/></g></svg>';
+  const luna = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M11.8 9.2A5.3 5.3 0 0 1 4.8 2.2a5.3 5.3 0 1 0 7 7z" fill="currentColor"/></svg>';
+  $('btnTema').innerHTML = claro ? `${luna}<span class="txt-tema">Tema oscuro</span>` : `${sol}<span class="txt-tema">Tema claro</span>`;
+  $('btnTema').setAttribute('aria-pressed', String(claro));
+  $('btnTema').title = claro ? 'Cambiar al tema oscuro' : 'Cambiar al tema claro, con los colores del LAMA';
+}
+function aplicarTema(t) {
+  TEMA = t; document.documentElement.dataset.tema = t;
+  try { localStorage.setItem('tejemedios.tema', t); } catch (e) { /* sin almacenamiento */ }
+  pintarBotonTema(); aplicarTema3D();
+}
+// [TÉCNICA] La escena 3D no lee CSS: sus colores se reasignan aquí. En fondo claro
+// las partículas no pueden sumarse como luz (se volverían blancas), y el brillo propio
+// de los nodos se reduce para que no se laven sobre el crema.
+function aplicarTema3D() {
+  if (!G.escena) return;
+  const claro = TEMA === 'claro';
+  const hx = d => claro ? DIMS[d].hexClaro : DIMS[d].hex;
+  G.escena.fog.color.set(claro ? 0xFDFAF1 : 0x0A1719);
+  G.luzAmb.intensity = claro ? 0.8 : 0.55;
+  G.factorEmisivo = claro ? 0.3 : 1;
+  for (const pl of G.placas) for (const [m] of pl.mats) m.color.set(hx(pl.dim));
+  for (const id in G.nodos) {
+    const g = G.nodos[id], c = hx(NODOS[id].dim);
+    g.mat.color.set(c); g.mat.emissive.set(c);
+    [g.matT, g.matA, g.matD, g.matC].forEach(m => m.color.set(c));
+    if (g.halo) g.halo.material.color.set(c);
+  }
+  for (const a of G.aristas) { a.col.set(hx(NODOS[a.e.de].dim)); a.mat.color.copy(a.col); }
+  G.colAbajo.set(claro ? 0x6F7A62 : 0xB9C6C3);
+  G.puntos.material.blending = claro ? THREE.NormalBlending : THREE.AdditiveBlending;
+  G.puntos.material.needsUpdate = true;
+}
+
+// ===== Vista: paneles, capas, niveles, leyenda =====
+function alternarPanel(lado, mostrar) {
+  const app = $('app'); const cls = lado === 'izq' ? 'sin-izq' : 'sin-der';
+  const visible = mostrar !== undefined ? mostrar : app.classList.contains(cls);
+  app.classList.toggle(cls, !visible);
+  pintarBotonPanel(lado, visible);
+}
+function pintarBotonPanel(lado, visible) {
+  const b = $(lado === 'izq' ? 'tgIzq' : 'tgDer');
+  b.setAttribute('aria-pressed', String(visible));
+  // Ícono de panel: la franja rellena marca de qué lado está
+  const x = lado === 'izq' ? 1 : 9;
+  const ic = `<svg width="14" height="12" viewBox="0 0 14 12" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="${x}" y="1" width="4" height="10" fill="currentColor"/></svg>`;
+  const txt = `<span class="txt-largo">${visible ? 'Ocultar' : 'Mostrar'} ${lado === 'izq' ? 'controles' : 'estado'}</span>`;
+  b.innerHTML = lado === 'izq' ? ic + txt : txt + ic;
+}
+function ponerCapas(v, porUsuario) {
+  S.capas = v; if (porUsuario) S.capasTocadas = true;
+  $('tgCapas').setAttribute('aria-pressed', String(v));
+}
+// [PEDAGOGÍA] Las placas orientan al comienzo; después estorban la lectura de la red.
+function ocultarCapasAuto() { if (!S.capasTocadas && S.capas) ponerCapas(false); }
+function ponerNiveles(v) {
+  S.niveles = v; $('app').classList.toggle('sin-niveles', !v);
+  $('tgNiveles').setAttribute('aria-pressed', String(v));
+  if (G.nodos) for (const id in G.nodos) G.nodos[id].ancho = 0;
+}
+function ponerLeyenda(v) { $('leyenda').hidden = !v; $('tgLeyenda').setAttribute('aria-expanded', String(v)); }
+
+// ===== Escena 3D =====
+// [TÉCNICA] three.js r128. Placas por dimensión; la altura del nodo sobre su placa es su nivel.
+const ALTURA = { E: -3.6, O: 0, R: 3.6 };
+const POS = {
+  CP: [0.6, -3.7], CA: [-3.4, 1.2], SF: [2.7, 2.5], PJ: [3.5, -1.3],
+  PP: [0, 0], FI: [3.7, 0.9], RH: [1.6, 3.5], IN: [-1.9, 3.3], CR: [-3.7, -0.4], PI: [-1.9, -3.3], AE: [1.9, -3.3],
+  TC: [-2.6, -1.5], VC: [0.3, 3.0], EM: [2.7, -1.2],
+};
+const ESC3D = { nivelMax: 1.7, base: 0.35 };
+const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const G = {};
+function iniciar3D() {
+  const canvas = $('lienzo');
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  G.r = r;
+  const escena = new THREE.Scene(); G.escena = escena;
+  escena.fog = new THREE.Fog(0x0A1719, 20, 42);
+  const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 100); G.cam = cam;
+  cam.position.set(11.5, 6.6, 11.5);
+  const ctl = new THREE.OrbitControls(cam, canvas); G.ctl = ctl;
+  ctl.target.set(0, 0.2, 0); ctl.enableDamping = true; ctl.dampingFactor = 0.08;
+  ctl.minDistance = 7; ctl.maxDistance = 34; ctl.enablePan = false;
+  ctl.autoRotate = !reducido; ctl.autoRotateSpeed = 0.35;
+  ctl.addEventListener('start', () => { ctl.autoRotate = false; G.vuelo = null; });
+  G.camTmp = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+
+  G.luzAmb = new THREE.AmbientLight(0xffffff, 0.55); escena.add(G.luzAmb); G.factorEmisivo = 1;
+  const dl = new THREE.DirectionalLight(0xffffff, 0.75); dl.position.set(6, 12, 8); escena.add(dl);
+
+  // Placas: disco y anillos por dimensión; su opacidad se anima con S.capas
+  G.placas = []; G.capa = 1;
+  for (const dim of ['E', 'O', 'R']) {
+    const y = ALTURA[dim], col = DIMS[dim].hex, mats = [];
+    const matD = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false });
+    const disco = new THREE.Mesh(new THREE.CircleGeometry(5.6, 72), matD);
+    disco.rotation.x = -Math.PI / 2; disco.position.y = y; escena.add(disco); mats.push([matD, 0.05]);
+    [[5.6, .55], [3.9, .16], [1.9, .1]].forEach(([rad, op]) => {
+      const pts = []; for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad)); }
+      const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: op });
+      escena.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m)); mats.push([m, op]);
+    });
+    const etq = document.createElement('div'); etq.className = 'etq-placa'; etq.textContent = DIMS[dim].plural; etq.style.color = DIMS[dim].css;
+    $('etiquetas').appendChild(etq);
+    G.placas.push({ dim, etq, mats, pos: new THREE.Vector3(-5.2, y, 2.6) });
+  }
+
+  // Nodos
+  G.nodos = {}; G.golpes = [];
+  for (const id in NODOS) {
+    const n = NODOS[id], col = DIMS[n.dim].hex;
+    let geo;
+    if (n.exogeno) geo = new THREE.OctahedronGeometry(0.42, 0);
+    else if (n.resultado) geo = new THREE.IcosahedronGeometry(0.55, 1);
+    else geo = new THREE.SphereGeometry(0.34, 28, 20);
+    const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.3, roughness: 0.45, metalness: 0.05, transparent: true });
+    const malla = new THREE.Mesh(geo, mat); escena.add(malla);
+    let halo = null;
+    if (n.resultado) { halo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 1), new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: 0.25 })); escena.add(halo); }
+    const [px, pz] = POS[id]; const yb = ALTURA[n.dim];
+    const matT = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 });
+    const tallo = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(px, yb, pz), new THREE.Vector3(px, yb + 1, pz)]), matT);
+    escena.add(tallo);
+    const tope = []; for (let i = 0; i <= 32; i++) { const a = i / 32 * Math.PI * 2; tope.push(new THREE.Vector3(px + Math.cos(a) * .22, yb + .005, pz + Math.sin(a) * .22)); }
+    const matA = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.6 });
+    escena.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(tope), matA));
+    const golpe = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
+    golpe.userData.id = id; escena.add(golpe); G.golpes.push(golpe);
+    const etq = document.createElement('button');
+    etq.className = 'etq' + (n.resultado ? ' resultado' : ''); etq.type = 'button';
+    etq.innerHTML = `<i style="background:${DIMS[n.dim].css}"></i><span>${n.corto}</span><b></b>`;
+    etq.setAttribute('aria-label', `${n.nombre}: ver sus relaciones`);
+    etq.addEventListener('click', () => seleccionar(id, true));
+    $('etiquetas').appendChild(etq);
+    // [PEDAGOGÍA] Anillo hueco: el nivel al que se dirige el factor si nada cambia.
+    const matD = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0 });
+    const anillo = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.03, 8, 48), matD);
+    anillo.rotation.x = Math.PI / 2; escena.add(anillo);
+    const matC = new THREE.LineDashedMaterial({ color: col, dashSize: 0.08, gapSize: 0.08, transparent: true, opacity: 0 });
+    const camino = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(px, 0, pz), new THREE.Vector3(px, 1, pz)]), matC);
+    escena.add(camino);
+    G.nodos[id] = { malla, mat, halo, tallo, matT, matA, golpe, etq, anillo, matD, camino, matC, val: etq.querySelector('b'), nivel: S.x[id] ?? .5, alfa: 1, pos: new THREE.Vector3(), ancho: 0 };
+  }
+
+  // Aristas y partículas
+  G.aristas = [];
+  const NPART = 7; G.NPART = NPART;
+  const totalP = ARISTAS.length * NPART;
+  const geoP = new THREE.BufferGeometry();
+  geoP.setAttribute('position', new THREE.BufferAttribute(new Float32Array(totalP * 3), 3));
+  geoP.setAttribute('color', new THREE.BufferAttribute(new Float32Array(totalP * 3), 3));
+  G.puntos = new THREE.Points(geoP, new THREE.PointsMaterial({ size: 0.26, map: texturaPunto(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true }));
+  escena.add(G.puntos);
+  ARISTAS.forEach((e, k) => {
+    const col = new THREE.Color(DIMS[NODOS[e.de].dim].hex);
+    const geo = new THREE.BufferGeometry().setFromPoints(new Array(33).fill(0).map(() => new THREE.Vector3()));
+    const mat = e.signo < 0
+      ? new THREE.LineDashedMaterial({ color: col, dashSize: 0.2, gapSize: 0.16, transparent: true, opacity: .4 })
+      : new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: .4 });
+    const linea = new THREE.Line(geo, mat); escena.add(linea);
+    const verbo = document.createElement('div'); verbo.className = 'etq-verbo'; verbo.textContent = e.verbo; verbo.hidden = true;
+    $('etiquetas').appendChild(verbo);
+    G.aristas.push({ e, linea, mat, col, alfa: .3, curva: new THREE.QuadraticBezierCurve3(new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()), verbo, ancho: 0, p0: k * NPART, fase: Math.random() });
+  });
+  G.colAbajo = new THREE.Color(0xB9C6C3);
+
+  // Selección por clic (sin arrastre); clic en el vacío devuelve la red completa
+  const ray = new THREE.Raycaster(); const v2 = new THREE.Vector2(); let abajo = null;
+  canvas.addEventListener('pointerdown', ev => { abajo = [ev.clientX, ev.clientY]; ponerLeyenda(false); });
+  canvas.addEventListener('pointerup', ev => {
+    if (!abajo || Math.hypot(ev.clientX - abajo[0], ev.clientY - abajo[1]) > 6) return;
+    const rc = canvas.getBoundingClientRect();
+    v2.set((ev.clientX - rc.left) / rc.width * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
+    ray.setFromCamera(v2, cam);
+    const hit = ray.intersectObjects(G.golpes)[0];
+    if (hit) seleccionar(hit.object.userData.id, true);
+    else if (S.foco || S.lazo) quitarFoco();
+  });
+  canvas.addEventListener('pointermove', ev => {
+    const rc = canvas.getBoundingClientRect();
+    v2.set((ev.clientX - rc.left) / rc.width * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
+    ray.setFromCamera(v2, cam);
+    canvas.style.cursor = ray.intersectObjects(G.golpes).length ? 'pointer' : 'grab';
+  });
+
+  let vertical = null;
+  const ajustar = () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return;
+    r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+    // En pantallas verticales, alejar la cámara para que quepan las placas
+    const v = w / h < 0.85;
+    if (v !== vertical) { vertical = v; cam.position.setLength(v ? 23 : 17.6); }
+    G.w = w; G.h = h;
+  };
+  new ResizeObserver(ajustar).observe(canvas); ajustar();
+}
+function texturaPunto() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
+const vtmp = new THREE.Vector3(), vperp = new THREE.Vector3(), vcen = new THREE.Vector3(), ARRIBA = new THREE.Vector3(0, 1, 0);
+let tPrev = performance.now(), acum = 0, tiempoP = 0;
+const MESES_POR_SEG = [0.8, 2, 5];
+const acercar = (a, b, k) => a + (b - a) * k;
+function bucle(t) {
+  const dt = Math.min(0.1, (t - tPrev) / 1000); tPrev = t;
+  if (S.corriendo) { acum += dt * MESES_POR_SEG[S.vel]; while (acum >= 1) { acum -= 1; avanzarMes(); if (!S.corriendo) { acum = 0; break; } } }
+  tiempoP += dt * (reducido ? 0.35 : 1);
+  const foco = focoActual();
+  const k = reducido ? 1 : Math.min(1, dt * 6);
+
+  // Placas: visibles solo con «Capas» activo y sin foco
+  G.capa = acercar(G.capa, S.capas && !foco ? 1 : 0, k);
+  for (const pl of G.placas) for (const [m, op] of pl.mats) { m.opacity = op * G.capa; m.visible = G.capa > 0.01; }
+
+  // Nodos: la altura sigue al nivel; fuera del foco casi desaparecen
+  vcen.set(0, 0, 0); let nFoco = 0;
+  for (const id in G.nodos) {
+    const g = G.nodos[id], n = NODOS[id];
+    g.nivel += ((S.x[id] ?? .5) - g.nivel) * Math.min(1, dt * 5);
+    const [px, pz] = POS[id]; const yb = ALTURA[n.dim];
+    const y = yb + ESC3D.base + g.nivel * ESC3D.nivelMax;
+    g.pos.set(px, y, pz);
+    g.malla.position.copy(g.pos); g.golpe.position.copy(g.pos);
+    g.malla.scale.setScalar(0.8 + g.nivel * 0.55);
+    const dentro = !foco || foco.nodos.has(id);
+    if (foco && dentro) { vcen.add(g.pos); nFoco++; }
+    g.alfa = acercar(g.alfa, dentro ? 1 : 0.07, k);
+    g.mat.opacity = g.alfa; g.mat.emissiveIntensity = (0.15 + g.nivel * 0.75) * g.alfa * G.factorEmisivo;
+    g.matT.opacity = 0.45 * (dentro ? 1 : 0); g.matA.opacity = 0.6 * (dentro ? Math.max(0.35, G.capa) : 0);
+    const tp = g.tallo.geometry.attributes.position; tp.setY(1, y); tp.needsUpdate = true;
+    const fin = S.proy ? S.proy.fin[id] : g.nivel;
+    const yd = yb + ESC3D.base + fin * ESC3D.nivelMax;
+    const verDestino = !n.exogeno && Math.abs(fin - (S.x[id] ?? fin)) > 0.04 && dentro;
+    g.anillo.position.set(px, yd, pz); g.anillo.scale.setScalar(0.8 + fin * 0.55);
+    g.matD.opacity = verDestino ? 0.9 * g.alfa : 0; g.anillo.visible = g.matD.opacity > 0.02;
+    const cp = g.camino.geometry.attributes.position; cp.setY(0, y); cp.setY(1, yd); cp.needsUpdate = true;
+    g.camino.computeLineDistances(); g.matC.opacity = verDestino ? 0.7 * g.alfa : 0; g.camino.visible = g.anillo.visible;
+    if (g.halo) { g.halo.position.copy(g.pos); g.halo.rotation.y += dt * 0.25; g.halo.rotation.x += dt * 0.1; g.halo.scale.setScalar(0.8 + g.nivel * 0.6); g.halo.material.opacity = 0.25 * g.alfa; }
+  }
+  // Vuelo de cámara hacia la vista elegida para el foco
+  if (G.vuelo) avanzarVuelo(dt);
+
+  // Aristas y partículas
+  const posP = G.puntos.geometry.attributes.position, colP = G.puntos.geometry.attributes.color;
+  for (const a of G.aristas) {
+    const e = a.e, A = G.nodos[e.de].pos, B = G.nodos[e.a].pos;
+    const cv = a.curva; cv.v0.copy(A); cv.v2.copy(B);
+    vtmp.addVectors(A, B).multiplyScalar(0.5);
+    const largo = A.distanceTo(B);
+    vperp.subVectors(B, A).cross(ARRIBA); if (vperp.lengthSq() < 1e-4) vperp.set(1, 0, 0); vperp.normalize();
+    cv.v1.copy(vtmp).addScaledVector(ARRIBA, 0.5 + largo * 0.1).addScaledVector(vperp, 0.35 + largo * 0.05);
+    const pts = cv.getPoints(32); const lp = a.linea.geometry.attributes.position;
+    for (let i = 0; i < pts.length; i++) lp.setXYZ(i, pts[i].x, pts[i].y, pts[i].z);
+    lp.needsUpdate = true;
+    if (e.signo < 0) a.linea.computeLineDistances();
+    const v = S.flujos[e.clave] || 0, mag = Math.min(1, Math.abs(v) / 0.35);
+    const oculta = S.soloFig && !e.fig;
+    const enFoco = !foco || foco.aristas.has(e.clave);
+    const meta = oculta ? 0 : (foco ? (enFoco ? 0.9 : 0.015) : 0.22 + 0.45 * mag);
+    a.alfa = acercar(a.alfa, meta, k); a.mat.opacity = a.alfa; a.linea.visible = a.alfa > 0.01;
+    const visibles = oculta || !enFoco ? 0 : Math.max(1, Math.round(G.NPART * mag));
+    const vel = 0.08 + 0.35 * mag;
+    const col = v >= 0 ? a.col : G.colAbajo;
+    for (let i = 0; i < G.NPART; i++) {
+      const q = a.p0 + i;
+      if (i < visibles && Math.abs(v) > 0.01) {
+        const u = (a.fase + i / G.NPART + tiempoP * vel) % 1;
+        const p = cv.getPoint(u); posP.setXYZ(q, p.x, p.y, p.z);
+        const brillo = v >= 0 ? 1 : 0.55; colP.setXYZ(q, col.r * brillo, col.g * brillo, col.b * brillo);
+      } else posP.setXYZ(q, 0, -999, 0);
+    }
+    a.mostrarVerbo = !!foco && foco.aristas.has(e.clave) && !oculta;
+  }
+  posP.needsUpdate = true; colP.needsUpdate = true;
+
+  G.ctl.update();
+  G.r.render(G.escena, G.cam);
+  proyectarEtiquetas(foco);
+  requestAnimationFrame(bucle);
+}
+// ===== Encuadre automático =====
+// [TÉCNICA] Al enfocar un nodo o un lazo se prueban 72 ángulos de cámara. Para cada uno
+// se proyectan los nodos del foco, se calcula la distancia que los encuadra y se
+// penaliza que los rótulos se solapen o que dos nodos queden casi encimados (por
+// ejemplo, uno justo debajo de otro en otra placa). Gana la vista con menos choques,
+// con una leve preferencia por girar poco.
+function esfericaActual() {
+  const d = vtmp.subVectors(G.cam.position, G.ctl.target); const r = d.length();
+  return { az: Math.atan2(d.x, d.z), el: Math.asin(Math.max(-1, Math.min(1, d.y / r))), r, t: G.ctl.target.clone() };
+}
+function colocarCamTmp(t, az, el, r) {
+  const c = G.camTmp; c.fov = G.cam.fov; c.aspect = G.cam.aspect; c.updateProjectionMatrix();
+  c.position.set(t.x + r * Math.cos(el) * Math.sin(az), t.y + r * Math.sin(el), t.z + r * Math.cos(el) * Math.cos(az));
+  c.lookAt(t); c.updateMatrixWorld();
+}
+function proyectarCon(c, v) { vperp.copy(v).project(c); return [(vperp.x * .5 + .5) * G.w, (-vperp.y * .5 + .5) * G.h]; }
+function mejorVista(ids) {
+  const t = new THREE.Vector3(); ids.forEach(id => t.add(G.nodos[id].pos)); t.multiplyScalar(1 / ids.length);
+  const act = esfericaActual();
+  const margen = { x0: 30, x1: G.w - 150, y0: 90, y1: G.h - 110 };
+  let mejor = null;
+  for (let ia = 0; ia < 24; ia++) for (const el of [0.22, 0.4, 0.6]) {
+    const az = ia / 24 * Math.PI * 2;
+    // Distancia mínima que encuadra todos los nodos del foco
+    let r = 7, pts;
+    for (; r <= 30; r += 0.75) {
+      colocarCamTmp(t, az, el, r);
+      pts = ids.map(id => proyectarCon(G.camTmp, G.nodos[id].pos));
+      if (pts.every(([x, y]) => x >= margen.x0 && x <= margen.x1 && y >= margen.y0 && y <= margen.y1)) break;
+    }
+    let pena = r > 30 ? 1e6 : 0;
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      const wi = G.nodos[ids[i]].ancho || 110, wj = G.nodos[ids[j]].ancho || 110;
+      // solape de rótulos puestos a la derecha de cada nodo
+      const ox = Math.max(0, Math.min(xi + 24 + wi, xj + 24 + wj) - Math.max(xi + 24, xj + 24));
+      const oy = Math.max(0, Math.min(yi + 11, yj + 11) - Math.max(yi - 11, yj - 11));
+      pena += ox * oy;
+      const d = Math.hypot(xi - xj, yi - yj); if (d < 80) pena += (80 - d) * (80 - d) * 1.5;
+    }
+    let giro = Math.abs(((az - act.az + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    pena += giro * 120 + r * 8;
+    if (!mejor || pena < mejor.pena) mejor = { az, el, r, t: t.clone(), pena };
+  }
+  return mejor;
+}
+const suave = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+function volarA(dest) {
+  if (!G.cam) return;
+  const ini = esfericaActual();
+  let daz = dest.az - ini.az; daz = Math.atan2(Math.sin(daz), Math.cos(daz));
+  G.ctl.autoRotate = false;
+  G.vuelo = { u: 0, dur: reducido ? 0.01 : 1.4, ini, daz, dest };
+}
+function avanzarVuelo(dt) {
+  const v = G.vuelo; v.u = Math.min(1, v.u + dt / v.dur); const k = suave(v.u);
+  const az = v.ini.az + v.daz * k, el = v.ini.el + (v.dest.el - v.ini.el) * k, r = v.ini.r + (v.dest.r - v.ini.r) * k;
+  G.ctl.target.lerpVectors(v.ini.t, v.dest.t, k);
+  const t = G.ctl.target;
+  G.cam.position.set(t.x + r * Math.cos(el) * Math.sin(az), t.y + r * Math.sin(el), t.z + r * Math.cos(el) * Math.cos(az));
+  if (v.u >= 1) G.vuelo = null;
+}
+function encuadrarFoco() {
+  if (!G.nodos) return;
+  const f = focoActual();
+  if (!f || f.tipo === 'palanca') return;
+  volarA(mejorVista([...f.nodos]));
+}
+function encuadreGeneral() {
+  if (!G.nodos) return;
+  const a = esfericaActual();
+  volarA({ az: a.az, el: 0.42, r: G.w / G.h < 0.85 ? 23 : 17.6, t: new THREE.Vector3(0, 0.2, 0) });
+}
+
+function aPantalla(v) {
+  vtmp.copy(v).project(G.cam);
+  return { x: (vtmp.x * 0.5 + 0.5) * G.w, y: (-vtmp.y * 0.5 + 0.5) * G.h, detras: vtmp.z > 1 };
+}
+const solapa = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const SUBE = new THREE.Vector3(0, 0.55, 0);
+function proyectarEtiquetas(foco) {
+  const camPos = G.cam.position; const ocupados = [];
+  // [TÉCNICA] Cada rótulo prueba cuatro lados del nodo (derecha, izquierda, arriba,
+  // abajo) y se queda con el primero que no choca; conserva su lado mientras pueda
+  // para no saltar en cada cuadro. Primero el seleccionado, luego los más cercanos.
+  const orden = Object.keys(G.nodos).map(id => ({ id, d: camPos.distanceTo(G.nodos[id].pos) }))
+    .sort((a, b) => (b.id === S.sel && S.foco) - (a.id === S.sel && S.foco) || a.d - b.d);
+  const centros = {};
+  for (const { id } of orden) { const p = aPantalla(G.nodos[id].pos); centros[id] = p; if (!foco || foco.nodos.has(id)) ocupados.push({ x: p.x - 16, y: p.y - 16, w: 32, h: 32 }); }
+  for (const { id, d: dist } of orden) {
+    const g = G.nodos[id];
+    const dentro = !foco || foco.nodos.has(id);
+    const p = centros[id];
+    if (!g.ancho) g.ancho = g.etq.offsetWidth;
+    const w = g.ancho, R = NODOS[id].resultado ? 26 : 18;
+    const lados = [[R + 4, -11], [-w - R - 4, -11], [-w / 2, -R - 26], [-w / 2, R + 4]];
+    const orden4 = [g.lado || 0, 0, 1, 2, 3];
+    let x, y, libre = false;
+    for (const l of orden4) {
+      const cx = p.x + lados[l][0], cy = p.y + lados[l][1];
+      const caja = { x: cx, y: cy, w, h: 22 };
+      const cabe = cx >= 4 && cx + w <= G.w - 4 && cy >= 4;
+      if (!dentro || cabe && !ocupados.some(o => solapa(o, caja) && !(o.x === p.x - 16 && o.y === p.y - 16))) { x = cx; y = cy; g.lado = l; libre = true; break; }
+    }
+    if (!libre) {
+      // Si todo choca, al menos que quepa en pantalla
+      const l = [0, 1, 2, 3].find(k => p.x + lados[k][0] >= 4 && p.x + lados[k][0] + w <= G.w - 4) ?? 0;
+      x = p.x + lados[l][0]; y = p.y + lados[l][1]; g.lado = l;
+    }
+    g.etq.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    g.etq.style.visibility = p.detras ? 'hidden' : 'visible';
+    g.etq.style.opacity = dentro ? Math.max(0.6, Math.min(1, 1.6 - dist / 28)).toFixed(2) : '0';
+    g.etq.style.zIndex = String(1000 - Math.round(dist * 10));
+    g.etq.classList.toggle('fuera', !dentro);
+    g.etq.classList.toggle('sel', !!foco && foco.tipo === 'nodo' && S.sel === id);
+    const hoy = pct(S.x[id]), dest = S.proy ? pct(S.proy.fin[id]) : hoy;
+    const conDestino = !!foco && foco.tipo === 'palanca' && dentro && !NODOS[id].exogeno;
+    const val = conDestino && dest !== hoy ? `${hoy} → ${dest}` : String(hoy);
+    if (g.val.textContent !== val) { g.val.textContent = val; g.ancho = 0; }
+    g.etq.classList.toggle('con-valor', conDestino);
+    g.etq.title = `Nivel ${hoy} de 100${dest !== hoy ? `; va hacia ${dest}` : ''}`;
+    if (dentro && !p.detras) ocupados.push({ x, y, w, h: 22 });
+  }
+  for (const pl of G.placas) {
+    const p = aPantalla(pl.pos);
+    pl.etq.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)`;
+    pl.etq.style.visibility = p.detras || G.capa < 0.05 ? 'hidden' : 'visible';
+    pl.etq.style.opacity = G.capa.toFixed(2);
+  }
+  // Rótulos de las relaciones: se prueba el punto medio y, si choca, otros puntos de la curva
+  for (const a of G.aristas) {
+    if (!a.mostrarVerbo) { if (!a.verbo.hidden) a.verbo.hidden = true; continue; }
+    if (a.verbo.hidden) a.verbo.hidden = false;
+    if (!a.ancho) a.ancho = a.verbo.offsetWidth;
+    let elegido = null;
+    for (const u of [0.5, 0.4, 0.6, 0.3, 0.7]) {
+      const p = aPantalla(a.curva.getPoint(u));
+      const caja = { x: p.x - a.ancho / 2, y: p.y - 9, w: a.ancho, h: 18 };
+      if (!ocupados.some(o => solapa(o, caja))) { elegido = caja; break; }
+      if (!elegido) elegido = Object.assign({ choca: true }, caja);
+    }
+    if (!elegido.choca) ocupados.push(elegido);
+    a.verbo.style.opacity = elegido.choca ? '0.35' : '1';
+    a.verbo.style.transform = `translate(${elegido.x.toFixed(1)}px, ${elegido.y.toFixed(1)}px)`;
+  }
+}
+
+// ===== Recorrido guiado =====
+// [PEDAGOGÍA] En vez de un video, el recorrido anima la propia interfaz con el reto en
+// curso: ilumina cada zona, mueve un control solo, deja correr unos meses y al final
+// devuelve todo a como estaba. Así nunca queda desactualizado respecto al simulador.
+function tourVisto() { try { return localStorage.getItem('tejemedios.recorridoReto') === '1'; } catch (e) { return false; } }
+function marcarTourVisto() { try { localStorage.setItem('tejemedios.recorridoReto', '1'); } catch (e) { /* sin almacenamiento: se volverá a mostrar */ } }
+function copiarEstado() {
+  return JSON.parse(JSON.stringify({ c: S.c, x: S.x, x0: S.x0, mes: S.mes, hist: S.hist, fantasma: S.fantasma, eventos: S.eventos, choques: S.choques, rp: S.rp, sel: S.sel, foco: S.foco, lazo: S.lazo }));
+}
+function restaurarEstado(e) {
+  // Clonar: la copia debe sobrevivir intacta a varias restauraciones
+  Object.assign(S, JSON.parse(JSON.stringify(e))); S.palanca = null;
+  refrescarFlujos(); proyectar(); pintarControles(); actualizarTodo(); pintarFocoChip();
+}
+function pasosReto() {
+  // La demostración usa una decisión que no es la clave del reto, para no resolverlo
+  const k = S.reto.id === 'demanda' ? 'prof' : 'colab';
+  const nombre = PALANCAS[k].nombre.toLowerCase();
+  return [
+    { sel: '#retoActivo', titulo: 'Tu reto', texto: 'Cada reto parte de una situación y te pide llevar el medio a un estado. El contexto queda fijo: aquí solo decides como medio.' },
+    { sel: '#hudReto', titulo: 'Las metas', texto: 'La barra llena es el nivel de hoy. La marca vertical es la meta. El círculo hueco, cuando aparece, es hacia dónde va el medio si nada cambia. Las metas deben sostenerse varios meses seguidos.' },
+    { sel: `.ctl[data-k="${k}"]`, titulo: 'Decidir no es llegar', texto: `Mira: movemos «${nombre}». La red no salta al instante. Lo que cambia es hacia dónde va cada factor: en los nombres aparece «hoy → destino».`, demo: () => demoPalanca(k) },
+    { sel: '#escena', titulo: 'Hoy y destino', texto: 'El nodo lleno está donde el factor está hoy. El anillo hueco marca adonde irá, y la línea punteada, el camino que le falta. Solo se muestran los factores que esa decisión mueve directamente; el resto de la red también reacciona después.', demo: () => { S.palanca = k; pintarFocoChip(); } },
+    { sel: '#btnPlay', titulo: 'El tiempo hace el resto', texto: 'Al pulsar Iniciar corren los meses y cada factor avanza hacia su anillo. Unos llegan en dos meses; el vínculo con las comunidades tarda más de un año. Un reto se gana sosteniendo, no con un clic.', demo: () => demoMeses(8) },
+    { sel: '#secInsp', titulo: 'Si te atascas', texto: 'Toca un factor en la red: aquí verás qué lo sube y qué lo baja ahora mismo. Y si pasa un buen rato sin avances, el marcador te ofrecerá pistas.', antes: () => { S.palanca = null; pintarFocoChip(); } },
+    { sel: null, titulo: 'Tu turno', texto: 'Devolvimos todo a como estaba antes del recorrido. Mueve tus decisiones, pulsa Iniciar y observa cómo se acercan los anillos. Puedes volver a ver esta guía con «¿Cómo se juega?».' },
+  ];
+}
+function abrirTour() {
+  if (!S.reto || TOUR.activo) return;
+  pausar(); apagarAviso(); ocultarCierre(); ponerLeyenda(false);
+  TOUR.activo = true; TOUR.copia = copiarEstado(); TOUR.pasos = pasosReto(); TOUR.i = 0;
+  const raiz = document.createElement('div'); raiz.id = 'tour';
+  raiz.innerHTML = `<div class="tour-bloqueo"></div><div class="tour-luz" id="tourLuz"></div>
+    <div class="tour-tarjeta" role="dialog" aria-modal="true" aria-labelledby="tourTit" id="tourTarjeta">
+      <span class="tour-paso" id="tourPaso"></span><h3 id="tourTit"></h3><p id="tourTxt"></p>
+      <div class="tour-puntos" id="tourPuntos" aria-hidden="true"></div>
+      <div class="tour-botones"><button class="btn" id="tourAtras">Anterior</button><button class="btn primario" id="tourSig">Siguiente</button><button class="tour-saltar" id="tourSaltar">Saltar</button></div>
+    </div>`;
+  document.body.appendChild(raiz);
+  $('tourAtras').onclick = () => irPaso(TOUR.i - 1);
+  $('tourSig').onclick = () => TOUR.i >= TOUR.pasos.length - 1 ? cerrarTour() : irPaso(TOUR.i + 1);
+  $('tourSaltar').onclick = cerrarTour;
+  irPaso(0);
+  requestAnimationFrame(seguirTour);
+}
+function cerrarTour() {
+  if (!TOUR.activo) return;
+  TOUR.activo = false; TOUR.turno++;
+  const r = $('tour'); if (r) r.remove();
+  restaurarEstado(TOUR.copia); pausar(); marcarTourVisto();
+  $('btnGuia') && $('btnGuia').focus();
+}
+function irPaso(i) {
+  if (i < 0 || i >= TOUR.pasos.length) return;
+  // Si se avanza antes de que termine una demostración, se completa de golpe
+  if (TOUR.finDemo && i > TOUR.i) TOUR.finDemo();
+  TOUR.finDemo = null;
+  TOUR.i = i; TOUR.turno++;
+  const paso = TOUR.pasos[i];
+  // Volver al estado de partida antes de cada demostración, para que los pasos se puedan repetir
+  if (i <= 2) { const pal = S.palanca; restaurarEstado(TOUR.copia); S.palanca = i === 2 ? pal : null; }
+  if (paso.antes) paso.antes();
+  const el = paso.sel ? document.querySelector(paso.sel) : null;
+  if (el) {
+    const det = el.closest('details'); if (det) det.open = true;
+    if (el.closest('.izq') && $('app').classList.contains('sin-izq')) alternarPanel('izq', true);
+    if (el.closest('.der') && $('app').classList.contains('sin-der')) alternarPanel('der', true);
+    el.scrollIntoView({ block: 'nearest', behavior: reducido ? 'auto' : 'smooth' });
+  }
+  $('tourPaso').textContent = `Cómo se juega un reto · ${i + 1} de ${TOUR.pasos.length}`;
+  $('tourTit').textContent = paso.titulo; $('tourTxt').textContent = paso.texto;
+  $('tourPuntos').innerHTML = TOUR.pasos.map((_, k) => `<i class="${k === i ? 'si' : ''}"></i>`).join('');
+  $('tourAtras').disabled = i === 0;
+  $('tourSig').textContent = i === TOUR.pasos.length - 1 ? 'Empezar el reto' : 'Siguiente';
+  $('tourSig').focus({ preventScroll: true });
+  if (paso.demo) paso.demo();
+}
+// Demostración: mover una decisión poco a poco
+function demoPalanca(k) {
+  const turno = TOUR.turno, v0 = S.c[k], v1 = v0 > 0.6 ? v0 - 0.35 : v0 + 0.35;
+  S.palanca = k; pintarFocoChip();
+  TOUR.finDemo = () => fijarPalanca(k, v1);
+  const t0 = performance.now(), dur = reducido ? 1 : 1600; let ult = 0;
+  const f = t => {
+    if (!TOUR.activo || TOUR.turno !== turno) return;
+    const u = Math.min(1, (t - t0) / dur);
+    if (t - ult > 70 || u === 1) { fijarPalanca(k, v0 + (v1 - v0) * suave(u)); ult = t; }
+    if (u < 1) requestAnimationFrame(f); else TOUR.finDemo = null;
+  };
+  setTimeout(() => requestAnimationFrame(f), reducido ? 0 : 500);
+}
+// Demostración: dejar correr unos meses
+function demoMeses(n) {
+  const turno = TOUR.turno; let hechos = 0;
+  $('btnPlay').textContent = 'Pausar';
+  const id = setInterval(() => {
+    if (!TOUR.activo || TOUR.turno !== turno || hechos >= n) { clearInterval(id); if (TOUR.activo) $('btnPlay').textContent = 'Continuar'; return; }
+    avanzarMes(); hechos++;
+  }, reducido ? 60 : 420);
+}
+// La luz y la tarjeta siguen al elemento (cambia de tamaño y de lugar durante las demostraciones)
+function seguirTour() {
+  if (!TOUR.activo) return;
+  const paso = TOUR.pasos[TOUR.i], luz = $('tourLuz'), tar = $('tourTarjeta');
+  const el = paso.sel ? document.querySelector(paso.sel) : null;
+  const W = window.innerWidth, H = window.innerHeight, tw = tar.offsetWidth, th = tar.offsetHeight, m = 16;
+  if (el && !el.hidden && el.offsetParent !== null) {
+    const r = el.getBoundingClientRect(), pad = 6;
+    const R = { x: Math.max(4, r.left - pad), y: Math.max(4, r.top - pad), w: Math.min(W - 8, r.width + pad * 2), h: Math.min(H - 8, r.height + pad * 2) };
+    Object.assign(luz.style, { left: R.x + 'px', top: R.y + 'px', width: R.w + 'px', height: R.h + 'px', opacity: 1 });
+    let x, y;
+    if (W < 760) { x = m; y = R.y + R.h + th + m < H ? R.y + R.h + 10 : Math.max(m, R.y - th - 10); if (R.h > H * 0.6) y = H - th - m; }
+    else if (R.x + R.w + m + tw < W) { x = R.x + R.w + m; y = R.y; }
+    else if (R.x - m - tw > 0) { x = R.x - m - tw; y = R.y; }
+    else if (R.y + R.h + m + th < H) { x = R.x; y = R.y + R.h + m; }
+    else if (R.y - m - th > 0) { x = R.x; y = R.y - m - th; }
+    else { x = R.x + m; y = R.y + R.h - th - m; }
+    tar.style.left = Math.max(m, Math.min(W - tw - m, x)) + 'px';
+    tar.style.top = Math.max(m, Math.min(H - th - m, y)) + 'px';
+  } else {
+    Object.assign(luz.style, { left: W / 2 + 'px', top: H / 2 + 'px', width: '0px', height: '0px' });
+    tar.style.left = (W - tw) / 2 + 'px'; tar.style.top = (H - th) / 2 + 'px';
+  }
+  requestAnimationFrame(seguirTour);
+}
+
+// ===== Arranque =====
+function conectarEventos() {
+  document.querySelectorAll('.modos button').forEach(b => b.onclick = () => {
+    if (S.reto && !(S.rp && S.rp.hecho) && b.dataset.modo !== 'modelo') {
+      // Con un reto en curso, «Explorar» y «Resolver retos» llevan al reto; salir es explícito
+      cambiarModo('lab'); const c = $('retoActivo'); c.classList.remove('llamar'); void c.offsetWidth; c.classList.add('llamar');
+      return;
+    }
+    cambiarModo(b.dataset.modo);
+  });
+  $('btnPlay').onclick = () => { if (S.corriendo) pausar(); else { if (S.reto && S.rp.hecho) volverAlMesCero(); jugar(); ocultarCapasAuto(); } };
+  $('btnPaso').onclick = () => { pausar(); avanzarMes(); pausar(); };
+  $('btnReinicio').onclick = () => { pausar(); volverAlMesCero(); pausar(); };
+  document.querySelectorAll('#vel button').forEach(b => b.onclick = () => {
+    S.vel = +b.dataset.v; document.querySelectorAll('#vel button').forEach(q => q.setAttribute('aria-pressed', String(q === b)));
+  });
+  document.querySelectorAll('[data-choque]').forEach(b => b.onclick = () => lanzarChoque(b.dataset.choque));
+  $('soloFigura').onchange = ev => { S.soloFig = ev.target.checked; };
+  $('tgIzq').onclick = () => alternarPanel('izq');
+  $('tgDer').onclick = () => alternarPanel('der');
+  $('tgCapas').onclick = () => ponerCapas(!S.capas, true);
+  $('tgNiveles').onclick = () => ponerNiveles(!S.niveles);
+  $('tgLeyenda').onclick = () => ponerLeyenda($('leyenda').hidden);
+  $('leyendaCerrar').onclick = () => ponerLeyenda(false);
+  $('focoQuitar').onclick = quitarFoco;
+  // «Sobre este artefacto»: un solo texto (plantilla) en la ventana y en «Entender el sistema»
+  const tpl = $('tplAcerca');
+  $('acercaCuerpo').appendChild(tpl.content.cloneNode(true));
+  $('acercaTarjeta').appendChild(tpl.content.cloneNode(true));
+  const abrirAcerca = () => { const d = $('acerca'); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); };
+  $('btnAcerca').onclick = abrirAcerca;
+  $('acercaCerrar').onclick = () => $('acerca').close ? $('acerca').close() : $('acerca').removeAttribute('open');
+  $('acerca').addEventListener('click', ev => { if (ev.target === $('acerca')) $('acerca').close(); });
+  document.addEventListener('click', ev => { if (ev.target.closest('[data-abrir-acerca]')) abrirAcerca(); });
+  new ResizeObserver(() => $('escena').style.setProperty('--alto-tiempo', $('tiempo').offsetHeight + 'px')).observe($('tiempo'));
+  // Al abrir una sección numerada se apaga su señal de «siguiente paso»
+  document.querySelectorAll('details.seccion').forEach(d => d.addEventListener('toggle', () => {
+    if (d.open) { const n = d.querySelector('.sec-num'); if (n) n.classList.remove('siguiente'); }
+  }));
+  document.addEventListener('click', ev => { const b = ev.target.closest('[data-ir-a]'); if (b) irA(b.dataset.irA); });
+  $('hudReto').addEventListener('click', ev => {
+    if (!ev.target.closest('[data-pista]') || !S.rp) return;
+    S.rp.pistas++; pintarRetoActivo();
+  });
+  pintarBotonPanel('izq', true); pintarBotonPanel('der', true);
+  document.addEventListener('keydown', ev => {
+    if (TOUR.activo) {
+      if (ev.key === 'Escape') cerrarTour();
+      else if (ev.key === 'ArrowRight') irPaso(TOUR.i + 1);
+      else if (ev.key === 'ArrowLeft') irPaso(TOUR.i - 1);
+      return;
+    }
+    if (ev.key === 'Escape' && (S.foco || S.lazo)) quitarFoco();
+  });
+  // La leyenda se pliega sola; las placas se desvanecen después de orientar
+  // La leyenda arranca cerrada: se abre a pedido desde «Cómo leer».
+  setTimeout(ocultarCapasAuto, 14000);
+  if (window.matchMedia('(max-width: 760px)').matches) ponerLeyenda(false);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (G.nodos) for (const id in G.nodos) G.nodos[id].ancho = 0; if (G.aristas) G.aristas.forEach(a => a.ancho = 0); });
+}
+
+construirControles();
+pintarListaRetos();
+conectarEventos();
+cargarArquetipo('neutro');
+pintarBotonTema();
+$('btnTema').onclick = () => aplicarTema(TEMA === 'claro' ? 'oscuro' : 'claro');
+if (window.THREE && THREE.OrbitControls) { iniciar3D(); aplicarTema3D(); requestAnimationFrame(bucle); }
+else {
+  $('escena').insertAdjacentHTML('beforeend', '<p style="position:absolute;inset:40% 20px auto;text-align:center;color:var(--tinta-2)">No se pudo cargar la librería 3D. Revisa la conexión y recarga la página; los controles y el panel de estado siguen funcionando.</p>');
+  setInterval(() => { if (S.corriendo) avanzarMes(); }, 500);
+}
+</script>
+</body>
+</html>
