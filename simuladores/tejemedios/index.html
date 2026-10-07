@@ -394,6 +394,8 @@ input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
 .reloj-txt b { color: var(--tinta); font-weight: 500; }
 .reloj-barra { height: 3px; background: var(--linea); border-radius: 2px; overflow: hidden; }
 .reloj-barra i { display: block; height: 100%; background: var(--tinta); width: 0; }
+.vel-grupo { display: flex; align-items: center; gap: 7px; }
+.vel-rot { font-family: var(--f-dato); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
 .vel { display: flex; border: 1px solid var(--linea); border-radius: var(--r-sm); overflow: hidden; }
 .vel button { border: 0; background: var(--panel); padding: 6px 9px; font-family: var(--f-dato); font-size: 12px; color: var(--tinta-2); }
 .vel button[aria-pressed="true"] { background: var(--tinta-2); color: var(--bg); }
@@ -727,6 +729,7 @@ body { background-image: var(--grano); }
       <details class="seccion">
         <summary class="sin-num"><span class="sec-tit">Cómo calcula</span></summary>
         <div class="seccion-cuerpo texto">
+          <p><strong>De dónde salen los niveles (0 a 100).</strong> No son datos de ningún medio: los calcula el modelo. Los factores de contexto (los rombos) valen lo que tú fijas en «c · Cambia el contexto». Para los demás, al elegir un punto de partida el modelo busca dónde se estabiliza ese medio con esas decisiones y ese contexto, y ese es el mes 0. Desde ahí, cada mes suma las influencias que recibe cada factor (las que lo suben y las que lo bajan) y las convierte en un destino entre 0 y 100: el anillo hueco. 50 es el punto neutro: por encima, un factor ejerce su influencia habitual (impulsa lo que impulsa, frena lo que frena); por debajo, la invierte. Por ejemplo, un financiamiento bajo frena las prácticas periodísticas en vez de sostenerlas.</p>
           <p>Cada mes, cada factor se mueve hacia el nivel que le fijan las influencias que recibe. Unos responden rápido (el financiamiento, en dos meses) y otros muy despacio (el vínculo con las comunidades tarda más de un año).</p>
           <p>Las decisiones cuestan: estar en terreno, aliarse o protegerse rinden según el financiamiento disponible. Por eso subir todo al máximo no funciona.</p>
           <p>Los pesos son didácticos. Ordenan las magnitudes según el texto de la tesis, pero no se estimaron con datos: el simulador sirve para razonar sobre el sistema, no para predecir a un medio real.</p>
@@ -749,7 +752,7 @@ body { background-image: var(--grano); }
       <div class="grupo-bv bv-ver" role="group" aria-label="Qué mostrar en la red">
         <span class="bv-rot">Ver</span>
         <button class="bv" id="tgCapas" aria-pressed="true" title="Mostrar u ocultar las placas de las tres dimensiones"><span class="ojo"></span>Capas</button>
-        <button class="bv" id="tgNiveles" aria-pressed="false" title="Mostrar el nivel de 0 a 100 junto a cada nombre"><span class="ojo"></span>Niveles</button>
+        <button class="bv" id="tgNiveles" aria-pressed="false" title="Mostrar junto a cada nombre su nivel de 0 a 100, calculado por el modelo (no es un dato medido). Se explica en «2 · Entender el sistema» › «Cómo calcula»."><span class="ojo"></span>Niveles</button>
       </div>
       <button class="bv bv-ayuda" id="tgLeyenda" aria-expanded="false" aria-controls="leyenda"><span class="ic-ayuda" aria-hidden="true">?</span>Cómo leer</button>
       <span class="espacio"></span>
@@ -769,6 +772,7 @@ body { background-image: var(--grano); }
       <div class="ley-fila"><svg width="30" height="12"><rect x="1" y="2" width="28" height="8" rx="2" fill="none" stroke="var(--e)"/></svg><span>Abajo: estructurales</span></div>
       <div class="ley-sep"></div>
       <div class="ley-fila"><svg width="30" height="16"><line x1="15" y1="15" x2="15" y2="5" stroke="var(--tinta-3)"/><circle cx="15" cy="5" r="4" fill="var(--tinta-2)"/></svg><span>Más alto sobre su placa: nivel más alto</span></div>
+      <div class="ley-fila"><svg width="30" height="12"><text x="15" y="10" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--tinta-2)">42</text></svg><span>«Niveles»: el nivel de 0 a 100 que calcula el modelo; 50 es neutro</span></div>
       <div class="ley-fila"><svg width="30" height="18"><ellipse cx="15" cy="4" rx="7" ry="2.5" fill="none" stroke="var(--tinta-2)" stroke-width="1.5"/><line x1="15" y1="6" x2="15" y2="12" stroke="var(--tinta-3)" stroke-dasharray="2 2"/><circle cx="15" cy="14" r="3.5" fill="var(--tinta-2)"/></svg><span>Anillo hueco: hacia dónde va el factor si nada cambia</span></div>
       <div class="ley-fila"><svg width="30" height="14"><polygon points="15,1 21,7 15,13 9,7" fill="var(--e)"/></svg><span>Rombo: contexto que el medio no decide</span></div>
       <div class="ley-fila"><svg width="30" height="12"><line x1="1" y1="6" x2="29" y2="6" stroke="var(--tinta-2)" stroke-width="1.5"/></svg><span>Trazo continuo: impulsa</span></div>
@@ -781,8 +785,10 @@ body { background-image: var(--grano); }
     <div class="tiempo" id="tiempo">
       <button class="btn primario" id="btnPlay">Iniciar</button>
       <button class="btn" id="btnPaso" title="Avanzar un mes">+1 mes</button>
-      <div class="vel" role="group" aria-label="Velocidad" id="vel">
-        <button data-v="0" aria-pressed="false">1×</button><button data-v="1" aria-pressed="true">2×</button><button data-v="2" aria-pressed="false">5×</button>
+      <div class="vel-grupo"><span class="vel-rot" id="velRot">Meses por segundo</span>
+        <div class="vel" role="group" aria-labelledby="velRot" id="vel">
+          <button data-v="0" aria-pressed="false" title="Lenta: 1 mes simulado por segundo">1</button><button data-v="1" aria-pressed="true" title="Media: 2 meses simulados por segundo">2</button><button data-v="2" aria-pressed="false" title="Rápida: 5 meses simulados por segundo">5</button>
+        </div>
       </div>
       <div class="reloj"><span class="reloj-txt" id="relojTxt"></span><div class="reloj-barra"><i id="relojBarra"></i></div></div>
       <button class="btn" id="btnReinicio" title="Vuelve al mes 0 con tus controles actuales; la corrida anterior queda como sombra">Volver al mes 0</button>
@@ -925,7 +931,7 @@ const PALANCAS = {
   wM:     { grupo: 'fondos', nombre: 'Membresías y lectores', def: 0.45 },
   colab:  { grupo: 'decision', nombre: 'Tiempo invertido en alianzas con otros medios', izq: 'Solo', der: 'En red', def: 0.45 },
   terr:   { grupo: 'decision', nombre: 'Presencia sostenida en los territorios', izq: 'Remota', der: 'En terreno', def: 0.4 },
-  prof:   { grupo: 'decision', nombre: 'Ritmo editorial', izq: 'Velocidad', der: 'Profundidad', def: 0.5 },
+  prof:   { grupo: 'decision', nombre: 'Enfoque editorial', izq: 'Rapidez y volumen', der: 'Profundidad', def: 0.5 },
   seg:    { grupo: 'decision', nombre: 'Protocolos de seguridad', izq: 'Ninguno', der: 'Robustos', def: 0.35 },
 };
 
@@ -1006,7 +1012,7 @@ const TERMINOS = {
     { de: 'CR', verbo: 'Facilita', fig: true, f: x => 0.6 * cen(x.CR) },
     { de: 'RH', verbo: 'Permite procesos largos', fig: false, f: x => 0.6 * cen(x.RH) },
     { de: 'PP', verbo: 'Legitima', fig: false, f: x => 0.5 * cen(x.PP) },
-    { p: 'prof', verbo: 'Ritmo de profundidad', f: (x, c) => 0.3 * cen(c.prof) },
+    { p: 'prof', verbo: 'Apuesta por la profundidad', f: (x, c) => 0.3 * cen(c.prof) },
     { de: 'CA', verbo: 'Impacta en', fig: true, f: (x, c) => -0.8 * (c.ca * (1 - 0.6 * ef(c, x, 'seg')) - 0.3) },
     { p: 'dist', verbo: 'Barrera lingüística y cultural', f: (x, c) => -0.8 * (c.dist * (1 - 0.75 * ef(c, x, 'terr')) - 0.25) },
   ],
@@ -1024,11 +1030,11 @@ const TERMINOS = {
     { de: 'CR', verbo: 'Determina', fig: true, f: x => 0.7 * cen(x.CR) },
     { de: 'VC', verbo: 'Enriquece', fig: true, f: x => 0.9 * cen(x.VC) },
     { de: 'CA', verbo: 'Limita', fig: true, f: (x, c) => -0.7 * (c.ca * (1 - 0.6 * ef(c, x, 'seg')) - 0.3) },
-    { p: 'prof', verbo: 'Ritmo de profundidad', f: (x, c) => 0.45 * cen(c.prof) },
+    { p: 'prof', verbo: 'Apuesta por la profundidad', f: (x, c) => 0.45 * cen(c.prof) },
   ],
 };
 
-// Alcance de audiencia: la velocidad da alcance, pero solo si hay infraestructura
+// Alcance de audiencia: la rapidez y el volumen dan alcance, pero solo si hay infraestructura
 function alcance(x, c) { return x.IN * (0.35 + 0.65 * (1 - c.prof)); }
 
 const ORDEN = ['SF', 'FI', 'PJ', 'AE', 'TC', 'PI', 'RH', 'IN', 'CR', 'VC', 'EM', 'PP'];
@@ -1119,9 +1125,9 @@ const INFO = {
 const ARQUETIPOS = [
   { id: 'neutro', nombre: 'Punto de partida', linea: 'Medio mediano, contexto promedio',
     texto: 'Un medio nativo mediano en un contexto promedio. Sirve para mover una palanca a la vez y ver qué pasa.', c: {}, citas: [] },
-  { id: 'verif', nombre: 'Verificador nacional', linea: 'Velocidad, redes, sin pauta',
-    texto: 'Redacción nacional dedicada a verificar el discurso público. Trabaja en red con otros verificadores, prioriza la velocidad y no acepta pauta estatal.',
-    c: { cp: .45, ca: .3, conc: .75, brecha: .3, dist: .4, wP: 0, wC: .6, wM: .4, colab: .7, terr: .2, prof: .35, seg: .5 },
+  { id: 'verif', nombre: 'Verificador nacional', linea: 'Calidad sobre rapidez, redes, sin pauta',
+    texto: 'Redacción nacional dedicada a verificar el discurso público. Trabaja en red con otros verificadores y no acepta pauta estatal. Aunque la desinformación se propaga rápido, publica más despacio para verificar con cuidado.',
+    c: { cp: .45, ca: .3, conc: .75, brecha: .3, dist: .4, wP: 0, wC: .6, wM: .4, colab: .7, terr: .2, prof: .65, seg: .5 },
     citas: [{ t: 'No apostamos nunca a financiación pública porque eso iría totalmente en contra de los intereses y de la misión.' }] },
   { id: 'invest', nombre: 'Investigación con redacción estable', linea: 'Profundidad, lectores, estabilidad',
     texto: 'Periodismo político y de investigación con condiciones laborales estables, financiado por lectores y cooperación. Prioriza la profundidad.',
@@ -1167,7 +1173,7 @@ const RETOS = [
     fija: { wP: 0 }, bloquea: ['wP', ...CONTEXTO],
     metas: [{ id: 'PP', min: .55 }, { id: 'SF', min: .45 }], sostener: 12, plazo: 60, pistaMes: 24,
     pistas: ['Toca «Prácticas periodísticas» en la red y mira qué la frena. Luego pregúntate qué gasto no necesita un medio en un contexto de conflicto moderado.',
-      'Las configuraciones que resuelven este reto comparten dos rasgos: ninguna prioriza la velocidad y ninguna depende de una sola fuente, sino que reparte entre cooperación y lectores. Casi ninguna lleva los protocolos de seguridad al máximo.'],
+      'Las configuraciones que resuelven este reto comparten dos rasgos: ninguna prioriza la rapidez y el volumen, y ninguna depende de una sola fuente, sino que reparte entre cooperación y lectores. Casi ninguna lleva los protocolos de seguridad al máximo.'],
     preguntas: ['¿Qué tuviste que sacrificar para sostener la caja?', '¿Qué lazo hizo el trabajo pesado: legitimidad, sostenibilidad o red? Compáralos en [[modelo|2 · Entender el sistema]].', '¿Tu configuración funcionaría con un conflicto armado alto? Pruébala en [[lab|1 · Explorar]], moviendo «c · Cambia el contexto».'] },
   { id: 'territorio', titulo: 'Confianza en el territorio', arq: 'territ',
     resumen: 'Una periodista sola, conflicto activo, otra lengua.',
@@ -1374,7 +1380,7 @@ function nombreTermino(t, idDestino) {
     const bajo = e && ((e.signo < 0 && t.v > 0) || (e.signo > 0 && t.v < 0));
     return NODOS[t.de].nombre.toLowerCase() + (bajo ? ' (en nivel bajo)' : '');
   }
-  const n = { fondos: 'la mezcla de fondos', costos: 'el costo de las decisiones', colab: 'la decisión de aliarse', terr: 'la presencia en terreno', prof: 'el ritmo de profundidad', brecha: 'la brecha digital', dist: 'la distancia lingüística y cultural' };
+  const n = { fondos: 'la mezcla de fondos', costos: 'el costo de las decisiones', colab: 'la decisión de aliarse', terr: 'la presencia en terreno', prof: 'la apuesta por la profundidad', brecha: 'la brecha digital', dist: 'la distancia lingüística y cultural' };
   if (t.verbo === 'Dependencia de la pauta') return 'la dependencia de la pauta';
   if (t.verbo === 'Diversificación de fuentes') return 'la diversificación de fuentes';
   return n[t.p] || t.verbo.toLowerCase();
@@ -2046,7 +2052,7 @@ function texturaPunto() {
 
 const vtmp = new THREE.Vector3(), vperp = new THREE.Vector3(), vcen = new THREE.Vector3(), ARRIBA = new THREE.Vector3(0, 1, 0);
 let tPrev = performance.now(), acum = 0, tiempoP = 0;
-const MESES_POR_SEG = [0.8, 2, 5];
+const MESES_POR_SEG = [1, 2, 5];
 const acercar = (a, b, k) => a + (b - a) * k;
 function bucle(t) {
   const dt = Math.min(0.1, (t - tPrev) / 1000); tPrev = t;
