@@ -59,15 +59,22 @@ h1{font-family:var(--display);font-weight:700;font-stretch:94%;font-size:clamp(1
 #lienzo{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 #lienzo.arrastrando{cursor:grabbing}
 #lienzo.sobre-persona{cursor:pointer}
-.mensaje{position:absolute;top:14px;left:14px;max-width:min(380px,62%);display:flex;gap:10px;align-items:flex-start;padding:10px 14px 10px 10px;background:var(--velo);backdrop-filter:blur(6px);border:1px solid var(--linea-2);border-radius:14px 14px 14px 4px;text-align:left;color:inherit;font:inherit}
-.mensaje.plegado{padding:6px;border-radius:12px 12px 12px 4px;cursor:pointer}
+/* [DISEÑO] El mensaje es una burbuja de chat clara, como en el teléfono: es lo
+   único claro sobre el mapa nocturno, y la etiqueta roja dice qué es. */
+.mensaje{position:absolute;top:14px;left:14px;max-width:min(340px,62%);display:flex;gap:10px;align-items:flex-start;padding:10px 14px 11px 10px;background:#EEF3EC;color:#0C1714;border:0;border-radius:16px 16px 16px 4px;text-align:left;font:inherit;box-shadow:0 12px 30px rgba(0,0,0,.45);transform-origin:top left;transition:transform .35s cubic-bezier(.2,.9,.3,1.2),opacity .25s}
+.mensaje.plegado{padding:0;width:44px;height:44px;border-radius:14px 14px 14px 4px;background:#EEF3EC;cursor:pointer;justify-content:center;align-items:center}
 .mensaje.plegado div{display:none}
-.mensaje:not(.plegado){cursor:pointer}
-.mensaje .icono{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(229,72,77,.16);display:grid;place-items:center}
-.mensaje small{display:block;color:var(--tinta-3);font-size:.82rem;line-height:1.3}
-.mensaje p{font-size:.86rem;line-height:1.35;color:var(--tinta)}
+.mensaje:not(.plegado){cursor:pointer;animation:llega .45s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes llega{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.mensaje .icono{flex:none;width:30px;height:30px;border-radius:9px;background:var(--rumor);display:grid;place-items:center}
+.mensaje .icono svg{stroke:#fff}
+.mensaje small{display:flex;align-items:center;gap:7px;color:#4C5E56;font-size:.78rem;line-height:1.3;margin-bottom:3px}
+.etiqueta-rumor{background:var(--rumor);color:#fff;font-weight:700;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+.mensaje p{font-size:.92rem;line-height:1.35;color:#0C1714;font-weight:600}
 .leyenda{position:absolute;left:14px;bottom:14px;display:grid;gap:5px;padding:10px 14px;background:var(--velo);backdrop-filter:blur(6px);border:1px solid var(--linea);border-radius:var(--r-m);font-size:.84rem;color:var(--tinta-2);pointer-events:none}
 .leyenda div{display:flex;align-items:center;gap:9px}
+.leyenda{transition:opacity .6s ease,transform .6s ease}
+.leyenda.diferida{opacity:0;transform:translateY(8px);pointer-events:none;visibility:hidden}
 .zoom{position:absolute;right:14px;bottom:14px;display:grid;gap:6px}
 .zoom button{width:38px;height:38px;border-radius:10px;border:1px solid var(--linea-2);background:var(--velo);display:grid;place-items:center;cursor:pointer}
 .zoom button:hover{background:var(--panel-2)}
@@ -201,8 +208,22 @@ details.tema[open] summary small{display:none}
 .panel{grid-area:panel;align-self:stretch;display:flex;flex-direction:column;gap:14px;min-width:0}
 .bloque{background:var(--panel);border:1px solid var(--linea);border-radius:var(--r-m);padding:14px 16px}
 .modos{display:grid;grid-template-columns:1fr 1fr;padding:4px;gap:4px;border-radius:var(--r-m)}
-.modos button{border:0;background:none;padding:9px 8px;border-radius:9px;cursor:pointer;font-weight:700;color:var(--tinta-2);display:flex;align-items:center;justify-content:center;gap:8px}
-.modos button[aria-pressed="true"]{background:var(--panel-2);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--linea-2)}
+.modos{padding:5px;gap:5px}
+/* [DISEÑO] Cada modo tiene su identidad: Observar en crema (mirar), Misión en
+   azul (el color de quien verifica). El activo se llena; el otro queda en sombra. */
+.modos button{border:1px solid transparent;background:none;padding:9px 10px;border-radius:10px;cursor:pointer;color:var(--tinta-3);display:flex;align-items:center;gap:10px;text-align:left;transition:background .2s,border-color .2s,color .2s}
+.modos button:hover{background:rgba(255,255,255,.03);color:var(--tinta-2)}
+.modo-ico{width:32px;height:32px;flex:none;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.04)}
+.modo-txt{display:grid;line-height:1.15}
+.modo-txt b{font-family:var(--display);font-stretch:96%;font-weight:700;font-size:1rem}
+.modo-txt small{font-size:.76rem;opacity:.85}
+.modos button[data-modo="observar"] .modo-ico{color:var(--crema)}
+.modos button[data-modo="mision"] .modo-ico{color:var(--verif)}
+.modos button[data-modo="observar"][aria-pressed="true"]{background:rgba(243,236,214,.1);border-color:rgba(243,236,214,.55);color:var(--tinta)}
+.modos button[data-modo="observar"][aria-pressed="true"] .modo-ico{background:var(--crema);color:#0C1714}
+.modos button[data-modo="mision"][aria-pressed="true"]{background:rgba(47,143,224,.16);border-color:var(--verif);color:var(--tinta)}
+.modos button[data-modo="mision"][aria-pressed="true"] .modo-ico{background:var(--verif);color:#fff}
+.mision{border-color:rgba(47,143,224,.45);box-shadow:inset 3px 0 0 var(--verif)}
 .mision{display:grid;gap:8px}
 .mision[hidden]{display:none}
 .mision p{font-size:.86rem;color:var(--tinta-2);line-height:1.4}
@@ -251,6 +272,11 @@ input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 .cronica li.clave{color:var(--tinta)}
 .cronica li.dia{display:block;font-family:var(--display);font-weight:700;font-size:.84rem;color:var(--tinta-3);padding-top:4px;border-top:1px solid var(--linea)}
 .cronica .vacia{color:var(--tinta-3);font-size:.85rem}
+.cronica .escenario-cab h2{margin-bottom:0}
+.cronica-nota{display:none;font-size:.84rem;color:var(--tinta-3)}
+.cronica.plegada{flex:none;min-height:0}
+.cronica.plegada ol{display:none}
+.cronica.plegada .cronica-nota{display:block}
 @keyframes entra{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 
 /* ─── Franja inferior ─── */
@@ -304,6 +330,32 @@ dialog::backdrop{background:rgba(8,16,13,.6);backdrop-filter:blur(3px)}
 .chat small{display:block;font-size:.82rem;color:#4C5E56;margin-bottom:2px}
 .opcion .nota{font-size:.84rem;color:var(--tinta-3);line-height:1.35}
 .opciones.dos{grid-template-columns:1fr 1fr}
+/* [DISEÑO] Ventana inicial: el rojo marca el rumor (lo que se elige y lo que
+   amenaza), el azul la misión. Son los mismos colores que en el mapa. */
+.antetitulo{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F07F82;margin-bottom:10px}
+.punto-vivo{width:8px;height:8px;border-radius:50%;background:var(--rumor);box-shadow:0 0 0 4px rgba(229,72,77,.2);animation:latido 1.8s ease-in-out infinite}
+@keyframes latido{50%{box-shadow:0 0 0 7px rgba(229,72,77,0)}}
+#opcionesRumor{align-items:start}
+.opcion.rumor{gap:0;padding:12px 14px}
+.rumor-cab{display:flex;align-items:center;gap:12px}
+.rumor-cab b{display:block}
+.rumor-cab small{display:block;font-size:.8rem;color:var(--tinta-3);margin-top:1px}
+.rumor-ico{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;background:rgba(229,72,77,.12);color:#F07F82;transition:background .2s,color .2s}
+.rumor-cuerpo{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s ease,opacity .25s ease,margin .3s ease}
+.rumor-cuerpo > *{overflow:hidden;min-height:0}
+.rumor-cuerpo{gap:0}
+.opcion.rumor:hover{border-color:rgba(229,72,77,.5)}
+.opcion.rumor:has(input:checked){border-color:var(--rumor);background:rgba(229,72,77,.07);box-shadow:inset 0 0 0 1px var(--rumor)}
+.opcion.rumor:has(input:checked) .rumor-ico{background:var(--rumor);color:#fff}
+.opcion.rumor:has(input:checked) .rumor-cuerpo{grid-template-rows:1fr;opacity:1;margin-top:12px}
+.opcion.rumor .chat{display:block;margin-bottom:8px}
+.opcion.rumor .nota{display:block}
+.opcion.modo-mision:has(input:checked){border-color:var(--verif);background:rgba(47,143,224,.1);box-shadow:inset 0 0 0 1px var(--verif)}
+.opcion.modo-mision:hover{border-color:rgba(47,143,224,.55)}
+.opciones.dos .opcion > svg{flex:none;width:38px;height:38px;padding:8px;border-radius:11px;background:rgba(243,236,214,.08)}
+.opciones.dos .opcion.modo-mision > svg{background:rgba(47,143,224,.14)}
+.opcion.modo-observar:has(input:checked) > svg{background:var(--crema);stroke:#0C1714}
+.opcion.modo-mision:has(input:checked) > svg{background:var(--verif);stroke:#fff}
 .opciones.dos .opcion{flex-direction:row;align-items:flex-start;gap:12px}
 .opciones.dos .opcion p{font-size:.84rem;color:var(--tinta-2);line-height:1.4;margin-top:3px}
 .dlg-pie{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;flex-wrap:wrap}
@@ -446,9 +498,9 @@ dialog::backdrop{background:rgba(8,16,13,.6);backdrop-filter:blur(3px)}
     <div class="aviso" id="aviso" role="status" hidden><p id="avisoTexto"></p><button type="button" class="btn btn-primario" id="avisoSeguir">Seguir</button></div>
     <button type="button" class="mensaje" id="mensaje" aria-expanded="true" aria-label="Mensaje que circula">
       <span class="icono" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E5484D" stroke-width="2.2" stroke-linecap="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5v-8Z"/></svg></span>
-      <div><small id="mensajeOrigen">Mensaje que circula</small><p id="mensajeTexto"></p></div>
+      <div><small><span class="etiqueta-rumor" id="mensajeEtiqueta">Rumor</span><span id="mensajeOrigen">Mensaje que circula</span></small><p id="mensajeTexto"></p></div>
     </button>
-    <div class="leyenda" id="leyenda">
+    <div class="leyenda diferida" id="leyenda">
       <button type="button" class="leyenda-cab" id="btnLeyenda" aria-expanded="true">Leyenda</button>
       <div class="leyenda-items">
       <div><span class="punto" style="background:var(--nadie)"></span>No se ha enterado</div>
@@ -477,9 +529,11 @@ dialog::backdrop{background:rgba(8,16,13,.6);backdrop-filter:blur(3px)}
   <aside class="panel" aria-label="Controles de la simulación">
     <div class="bloque modos" role="group" aria-label="Modo">
       <button type="button" data-modo="observar" aria-pressed="true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Observar</button>
+        <span class="modo-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="modo-txt"><b>Observar</b><small>Mira y compara</small></span></button>
       <button type="button" data-modo="mision" aria-pressed="false">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Misión</button>
+        <span class="modo-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span class="modo-txt"><b>Misión</b><small>Intenta frenarlo</small></span></button>
     </div>
 
     <div class="bloque mision" id="mision" hidden>
@@ -573,8 +627,13 @@ dialog::backdrop{background:rgba(8,16,13,.6);backdrop-filter:blur(3px)}
       </div>
     </section>
 
-    <section class="bloque cronica" aria-labelledby="tCronica">
-      <h2 id="tCronica"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--tinta-2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg>Crónica del rumor</h2>
+    <section class="bloque cronica" id="cronicaBloque" aria-labelledby="tCronica">
+      <div class="escenario-cab">
+        <h2 id="tCronica"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--tinta-2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg>Crónica del rumor</h2>
+        <button type="button" class="btn-plegar" id="btnCronica" aria-expanded="false" aria-controls="cronica"><span id="txtCronica">Abrir</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+      </div>
+      <p class="cronica-nota">Se abre al iniciar: aquí se cuenta lo que va pasando.</p>
       <ol id="cronica" aria-live="polite"><li class="vacia">Aquí aparecerá lo que vaya pasando en el barrio.</li></ol>
     </section>
   </aside>
@@ -658,17 +717,18 @@ dialog::backdrop{background:rgba(8,16,13,.6);backdrop-filter:blur(3px)}
 
 <dialog id="intro" aria-labelledby="tIntro">
   <form method="dialog" class="dlg" id="formIntro">
+    <p class="antetitulo"><span class="punto-vivo" aria-hidden="true"></span>LAMA-08 · Dinámicas de desinformación</p>
     <h2 id="tIntro">Un mensaje está por llegar al barrio Los Almendros</h2>
     <p>Cincuenta vecinas y vecinos, cuatro sectores y unos cuantos grupos de chat. Elige qué rumor llega y cómo quieres seguirlo.</p>
     <h3>El rumor</h3>
     <div class="opciones" id="opcionesRumor"></div>
     <h3>Tu papel</h3>
     <div class="opciones dos">
-      <label class="opcion"><input type="radio" name="modo" value="observar" checked>
+      <label class="opcion modo-observar"><input type="radio" name="modo" value="observar" checked>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--crema)" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
         <span><b>Observar</b><p>Mueve los parámetros y mira cómo cambia la historia. Los retos te proponen qué comparar, y tus partidas quedan en una tabla.</p></span></label>
-      <label class="opcion"><input type="radio" name="modo" value="mision">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--crema)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <label class="opcion modo-mision"><input type="radio" name="modo" value="mision">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--verif)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
         <span><b>Misión</b><p>Solo ves lo que te cuentan. Tienes tres conversaciones para frenarlo; al final verás qué habría pasado sin ellas.</p></span></label>
     </div>
     <div class="dlg-pie">
@@ -703,11 +763,14 @@ const SALTOS_MUCHOS = 5;                        // desde aquí el mensaje está 
 const T_MAX = 192;                              // dos días
 const TAU_R = 28, TAU_V = 44, TAU_C = 16;       // «novedad» del rumor, del desmentido y del «por si acaso» (en pasos)
 
+// [DISEÑO] Sectores de tamaño y forma distintos, sin simetría de cuadrantes: la
+// ladera es grande y alargada, el parque ancho, la galería se mete al centro y
+// las orillas siguen el río. Los bordes se mezclan, como en un barrio real.
 const SECTORES = [
-  { nombre: 'La Loma',         cx: 235, cy: 170, rx: 160, ry: 112 },
-  { nombre: 'El Parque',       cx: 760, cy: 165, rx: 160, ry: 110 },
-  { nombre: 'La Galería',      cx: 250, cy: 455, rx: 160, ry: 112 },
-  { nombre: 'Orillas del río', cx: 735, cy: 440, rx: 150, ry: 102 },
+  { nombre: 'La Loma',         cx: 205, cy: 215, rx: 185, ry: 175, rot: -.35 },
+  { nombre: 'El Parque',       cx: 640, cy: 135, rx: 230, ry: 100, rot: .12 },
+  { nombre: 'La Galería',      cx: 430, cy: 455, rx: 210, ry: 125, rot: -.18 },
+  { nombre: 'Orillas del río', cx: 835, cy: 405, rx: 140, ry: 165, rot: .5 },
 ];
 
 // [nombre, sector, género, edad (j joven · a adulta · m mayor), rol si es líder]
@@ -743,14 +806,29 @@ function crearBarrio(semilla, dens) {
   }));
   // [TÉCNICA] Muestreo del mejor candidato: de varias posiciones al azar se queda
   // con la más lejana a las ya ocupadas, para que los avatares no se apilen.
+  // [DISEÑO] Cada sector tiene dos o tres núcleos que cambian con la semilla, y
+  // una de cada cinco personas vive en el borde con otro sector: la gente queda
+  // dispersa y los sectores se tocan, sin cuatro grupos simétricos.
+  const nucleos = SECTORES.map(s => Array.from({ length: 2 + (rp() < .5 ? 1 : 0) }, () => {
+    const a = rp() * TAU, d = .25 + rp() * .45;
+    return { x: s.cx + Math.cos(a) * d * s.rx, y: s.cy + Math.sin(a) * d * s.ry };
+  }));
   const puestos = [];
   for (const g of gente) {
     const s = SECTORES[g.sector];
+    const borde = !g.lider && rp() < .2;
+    const otro = SECTORES[(g.sector + 1 + ((rp() * 3) | 0)) % 4];
     let mejor = null, md = -1;
-    for (let k = 0; k < (g.lider ? 1 : 16); k++) {
+    for (let k = 0; k < (g.lider ? 4 : 18); k++) {
       let x, y;
-      if (g.lider) { x = s.cx + (rp() - .5) * 30; y = s.cy + (rp() - .5) * 24; }
-      else { const a = rp() * TAU, r = Math.sqrt(rp()) * .97; x = s.cx + Math.cos(a) * r * s.rx; y = s.cy + Math.sin(a) * r * s.ry; }
+      if (g.lider) { x = s.cx + (rp() - .5) * 60; y = s.cy + (rp() - .5) * 50; }
+      else if (borde) { const t = .38 + rp() * .2; x = s.cx + (otro.cx - s.cx) * t + (rp() - .5) * 70; y = s.cy + (otro.cy - s.cy) * t + (rp() - .5) * 60; }
+      else {
+        const nu = nucleos[g.sector][(rp() * nucleos[g.sector].length) | 0];
+        const a = rp() * TAU, r = Math.sqrt(rp()), ex = Math.cos(a) * r * s.rx * .62, ey = Math.sin(a) * r * s.ry * .62;
+        x = nu.x + ex * Math.cos(s.rot) - ey * Math.sin(s.rot); y = nu.y + ex * Math.sin(s.rot) + ey * Math.cos(s.rot);
+      }
+      x = Math.min(W - 26, Math.max(26, x)); y = Math.min(H - 26, Math.max(30, y));
       let d = Infinity;
       for (const q of puestos) d = Math.min(d, Math.hypot(q.x - x, q.y - y));
       if (d > md) { md = d; mejor = { x, y }; }
@@ -1223,7 +1301,7 @@ function descendientes(sim, raiz) {
 // ═══ <narrativa> ═══════════════════════════════════════════════════════════
 const ESCENARIOS = {
   agua: {
-    titulo: 'Corte de agua', remitente: 'Grupo «Vecinos de la cuadra»',
+    titulo: 'Corte de agua', tipo: 'Servicios públicos', remitente: 'Grupo «Vecinos de la cuadra»',
     texto: 'Mañana cortan el agua toda la semana en el barrio. ¡Llenen tanques y pásenlo!',
     nota: 'Un miedo práctico: cuesta poco creerlo y reenviarlo.', cred: 60, vel: 5, alarma: .35,
     frases: ['¡Llenen tanques ya!', 'Me lo dijo uno de la empresa', 'Pásenlo a la familia', '¡Toda la semana sin agua!'],
@@ -1237,7 +1315,7 @@ const ESCENARIOS = {
       consejo: 'Con un rumor sobre servicios públicos, el desmentido sirve más si trae el dato que se puede comprobar: el horario real del corte y quién lo anunció.' },
   },
   subsidio: {
-    titulo: 'Subsidio falso', remitente: 'Reenviado muchas veces',
+    titulo: 'Subsidio falso', tipo: 'Estafa', remitente: 'Reenviado muchas veces',
     texto: 'Están dando un subsidio de $500.000 por familia. Inscríbase con su cédula en este enlace antes del viernes.',
     nota: 'Una estafa: el mensaje pide datos personales.', cred: 45, vel: 4, alarma: .15,
     frases: ['¡Inscríbanse rápido!', 'Yo ya mandé mi cédula', 'Pásenlo antes del viernes', 'Es del Gobierno, de verdad'],
@@ -1250,7 +1328,7 @@ const ESCENARIOS = {
       consejo: 'Ante una estafa no basta con desmentir: hay que pedir que nadie envíe datos, denunciar el enlace y avisar a quien ya los envió para que proteja sus cuentas.' },
   },
   camioneta: {
-    titulo: 'Camioneta blanca', remitente: 'Audio reenviado',
+    titulo: 'Camioneta blanca', tipo: 'Pánico', remitente: 'Audio reenviado',
     texto: 'Audio urgente: una camioneta blanca se está llevando niños cerca del parque. ¡Cuiden a sus hijos!',
     nota: 'Pánico: la alarma que más rápido corre.', cred: 55, vel: 8, alarma: .6,
     frases: ['¡Cuiden a los niños!', 'Mi prima la vio', '¡Pásenlo, es urgente!', 'No dejen salir a los pelados'],
@@ -1266,7 +1344,7 @@ const ESCENARIOS = {
 const FRASES_DUDA = ['¿Será verdad?', '¿Quién lo dijo?', '¿Y eso de dónde salió?', 'Mmm… ¿seguro?'];
 const FRASES_SIACASO = ['No sé si sea cierto, pero…', 'Por si acaso, ahí les va', 'Mejor prevenir', 'Me llegó, se lo paso'];
 const FRASES_CORR = ['Lo verifiqué: es falso', 'La emisora ya lo desmintió', 'Revisen la fuente antes de reenviar', 'Eso no es cierto'];
-const EMISORA = { nombre: 'Ondas de Los Almendros', x: 500, y: 312 };
+const EMISORA = { nombre: 'Ondas de Los Almendros', x: 460, y: 312 };   // en el cruce de las dos avenidas
 
 function hora(t) {
   const m = 7 * 60 + t * MIN_TICK;
@@ -1477,26 +1555,25 @@ function lienzo(w, h) { const c = document.createElement('canvas'); c.width = w;
 // [TÉCNICA] El barrio se pinta una vez por semilla en un lienzo aparte, con azar
 // fijo: mismo número, mismo barrio. Vista aérea nocturna: manzanas, techos,
 // copas de árboles, el río, la cancha, la galería y los faroles.
-function pintarBarrio(semilla) {
+function pintarBarrio(semilla, barrio) {
   const S = 2, c = lienzo(W * S, H * S), g = c.getContext('2d');
   g.scale(S, S);
   const r = mulberry32(semilla ^ 0x1234567);
   g.fillStyle = '#1F322B'; g.fillRect(0, 0, W, H);
 
-  // Manzanas y techos, en una cuadrícula que gira un poco en cada sector.
+  // Manzanas y techos. [DISEÑO] Cinco retículas con orientaciones distintas que
+  // se reparten el plano por cercanía: el trazado queda irregular, como un barrio
+  // que creció por partes, y no en cuatro cuadrantes.
   const TECHOS = ['#26382F', '#2C4038', '#323E38', '#353B34', '#2E3C39', '#384039', '#283638', '#3D3F37'];
-  const zonas = [
-    { x0: -20, y0: -20, x1: 500, y1: 300, rot: -.07 }, { x0: 500, y0: -20, x1: 1020, y1: 300, rot: .05 },
-    { x0: -20, y0: 322, x1: 500, y1: 640, rot: .04 }, { x0: 500, y0: 322, x1: 1020, y1: 640, rot: -.09 },
-  ];
-  for (const z of zonas) {
-    g.save();
-    g.beginPath(); g.rect(z.x0 + 10, z.y0 + 10, z.x1 - z.x0 - 20, z.y1 - z.y0 - 20); g.clip();
-    const cx = (z.x0 + z.x1) / 2, cy = (z.y0 + z.y1) / 2;
-    g.translate(cx, cy); g.rotate(z.rot); g.translate(-cx, -cy);
-    const paso = 62 + r() * 10;
-    for (let x = z.x0 - 60; x < z.x1 + 60; x += paso) for (let y = z.y0 - 60; y < z.y1 + 60; y += paso * .78) {
+  const parches = [[170, 190, -.34], [660, 110, .1], [430, 480, -.17], [880, 420, .5], [60, 560, .06]];
+  const masCerca = (x, y) => { let m = 0, md = Infinity; parches.forEach(([px, py], k) => { const d = Math.hypot(x - px, y - py); if (d < md) { md = d; m = k; } }); return m; };
+  parches.forEach(([pcx, pcy, rot], k) => {
+    const paso = 58 + r() * 12, cs = Math.cos(rot), sn = Math.sin(rot);
+    for (let x = -700; x < 700; x += paso) for (let y = -700; y < 700; y += paso * .78) {
       const bw = paso - 12, bh = paso * .78 - 12;
+      const mx = pcx + (x + bw / 2) * cs - (y + bh / 2) * sn, my = pcy + (x + bw / 2) * sn + (y + bh / 2) * cs;
+      if (mx < -40 || mx > W + 40 || my < -40 || my > H + 40 || masCerca(mx, my) !== k) continue;
+      g.save(); g.translate(pcx, pcy); g.rotate(rot);
       g.fillStyle = '#192A23'; g.fillRect(x, y, bw, bh);
       const cols = 2 + (r() * 2 | 0), filas = 2;
       for (let a = 0; a < cols; a++) for (let b = 0; b < filas; b++) {
@@ -1508,17 +1585,18 @@ function pintarBarrio(semilla) {
         if (r() < .3) { g.fillStyle = 'rgba(255,255,255,.03)'; g.fillRect(px, py, w * .5, h * .9); }
         if (r() < .05) { g.fillStyle = 'rgba(244,200,112,.35)'; g.fillRect(px + w * .3, py + h * .3, 2, 2); }
       }
+      g.restore();
     }
-    g.restore();
-  }
+  });
 
-  // Avenidas que separan los sectores.
+  // Avenidas: dos vías torcidas que se cruzan fuera del centro, donde está la emisora.
+  const avA = [[-10, 360], [300, 330], [640, 300], [1010, 230]], avB = [[560, -10], [520, 160], [430, 380], [360, 630]];
+  const via = v => { g.beginPath(); g.moveTo(...v[0]); g.bezierCurveTo(...v[1], ...v[2], ...v[3]); };
+  const enVia = (v, t) => { const u = 1 - t; return [0, 1].map(k => u * u * u * v[0][k] + 3 * u * u * t * v[1][k] + 3 * u * t * t * v[2][k] + t * t * t * v[3][k]); };
   g.strokeStyle = '#263A33'; g.lineWidth = 20; g.lineCap = 'round';
-  g.beginPath(); g.moveTo(-10, 312); g.bezierCurveTo(300, 300, 700, 326, 1010, 310); g.stroke();
-  g.beginPath(); g.moveTo(500, -10); g.bezierCurveTo(492, 200, 508, 420, 498, 630); g.stroke();
+  via(avA); g.stroke(); via(avB); g.stroke();
   g.strokeStyle = 'rgba(243,236,214,.07)'; g.lineWidth = 1; g.setLineDash([8, 10]);
-  g.beginPath(); g.moveTo(-10, 312); g.bezierCurveTo(300, 300, 700, 326, 1010, 310); g.stroke();
-  g.beginPath(); g.moveTo(500, -10); g.bezierCurveTo(492, 200, 508, 420, 498, 630); g.stroke();
+  via(avA); g.stroke(); via(avB); g.stroke();
   g.setLineDash([]);
 
   // El río, al sur.
@@ -1569,20 +1647,33 @@ function pintarBarrio(semilla) {
 
   // Faroles en las avenidas: el único acento cálido del mapa.
   for (let k = 0; k < 26; k++) {
-    const sobreH = r() < .5;
-    const x = sobreH ? r() * W : 500 + (r() - .5) * 26, y = sobreH ? 312 + (r() - .5) * 26 : r() * H;
+    const [fx, fy] = enVia(r() < .55 ? avA : avB, r());
+    const x = fx + (r() - .5) * 24, y = fy + (r() - .5) * 24;
     const gr = g.createRadialGradient(x, y, 0, x, y, 22);
     gr.addColorStop(0, 'rgba(244,200,112,.22)'); gr.addColorStop(1, 'rgba(244,200,112,0)');
     g.fillStyle = gr; g.beginPath(); g.arc(x, y, 22, 0, TAU); g.fill();
     g.fillStyle = 'rgba(255,226,160,.8)'; g.beginPath(); g.arc(x, y, 1.3, 0, TAU); g.fill();
   }
 
-  // Nombres de los sectores.
-  g.fillStyle = 'rgba(238,244,240,.3)';
+  // Nombres de los sectores, sobre el centro de quienes viven en cada uno.
+  g.fillStyle = 'rgba(238,244,240,.26)';
   g.font = '700 14px Anybody, "Arial Narrow", sans-serif';
-  g.textBaseline = 'top';
-  try { g.letterSpacing = '1px'; } catch (_) {}
-  for (const s of SECTORES) g.fillText(s.nombre, s.cx - s.rx + 4, s.cy - s.ry - 20);
+  g.textBaseline = 'middle'; g.textAlign = 'center';
+  try { g.letterSpacing = '1.5px'; } catch (_) {}
+  // Entre arriba, abajo y el centro del sector, se elige el sitio más lejos de
+  // las personas y de los rótulos de los grupos.
+  const hubs = barrio ? zonasDe(barrio).map(z => z.hub) : [];
+  SECTORES.forEach((s, k) => {
+    const ps = barrio ? barrio.gente.filter(p => p.sector === k) : [];
+    if (!ps.length) { g.fillText(s.nombre.toUpperCase(), s.cx, s.cy - s.ry); return; }
+    const cx = Math.min(W - 80, Math.max(80, ps.reduce((a, p) => a + p.x, 0) / ps.length));
+    const cands = [[cx, Math.min(...ps.map(p => p.y)) - 24], [cx, Math.max(...ps.map(p => p.y)) + 26], [cx, ps.reduce((a, p) => a + p.y, 0) / ps.length]]
+      .map(([x, y]) => [x, Math.min(H - 14, Math.max(16, y))]);
+    const holgura = ([x, y]) => Math.min(...barrio.gente.map(p => Math.hypot((p.x - x) / 2.2, p.y - y)), ...hubs.map(([hx, hy]) => Math.hypot((hx - x) / 2.2, hy - y)));
+    const [lx, ly] = cands.reduce((a, b) => holgura(b) > holgura(a) ? b : a);
+    g.fillText(s.nombre.toUpperCase(), lx, ly);
+  });
+  g.textAlign = 'left';
 
   // Viñeta.
   const v = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .72);
@@ -1730,7 +1821,7 @@ const estado = {
   pendiente: -1, ultimaRespuesta: null, reanudar: false, mensajeVisto: false,
   verGrupos: true, calorGrupo: new Map(), rotulos: [], grupoHover: -1,
   // Revisión pedagógica (octubre 2026)
-  detener: true, foco: -1, destello: null, aviso: '',
+  detener: true, foco: -1, destello: null, aviso: '', leyendaVista: false, tMensaje: 0,
   partidas: [], barrios: new Map(), preguntasHechas: new Set(), alt: null,
   retoIdx: 0, retoActivo: null, retosHechos: new Map(),
 };
@@ -1743,7 +1834,7 @@ function nuevaSemilla() { return (Math.random() * 1e9) | 0; }
 function prepararBarrio(semillaNueva) {
   if (semillaNueva) estado.semilla = nuevaSemilla();
   estado.barrio = crearBarrio(estado.semilla, P.dens);
-  estado.fondo = pintarBarrio(estado.semilla);
+  estado.fondo = pintarBarrio(estado.semilla, estado.barrio);
   if (!estado.avatares.length) estado.avatares = estado.barrio.gente.map(pintarAvatar);
   reiniciar();
 }
@@ -1754,12 +1845,16 @@ function reiniciar() {
   estado.eventosVistos = 0; estado.convRestantes = 3; estado.cf = null; estado.sel = -1;
   estado.pendiente = -1; estado.ultimaRespuesta = null; estado.mensajeVisto = false; estado.diaCronica = 0;
   $('#mensajeTexto').textContent = niebla() ? 'Todavía no te ha llegado ningún mensaje.' : ESCENARIOS[estado.esc].texto;
-  $('#mensajeOrigen').textContent = niebla() ? 'Lo que te ha llegado' : 'Mensaje que circula';
+  $('#mensajeOrigen').textContent = niebla() ? 'Lo que te ha llegado' : ESCENARIOS[estado.esc].remitente;
+  $('#mensajeEtiqueta').hidden = niebla();
   estado.aparicion = performance.now();
   $('#cronica').innerHTML = '<li class="vacia">Aquí aparecerá lo que vaya pasando en el barrio.</li>';
   $('#ficha').hidden = true;
   $('#pista').style.opacity = 1;
-  plegarMensaje(false); plegarEscenario(false); plegarLeyenda(false);
+  // [DISEÑO] Orden de lectura al cargar: el mapa primero; la leyenda llega unos
+  // segundos después; el escenario queda en resumen y la crónica cerrada hasta iniciar.
+  plegarMensaje(true); plegarEscenario(true); plegarCronica(true);
+  if (estado.leyendaVista) plegarLeyenda(false);
   bloquearDensidad(false); ocultarAviso(); estado.alt = null;
   pintarConversaciones(); actualizarBoton(); actualizarCifras(); volcarEventos(); pintarReto();
 }
@@ -1893,8 +1988,9 @@ function dibujar(ahora) {
     }
   }
 
-  // Zonas de los grupos de chat: trazo punteado en reposo; se llenan de color
-  // cuando alguien publica en ellas (rojo el rumor, azul el desmentido).
+  // Zonas de los grupos de chat. [DISEÑO] En reposo no se dibujan: solo aparecen
+  // cuando alguien publica en ellas (rojo el rumor, azul el desmentido) o al
+  // señalar un grupo o a uno de sus miembros. La red oculta no compite con la dinámica.
   if (estado.verGrupos) {
     const selGr = estado.sel >= 0 ? b.gruposDe[estado.sel] : [];
     for (const z of zonasDe(b)) {
@@ -1903,11 +1999,12 @@ function dibujar(ahora) {
       if (act && vida <= 0) estado.calorGrupo.delete(z.gi);
       const col = act && act.tipo === 'rumor' ? COL.rumor : COL.verif;
       const resaltado = estado.grupoHover === z.gi || selGr.includes(z.gi);
+      if (vida <= 0 && !resaltado) continue;
       trazoSuave(z.poli);
       if (vida > 0) { ctx.globalAlpha = .15 * vida; ctx.fillStyle = col; ctx.fill(); }
       else if (resaltado) { ctx.globalAlpha = .05; ctx.fillStyle = COL.crema; ctx.fill(); }
       ctx.globalAlpha = vida > 0 ? .35 + .65 * vida : 1;
-      ctx.strokeStyle = vida > 0 ? col : resaltado ? 'rgba(243,236,214,.6)' : 'rgba(243,236,214,.24)';
+      ctx.strokeStyle = vida > 0 ? col : 'rgba(243,236,214,.6)';
       ctx.lineWidth = (vida > 0 || resaltado ? 1.7 : 1.1) / Math.sqrt(estado.vista.z);
       ctx.setLineDash([7, 6]); ctx.lineDashOffset = 0; ctx.stroke(); ctx.setLineDash([]);
       if (vida > 0 || resaltado) {
@@ -1920,12 +2017,8 @@ function dibujar(ahora) {
     }
   }
 
-  // Aristas: tenues en reposo; encendidas cuando algo pasa por ellas.
-  ctx.lineWidth = 1 / Math.sqrt(estado.vista.z) * .95;
-  ctx.strokeStyle = 'rgba(214,232,224,.13)';
-  ctx.beginPath();
-  for (const [a, c] of b.aristas) { const A = b.gente[a], C = b.gente[c]; ctx.moveTo(A.x, A.y); ctx.lineTo(C.x, C.y); }
-  ctx.stroke();
+  // Aristas. [DISEÑO] Los contactos no se dibujan en reposo: se encienden cuando
+  // algo pasa por ellos, y los de una persona al seleccionarla.
   if (estado.sel >= 0) {
     ctx.strokeStyle = 'rgba(243,236,214,.5)'; ctx.lineWidth = 1.4;
     ctx.beginPath();
@@ -2095,8 +2188,9 @@ function dibujarPersona(g, ahora) {
 function dibujarRotulo(x, y, texto, color, resaltado, gi) {
   ctx.save();
   ctx.font = '700 12px Commissioner, sans-serif';
-  // En mapas pequeños, en reposo, el rótulo se reduce a su icono para no tapar a nadie.
-  const compacto = escala() < .75 && !color && !resaltado;
+  // [DISEÑO] En reposo el rótulo se reduce a su ícono: el nombre aparece al pasar
+  // el cursor, al seleccionar a un miembro o cuando el grupo se enciende.
+  const compacto = !color && !resaltado;
   if (compacto) texto = '';
   const w = compacto ? 20 : ctx.measureText(texto).width + 28, h = 20, bx = x - w / 2, by = y - h / 2;
   ctx.globalAlpha = color || resaltado ? 1 : .88;
@@ -2175,7 +2269,8 @@ function avisos(nuevos, ahora) {
       estado.mensajeVisto = true;
       $('#mensajeTexto').textContent = ESCENARIOS[estado.esc].texto;
       $('#mensajeOrigen').textContent = `Te lo mandó ${sim.barrio.gente[i].nombre}`;
-      plegarMensaje(false);
+      $('#mensajeEtiqueta').hidden = false;
+      mostrarMensaje();
     }
   }
 }
@@ -2673,8 +2768,27 @@ function prepararReto(r, v) {
 }
 
 // ─── Mensaje que circula: se pliega al empezar para no tapar los globos ───
-function plegarMensaje(b) { const m = $('#mensaje'); m.classList.toggle('plegado', b); m.setAttribute('aria-expanded', String(!b)); }
+function plegarMensaje(b) { const m = $('#mensaje'); m.classList.toggle('plegado', b); m.setAttribute('aria-expanded', String(!b)); clearTimeout(estado.tMensaje); }
+// [DISEÑO] El mensaje «llega» al iniciar: se despliega unos segundos y vuelve a su ícono.
+function mostrarMensaje() {
+  plegarMensaje(false);
+  estado.tMensaje = setTimeout(() => plegarMensaje(true), 7000);
+}
 $('#mensaje').onclick = () => plegarMensaje(!$('#mensaje').classList.contains('plegado'));
+
+// ─── Crónica plegable: cerrada hasta que empieza la historia ───
+function plegarCronica(b) {
+  $('#cronicaBloque').classList.toggle('plegada', b);
+  $('#btnCronica').setAttribute('aria-expanded', String(!b));
+  $('#txtCronica').textContent = b ? 'Abrir' : 'Cerrar';
+}
+$('#btnCronica').onclick = () => plegarCronica(!$('#cronicaBloque').classList.contains('plegada'));
+
+// ─── Leyenda diferida: aparece unos segundos después de entrar al barrio ───
+function mostrarLeyendaLuego() {
+  if (estado.leyendaVista) return;
+  setTimeout(() => { estado.leyendaVista = true; $('#leyenda').classList.remove('diferida'); plegarLeyenda(false); }, REDUCIR ? 600 : 2600);
+}
 
 // ─── Escenario y leyenda plegables ───
 // [TÉCNICA] Al iniciar, el escenario se contrae a un resumen y la leyenda a su
@@ -2720,7 +2834,8 @@ $('#btnPlay').onclick = () => {
     bloquearDensidad(true);
     $('#pista').style.opacity = 0;
     // La leyenda queda abierta durante la primera partida: es cuando más se necesita.
-    plegarMensaje(true); plegarEscenario(true); plegarLeyenda(estado.partidas.length > 0);
+    plegarEscenario(true); plegarCronica(false); plegarLeyenda(estado.partidas.length > 0);
+    if (sim.t === 0 && !niebla()) mostrarMensaje(); else plegarMensaje(true);
     ocultarAviso();
     if (sim.t === 0 && !estado.globos.length && !niebla()) agregarGlobo({ i: sim.cero, texto: ESCENARIOS[estado.esc].frases[0], tipo: R_, pri: 6 }, performance.now(), true);
   }
@@ -2876,11 +2991,19 @@ grafCaja.addEventListener('pointerleave', () => { hoverGraf = -1; dibujarGrafica
 // ─── Introducción ───
 function abrirIntro() {
   estado.corriendo = false; actualizarBoton();
+  // [DISEÑO] Cada rumor se muestra plegado (ícono, nombre y tipo); al elegirlo se
+  // despliega el mensaje tal como llega al teléfono, con su nota.
+  const ICONO_RUMOR = {
+    gota: '<path d="M12 3c3.5 4.4 6 7.6 6 10.6A6 6 0 0 1 6 13.6C6 10.6 8.5 7.4 12 3Z"/>',
+    tarjeta: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 11h6M7 14h4"/>',
+    alerta: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4M12 17v.1"/>',
+  };
   $('#opcionesRumor').innerHTML = Object.entries(ESCENARIOS).map(([k, e]) => `
-    <label class="opcion"><input type="radio" name="rumor" value="${k}" ${k === estado.esc ? 'checked' : ''}>
-      <b>${e.titulo}</b>
-      <div class="chat"><small>${e.remitente}</small>${e.texto}</div>
-      <span class="nota">${e.nota}</span></label>`).join('');
+    <label class="opcion rumor"><input type="radio" name="rumor" value="${k}" ${k === estado.esc ? 'checked' : ''}>
+      <span class="rumor-cab"><span class="rumor-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONO_RUMOR[e.dano.glifo]}</svg></span>
+        <span><b>${e.titulo}</b><small>${e.tipo}</small></span></span>
+      <span class="rumor-cuerpo"><span class="rumor-interior"><span class="chat"><small>${e.remitente}</small>${e.texto}</span>
+      <span class="nota">${e.nota}</span></span></span></label>`).join('');
   const m = document.querySelector(`#formIntro input[name=modo][value=${estado.modo}]`); if (m) m.checked = true;
   $('#intro').showModal();
 }
@@ -2898,6 +3021,7 @@ function aplicarIntro() {
   fijarModo(modo);
   estado.vista = vistaInicial();
   prepararBarrio(true);
+  mostrarLeyendaLuego();
 }
 
 // ─── Arranque ───
@@ -2910,7 +3034,7 @@ medir();
 new ResizeObserver(() => { medir(); acotarVista(); }).observe($('#mapa'));
 estado.vista = vistaInicial();
 new ResizeObserver(() => dibujarGrafica()).observe(grafCaja);
-document.fonts && document.fonts.ready.then(() => { estado.fondo = pintarBarrio(estado.semilla); });
+document.fonts && document.fonts.ready.then(() => { estado.fondo = pintarBarrio(estado.semilla, estado.barrio); });
 requestAnimationFrame(cuadro);
 abrirIntro();
 // ═══ </interfaz> ═══════════════════════════════════════════════════════════
