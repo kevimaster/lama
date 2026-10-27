@@ -39,7 +39,7 @@ lama/
 | LAMA-05 | Tu feed personalizado | HTML | Funcional |
 | LAMA-06 | El Casino de la Atención V1 | HTML | Funcional |
 | LAMA-07 | El Casino de la Atención V2 | HTML | Funcional |
-| LAMA-08 | Dinámicas de desinformación | HTML | Funcional |
+| LAMA-08 | Efecto dominó | HTML | Funcional |
 | LAMA-09 | Analizador de Sesgos V1 | HTML | Funcional |
 | LAMA-10 | Analizador de Sesgos V2 | HTML | Funcional |
 | LAMA-11 | Dashboard de Diversidad Informativa | HTML | Funcional |
