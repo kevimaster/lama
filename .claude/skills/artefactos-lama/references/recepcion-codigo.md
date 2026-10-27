@@ -7,7 +7,7 @@ entre ese archivo y un simulador que despliega.
 ## Flujo
 
 1. El autor guarda el código con la extensión correcta (ver abajo) y lo deja en
-   `Dropbox/02_INVESTIGACION/Proyectos/LAMA/ArtiLamas_<Autor>/`.
+   `Dropbox/02_INVESTIGACION/Proyectos/LAMA/02_ARTEFACTOS/Recibidos/ArtiLamas_<Autor>/`.
 2. Se identifica el tipo y se arma la estructura que corresponda.
 3. Se corrigen las trampas conocidas (íconos, dependencias, claves).
 4. Se agrega al catálogo y al despliegue — ver `despliegue.md`.
