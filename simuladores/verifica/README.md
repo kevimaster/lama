@@ -4,11 +4,17 @@ Simulador de verificación periodística del Laboratorio de Mediaciones Algorít
 
 Por: Kevin Alexis García. Diseño y desarrollo en colaboración con Claude, de Anthropic.
 
-Cada estudiante verifica una cadena viral ficticia («La cadena del San Rafael») con 90 minutos simulados, califica cinco afirmaciones citando sus pistas y escribe una nota de verificación. El profesor compara los recorridos en el panel de plenaria (`index.html#panel`).
+La portada ofrece tres casos ficticios, cada uno con tiempo simulado: escoges uno, investigas, calificas cada afirmación citando tus pistas y escribes una nota de verificación. El profesor compara los recorridos de cada caso en el panel de plenaria (`index.html#panel`).
+
+- **01 · La cadena del San Rafael** (introductorio): un audio y una foto anuncian el cierre de un hospital tras una réplica.
+- **02 · El 38 %** (intermedio): una alcaldesa celebra que los homicidios bajaron 38 %; primero se separa lo verificable de la opinión.
+- **03 · La consulta** (avanzado): una campaña segmentada muestra a cada público una versión distinta de la misma consulta popular.
+
+Cada caso tiene su propia dirección (`#caso-01`, `#caso-02`, `#caso-03`) y guarda el progreso por separado.
 
 ## Archivos
 
-- `index.html`: el juego completo en un solo archivo, con la foto incluida.
+- `index.html`: el juego completo en un solo archivo, con los tres casos y la foto incluida.
 - `Code.gs`: receptor opcional de recorridos en una hoja de Google.
 
 ## Recepción automática en Google Sheets (opcional)
@@ -31,5 +37,6 @@ Si cambias `Code.gs` después, publica una versión nueva desde **Implementar > 
 
 - Cualquiera que tenga la URL `/exec` puede enviar recorridos; leerlos exige la clave del profesor.
 - Las respuestas correctas viven en el código de la página: un estudiante que lea el código fuente podría verlas.
-- El progreso de cada estudiante se guarda en su navegador.
-- La foto de la cadena es de EFE / Ernesto Guzmán (Hospital Universitario del Valle, Cali). Se usa con fines pedagógicos dentro de un caso ficticio.
+- El progreso de cada estudiante se guarda en su navegador, por caso.
+- `Code.gs` sirve para los tres casos: el registro completo (con el caso) queda en la columna «Registro», que es la que lee el panel. Las columnas A a E guardan las calificaciones por letra de afirmación (el caso 01 usa A–E, el 02 A–D y el 03 A–C); la hoja no tiene columna de caso, así que el caso de cada fila se lee en el campo `"c"` del registro.
+- La foto del caso 01 es de EFE / Ernesto Guzmán (Hospital Universitario del Valle, Cali). Se usa con fines pedagógicos dentro de un caso ficticio.
